@@ -25,11 +25,12 @@ import { useGetFabsQuery, useGetFabByIdQuery } from '@/store/api/job';
 import { useGetShopRevisionsByFabIdQuery } from '@/store/api/shopRevision';
 import { Badge } from '@/components/ui/badge';
 
-// ─── Extended TIME_SLOTS to include all hours (00:00–23:45) ──────────────
 export const TIME_SLOTS = (() => {
   const slots: { value: string; label: string }[] = [];
-  for (let h = 0; h < 24; h++) {
+  for (let h = 7; h <= 16; h++) {
+    if (h === 12) continue;
     for (const m of [0, 15, 30, 45]) {
+      if (h === 22 && m > 0) break;
       const hh = String(h).padStart(2, '0');
       const mm = String(m).padStart(2, '0');
       const value = `${hh}:${mm}`;
@@ -158,26 +159,29 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
 
   const hasSlot = !!(entry.start_date && entry.start_time && entry.end_date && entry.end_time);
 
-  // ─── Ensure end time is filled if missing ──────────────────────────────
-  const initializedEditRef = useRef(false);
-  useEffect(() => {
-    if (initializedEditRef.current || !isEditing || !entry.id || !entry.start_date || !entry.start_time) return;
-    const productiveHours = Number(entry.estimated_hours);
-    if (!Number.isFinite(productiveHours) || productiveHours <= 0) return;
-    // If end_time already set, skip recomputation
-    if (entry.end_time && entry.end_date) {
-      initializedEditRef.current = true;
+  // ─── Editable estimated hours – updates immediately, end recalculated ──
+  const handleEstimatedHoursChange = useCallback((value: string) => {
+    // Always update the estimated hours field immediately
+    onUpdate({ estimated_hours: value });
+
+    // If value is empty, invalid, or start date/time missing, stop here
+    const hours = Number(value);
+    const start = createLocalDateTime(entry.start_date, entry.start_time);
+    if (!start || value === '' || !Number.isFinite(hours) || hours <= 0) {
+      // If the user clears the hours, we should also clear the end to avoid confusion
+      if (value === '') {
+        onUpdate({ end_date: undefined, end_time: '' });
+      }
       return;
     }
-    const start = createLocalDateTime(entry.start_date, entry.start_time);
-    if (!start) return;
-    const end = addWorkingHours(start, productiveHours);
+
+    // Recalculate end from the new hours
+    const end = addWorkingHours(start, hours);
     onUpdate({
       end_date: new Date(end.getFullYear(), end.getMonth(), end.getDate()),
       end_time: `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`,
     });
-    initializedEditRef.current = true;
-  }, [entry.id, entry.start_date, entry.start_time, entry.estimated_hours, entry.end_time, entry.end_date, isEditing, onUpdate]);
+  }, [entry.start_date, entry.start_time, onUpdate]);
 
   const recalcEstimatedHours = useCallback((startDate: Date | undefined, startTime: string, endDate: Date | undefined, endTime: string): string => {
     const startDateTime = createLocalDateTime(startDate, startTime);
@@ -213,22 +217,25 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
         start_time: newStartTime,
         end_date: new Date(newEnd.getFullYear(), newEnd.getMonth(), newEnd.getDate()),
         end_time: `${String(newEnd.getHours()).padStart(2, '0')}:${String(newEnd.getMinutes()).padStart(2, '0')}`,
-        estimated_hours: originalHours.toFixed(2),
+        // DO NOT update estimated_hours – keep it as is
       });
       return;
     }
 
-    const newHours = recalcEstimatedHours(newStartDate, newStartTime, entry.end_date, entry.end_time);
-    onUpdate({ start_date: newStartDate, start_time: newStartTime, estimated_hours: newHours });
-  }, [entry.estimated_hours, entry.end_date, entry.end_time, onUpdate, recalcEstimatedHours]);
+    onUpdate({ start_date: newStartDate, start_time: newStartTime });
+  }, [entry.estimated_hours, onUpdate]);
 
   const onEndTimeChange = useCallback((value: string) => {
-    updateFromEndDateTime(entry.end_date, value);
-  }, [entry.end_date, updateFromEndDateTime]);
+    if (isEditing) {
+      updateFromEndDateTime(entry.end_date, value);
+    }
+  }, [entry.end_date, updateFromEndDateTime, isEditing]);
 
   const onEndDateChange = useCallback((date: Date | undefined) => {
-    updateFromEndDateTime(date, entry.end_time);
-  }, [entry.end_time, updateFromEndDateTime]);
+    if (isEditing) {
+      updateFromEndDateTime(date, entry.end_time);
+    }
+  }, [entry.end_time, updateFromEndDateTime, isEditing]);
 
   const onStartTimeChange = useCallback((value: string) => {
     handleStartDateTimeChange(entry.start_date, value);
@@ -315,7 +322,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
             <div>
               <Label className="text-[13px] text-[#4b545d]">Shop Activity</Label>
               <Select
-                value={entry.planning_section_id || undefined}
+                value={entry.planning_section_id ?? ''}
                 onValueChange={value => onUpdate({ planning_section_id: value, workstation_id: '', operator_id: '' })}
                 disabled={disableShopActivity}
               >
@@ -332,13 +339,16 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
               </Select>
             </div>
 
-            <div className="hidden">
-              <Label className="text-[13px] text-[#4b545d]">Est. Hours (auto)</Label>
+            <div>
+              <Label className="text-[13px] text-[#4b545d]">Estimated Hours *</Label>
               <Input
-                type="text"
-                value={entry.estimated_hours || ''}
-                readOnly
-                className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px] bg-gray-50"
+                type="number"
+                min="0.25"
+                step="0.25"
+                value={entry.estimated_hours ?? ''}
+                onChange={e => handleEstimatedHoursChange(e.target.value)}
+                placeholder="e.g. 8"
+                className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]"
               />
             </div>
 
@@ -434,23 +444,18 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
+                    disabled
                     className={cn(
-                      'mt-2 w-full h-[42px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[13px] flex items-center gap-2',
+                      'mt-2 w-full h-[42px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[13px] flex items-center gap-2 bg-gray-50 cursor-not-allowed',
                       !entry.end_date && 'text-muted-foreground'
                     )}
                   >
                     <Calendar className="h-4 w-4 text-[#7a9705]" />
-                    {entry.end_date ? format(entry.end_date, 'PPP') : <span>Pick end date</span>}
+                    {entry.end_date ? format(entry.end_date, 'PPP') : <span>Auto‑calculated</span>}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={entry.end_date}
-                    onSelect={onEndDateChange}
-                    initialFocus
-                    disabled={date => entry.start_date ? date < entry.start_date : false}
-                  />
+                  <p className="p-3 text-sm text-muted-foreground">Calculated from estimated hours.</p>
                 </PopoverContent>
               </Popover>
             </div>
@@ -459,7 +464,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-[13px] text-[#4b545d]">Start Time</Label>
-              <Select value={entry.start_time} onValueChange={onStartTimeChange}>
+              <Select value={entry.start_time ?? ''} onValueChange={onStartTimeChange}>
                 <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
                   <SelectValue placeholder="Select start" />
                 </SelectTrigger>
@@ -473,9 +478,9 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
 
             <div>
               <Label className="text-[13px] text-[#4b545d]">End Time</Label>
-              <Select value={entry.end_time} onValueChange={onEndTimeChange}>
+              <Select value={entry.end_time ?? ''} onValueChange={onEndTimeChange} disabled>
                 <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                  <SelectValue placeholder="Select end" />
+                  <SelectValue placeholder="Auto‑calculated" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[200px] overflow-y-auto">
                   {TIME_SLOTS.map(slot => (
@@ -707,7 +712,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     }
   }, [effectiveEvent, dataReady, entries.length, createEmptyEntry, effectivePrefillFabId, fabDetails, hideAddStageButton, getActiveStagesFromFab, getNextAvailableSequence]);
 
-  // ─── Edit mode: compute end date/time using addWorkingHours ──────────────
+  // Edit mode: parse API datetime strings as local
   useEffect(() => {
     if (!effectiveEvent) return;
     if (!employeesLoaded || !workstationsLoaded || !sectionsLoaded || !fabsLoaded) return;
@@ -715,24 +720,15 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     const ev = effectiveEvent;
     const startDate = ev.scheduled_start_date ? parseLocalDateTime(ev.scheduled_start_date) : undefined;
     let endDate: Date | undefined = undefined;
-    let endTimeStr = '';
-
     if (startDate && ev.estimated_hours) {
       const hours = Number(ev.estimated_hours);
       if (hours > 0) {
-        // Use addWorkingHours to respect breaks and day boundaries
         endDate = addWorkingHours(startDate, hours);
-        endTimeStr = format(endDate, 'HH:mm');
-      } else if (ev.scheduled_end_date) {
-        endDate = parseLocalDateTime(ev.scheduled_end_date);
-        endTimeStr = endDate ? format(endDate, 'HH:mm') : '';
+      } else {
+        endDate = startDate;
       }
-    } else if (ev.scheduled_end_date) {
-      endDate = parseLocalDateTime(ev.scheduled_end_date);
-      endTimeStr = endDate ? format(endDate, 'HH:mm') : '';
     } else if (startDate) {
       endDate = startDate;
-      endTimeStr = format(endDate, 'HH:mm');
     }
 
     let planningSectionId = ev.planning_section_id != null ? String(ev.planning_section_id) : '';
@@ -745,6 +741,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     }
 
     const startTimeStr = startDate ? format(startDate, 'HH:mm') : '';
+    const endTimeStr = endDate ? format(endDate, 'HH:mm') : '';
 
     const finalEntry: PlanEntry = {
       id: ev.id,
@@ -828,16 +825,17 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
           workstation_id: '',
           operator_id: '',
         }));
-        return updated.map(e => ({ ...e, estimated_hours: recalcEntryHours(e) }));
+        // Do NOT recalc estimated hours from start/end here
+        return updated;
       }
+
       const updatedEntry = { ...target, ...patch };
-      if (patch.start_date !== undefined || patch.start_time !== undefined || patch.end_date !== undefined || patch.end_time !== undefined) {
-        updatedEntry.estimated_hours = recalcEntryHours(updatedEntry);
-      }
+
+      // We DO NOT update estimated_hours based on start/end – user controls it.
       newEntries[idx] = updatedEntry;
       return newEntries;
     });
-  }, [allFabsList, planningSections, isResurfaceFab, getResurfaceSection, prefillSectionIdStr, hideAddStageButton, getActiveStagesFromFab, createEmptyEntry, recalcEntryHours, getNextAvailableSequence]);
+  }, [allFabsList, planningSections, isResurfaceFab, getResurfaceSection, prefillSectionIdStr, hideAddStageButton, getActiveStagesFromFab, createEmptyEntry, getNextAvailableSequence]);
 
   const addEntry = useCallback(() => {
     if (currentIsResurface) return;
@@ -889,8 +887,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       if (!entry.end_date) { toast.error('End date is required'); return; }
       if (!entry.end_time) { toast.error('End time is required'); return; }
       if (!entry.estimated_hours || parseFloat(entry.estimated_hours) <= 0) {
-        toast.error('Estimated hours must be positive (auto‑calculated from start/end)');
-        return;
+        toast.error('Estimated hours must be positive (auto‑calculated from start/end)'); return;
       }
     }
 
@@ -978,7 +975,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               {isEditing ? 'Edit Plan' : 'Create Plan'}
             </p>
             {entries[0]?.fab_id && (
-              <Link 
+              <Link
                 to={`/sales/${entries[0].fab_id}`}
                 className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2"
               >
@@ -1024,7 +1021,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             {hasPendingShopRevision && (
               <div className="p-3 bg-red-50 border border-red-300 rounded-[8px] text-red-700 text-sm flex items-center gap-2">
                 <Info className="h-4 w-4" />
-                Pending shop revision 
+                Pending shop revision
               </div>
             )}
 
@@ -1108,7 +1105,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
                 type="submit"
                 className={cn(
                   "flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold bg-gradient-to-r from-[#7a9705] to-[#9cc15e]",
-                  submitDisabled ? "opacity-60 cursor-not-allowed" : ""
+                  submitDisabled ? "opacity-60 cursor-not-allowed" : "bg-gradient-to-r from-[#7a9705] to-[#9cc15e]"
                 )}
                 disabled={submitDisabled}
               >

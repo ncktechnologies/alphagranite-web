@@ -29,7 +29,7 @@ import {
     useGetFabByIdQuery,
     useUpdateFabMutation,
     useCreateFabNoteMutation,
-    useDeleteFileMutation, // <--- NEW IMPORT
+    useDeleteFileMutation,
 } from '@/store/api/job';
 import {
     useCreateShopRevisionMutation,
@@ -52,13 +52,14 @@ import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
 import { UniversalUploadModal } from '@/components/universal-upload';
 import { Input } from '@/components/ui/input';
 import Popup from '@/components/ui/popup';
+import { addWorkingHours, createLocalDateTime } from '@/lib/shop-time'; // <-- import helpers
 
-// ─── Constants & Helpers (unchanged) ──────────────────────────────────────
+// ─── Constants & Helpers ──────────────────────────────────────────────────
 
-const TIME_SLOTS = (() => {
+const WORKING_TIME_SLOTS = (() => {
     const slots: { value: string; label: string }[] = [];
-    for (let h = 6; h <= 22; h++) {
-        if (h === 12) continue;
+    for (let h = 7; h <= 16; h++) {
+        if (h === 12) continue; // skip break
         for (const m of [0, 15, 30, 45]) {
             if (h === 22 && m > 0) break;
             const hh = String(h).padStart(2, '0');
@@ -150,7 +151,7 @@ const getFabStatusInfo = (statusId: number | undefined) => {
     return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
 };
 
-// ─── Subcomponents (unchanged) ──────────────────────────────────────────
+// ─── Subcomponents ──────────────────────────────────────────────────────────
 
 const MiniProgress: React.FC<{ percent: number }> = ({ percent }) => {
     const p = Math.min(percent || 0, 100);
@@ -245,6 +246,7 @@ interface PlanStageCardProps {
     canEdit?: boolean;
 }
 
+// ─── Updated PlanStageCard with auto‑calculated end ────────────────────────
 const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, employees, totalPlans, onSaved, disabled = false, canEdit = false }) => {
     const [updateShopPlan] = useUpdateShopPlanMutation();
     const [isEditing, setIsEditing] = useState(false);
@@ -269,49 +271,109 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
     const workstationsForSection: any[] = workstationData?.workstations
         || (Array.isArray(workstationData) ? workstationData : []);
 
-    const deriveEndTime = () => {
-        if (plan.scheduled_end_date) return parseTimeFromISO(plan.scheduled_end_date);
-        if (plan.estimated_hours && plan.scheduled_start_date) {
-            try {
-                return format(
-                    new Date(new Date(plan.scheduled_start_date).getTime() + plan.estimated_hours * 3_600_000),
-                    'HH:mm'
-                );
-            } catch { return ''; }
-        }
-        return '';
+    // ─── Helper: create local DateTime ──────────────────────────────────────
+    const createLocalDateTime = (date: Date | undefined, time: string): Date | null => {
+        if (!date || !time) return null;
+        const [hours, minutes] = time.split(':').map(Number);
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const day = date.getDate();
+        return new Date(year, month, day, hours, minutes);
     };
 
-    const deriveEndDate = () => {
-        if (plan.scheduled_end_date) {
-            return parseDateString(plan.scheduled_end_date.split('T')[0]);
-        }
-        if (plan.estimated_hours && plan.scheduled_start_date) {
-            try {
-                const startDate = new Date(plan.scheduled_start_date);
-                const endDate = new Date(startDate.getTime() + plan.estimated_hours * 3_600_000);
-                return parseDateString(format(endDate, 'yyyy-MM-dd'));
-            } catch { return undefined; }
-        }
-        return parseDateString(plan.scheduled_start_date?.split('T')[0]);
-    };
+    // ─── Build initial draft from plan data ─────────────────────────────────
+    const buildDraft = () => {
+        const startDate = parseDateString(plan.scheduled_start_date?.split('T')[0]);
+        const startTime = parseTimeFromISO(plan.scheduled_start_date);
+        const hours = Number(plan.estimated_hours) || 0;
+        let endDate = parseDateString(plan.scheduled_end_date?.split('T')[0]);
+        let endTime = parseTimeFromISO(plan.scheduled_end_date);
 
-    const buildDraft = () => ({
-        workstation_id: String(plan.workstation_id ?? ''),
-        operator_id: String(plan.operator_id ?? ''),
-        start_date: parseDateString(plan.scheduled_start_date?.split('T')[0]),
-        start_time: parseTimeFromISO(plan.scheduled_start_date),
-        end_date: deriveEndDate(),
-        end_time: deriveEndTime(),
-        notes: plan.notes ?? '',
-        sequence: plan.sequence ?? 1,
-    });
+        // If end date/time not set, compute from start + hours
+        if (!endDate || !endTime) {
+            const start = createLocalDateTime(startDate, startTime);
+            if (start && hours > 0) {
+                const computedEnd = addWorkingHours(start, hours);
+                endDate = new Date(computedEnd.getFullYear(), computedEnd.getMonth(), computedEnd.getDate());
+                endTime = `${String(computedEnd.getHours()).padStart(2, '0')}:${String(computedEnd.getMinutes()).padStart(2, '0')}`;
+            } else {
+                endDate = startDate;
+                endTime = startTime;
+            }
+        }
+
+        return {
+            workstation_id: String(plan.workstation_id ?? ''),
+            operator_id: String(plan.operator_id ?? ''),
+            start_date: startDate,
+            start_time: startTime,
+            end_date: endDate,
+            end_time: endTime,
+            estimated_hours: plan.estimated_hours ? String(plan.estimated_hours) : '',
+            notes: plan.notes ?? '',
+            sequence: plan.sequence ?? 1,
+        };
+    };
 
     const [draft, setDraft] = useState(buildDraft);
-    const patch = (p: Partial<typeof draft>) => setDraft(d => ({ ...d, ...p }));
 
-    const handleCancel = () => { setDraft(buildDraft()); setIsEditing(false); };
+    // ─── Patch function ──────────────────────────────────────────────────────
+    const patch = (p: Partial<typeof draft>) => {
+        setDraft(d => ({ ...d, ...p }));
+    };
 
+    // ─── Recalculate end from start + estimated hours ──────────────────────
+    const recalcEnd = (startDate: Date | undefined, startTime: string, hours: number) => {
+        const start = createLocalDateTime(startDate, startTime);
+        if (!start || !hours || hours <= 0) {
+            patch({ end_date: undefined, end_time: '' });
+            return;
+        }
+        const computedEnd = addWorkingHours(start, hours);
+        patch({
+            end_date: new Date(computedEnd.getFullYear(), computedEnd.getMonth(), computedEnd.getDate()),
+            end_time: `${String(computedEnd.getHours()).padStart(2, '0')}:${String(computedEnd.getMinutes()).padStart(2, '0')}`,
+        });
+    };
+
+    // ─── Handlers ─────────────────────────────────────────────────────────────
+    const handleEstimatedHoursChange = (value: string) => {
+        const hours = Number(value);
+        patch({ estimated_hours: value });
+        if (!isNaN(hours) && hours > 0 && draft.start_date && draft.start_time) {
+            recalcEnd(draft.start_date, draft.start_time, hours);
+        } else {
+            patch({ end_date: undefined, end_time: '' });
+        }
+    };
+
+    const handleStartDateChange = (date: Date | undefined) => {
+        patch({ start_date: date });
+        const hours = Number(draft.estimated_hours);
+        if (date && draft.start_time && hours > 0) {
+            recalcEnd(date, draft.start_time, hours);
+        } else {
+            patch({ end_date: undefined, end_time: '' });
+        }
+    };
+
+    const handleStartTimeChange = (value: string) => {
+        patch({ start_time: value });
+        const hours = Number(draft.estimated_hours);
+        if (draft.start_date && value && hours > 0) {
+            recalcEnd(draft.start_date, value, hours);
+        } else {
+            patch({ end_date: undefined, end_time: '' });
+        }
+    };
+
+    // ─── Cancel ──────────────────────────────────────────────────────────────
+    const handleCancel = () => {
+        setDraft(buildDraft());
+        setIsEditing(false);
+    };
+
+    // ─── Filter operators ──────────────────────────────────────────────────
     const selectedWorkstation = workstationsForSection.find(w => String(w.id) === draft.workstation_id);
     const allowedOperatorIds = selectedWorkstation?.operator_ids?.map(String) || [];
     const filteredEmployees = allowedOperatorIds.length > 0
@@ -324,6 +386,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
         }
     }, [draft.workstation_id]);
 
+    // ─── Save ──────────────────────────────────────────────────────────────
     const handleSave = async () => {
         setIsSaving(true);
         try {
@@ -331,14 +394,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
             const endDateStr = draft.end_date ? formatDate(draft.end_date) : startDateStr;
             const scheduledStart = startDateStr && draft.start_time ? `${startDateStr}T${draft.start_time}:00` : undefined;
             const scheduledEnd = endDateStr && draft.end_time ? `${endDateStr}T${draft.end_time}:00` : undefined;
-
-            let estimatedHours = plan.estimated_hours;
-            if (scheduledStart && scheduledEnd) {
-                const diffMs = new Date(scheduledEnd).getTime() - new Date(scheduledStart).getTime();
-                if (diffMs > 0) {
-                    estimatedHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
-                }
-            }
+            const estimatedHours = parseFloat(draft.estimated_hours) || 0;
 
             await updateShopPlan({
                 plan_id: Number(plan.id),
@@ -365,16 +421,15 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
             setIsSaving(false);
         }
     };
-    const handleDeleteClick = () => {
-        setDeleteConfirmOpen(true);
-    };
 
+    // ─── Delete ──────────────────────────────────────────────────────────────
+    const handleDeleteClick = () => { setDeleteConfirmOpen(true); };
     const handleDeleteConfirm = async () => {
         setIsDeleting(true);
         try {
             await deleteShopPlan(plan.id).unwrap();
             toast.success('Plan deleted successfully.');
-            onSaved(); // refreshes parent
+            onSaved();
         } catch (error: any) {
             // toast.error(error?.data?.message || 'Failed to delete plan.');
         } finally {
@@ -383,6 +438,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
         }
     };
 
+    // ─── Read‑only display values ──────────────────────────────────────────
     const wsName = workstations.find(w => String(w.id) === String(plan.workstation_id))?.name
         || workstations.find(w => String(w.id) === String(plan.workstation_id))?.workstation_name
         || '—';
@@ -458,6 +514,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                 <CardContent className="pt-4 px-4 pb-4">
                     {isEditing ? (
                         <div className="flex flex-col gap-4">
+                            {/* Workstation */}
                             <div className="flex flex-col gap-1.5">
                                 <Label className="text-xs text-muted-foreground uppercase tracking-wide">Workstation</Label>
                                 <Select
@@ -492,6 +549,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                                 </Select>
                             </div>
 
+                            {/* Operator */}
                             <div className="flex flex-col gap-1.5">
                                 <Label className="text-xs text-muted-foreground uppercase tracking-wide">Operator</Label>
                                 <Select
@@ -526,57 +584,74 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                                 </Select>
                             </div>
 
+                            {/* Estimated Hours */}
                             <div className="flex flex-col gap-1.5">
-                                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Scheduled Date</Label>
+                                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Estimated Hours</Label>
+                                <Input
+                                    type="number"
+                                    min="0.25"
+                                    step="0.25"
+                                    value={draft.estimated_hours ?? ''}
+                                    onChange={e => handleEstimatedHoursChange(e.target.value)}
+                                    placeholder="e.g. 2.5"
+                                    className="h-[38px] border-[#e2e4ed] text-sm"
+                                    disabled={effectiveDisabled}
+                                />
+                            </div>
+
+                            {/* Start Date */}
+                            <div className="flex flex-col gap-1.5">
+                                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Start Date</Label>
                                 <DateTimePicker
                                     mode="date"
                                     value={draft.start_date}
-                                    onChange={date => patch({ start_date: date })}
+                                    onChange={handleStartDateChange}
                                     disabled={effectiveDisabled}
                                 />
                             </div>
 
+                            {/* Start Time */}
                             <div className="flex flex-col gap-1.5">
-                                <Label className="text-xs text-muted-foreground uppercase tracking-wide">End Date</Label>
+                                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Start Time</Label>
+                                <Select value={draft.start_time} onValueChange={handleStartTimeChange} disabled={effectiveDisabled}>
+                                    <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
+                                        <SelectValue placeholder="Select start" />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-[200px] overflow-y-auto">
+                                        {WORKING_TIME_SLOTS.map(s => (
+                                            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* End Date - disabled */}
+                            <div className="flex flex-col gap-1.5">
+                                <Label className="text-xs text-muted-foreground uppercase tracking-wide">End Date (auto)</Label>
                                 <DateTimePicker
                                     mode="date"
                                     value={draft.end_date}
-                                    onChange={date => patch({ end_date: date })}
-                                    disabled={effectiveDisabled}
+                                    onChange={() => {}}
+                                    disabled={true}
                                 />
                             </div>
 
-                            <div className="">
-                                <div className="flex flex-col gap-1.5">
-                                    <Label className="text-xs text-muted-foreground uppercase tracking-wide">Start Time</Label>
-                                    <Select value={draft.start_time} onValueChange={v => patch({ start_time: v })} disabled={effectiveDisabled}>
-                                        <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
-                                            <SelectValue placeholder="Start" />
-                                        </SelectTrigger>
-                                        <SelectContent className="max-h-[200px] overflow-y-auto">
-                                            {TIME_SLOTS.map(s => (
-                                                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <Label className="text-xs text-muted-foreground uppercase tracking-wide">End Time</Label>
-                                    <Select value={draft.end_time} onValueChange={v => patch({ end_time: v })} disabled={effectiveDisabled}>
-                                        <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
-                                            <SelectValue placeholder="End" />
-                                        </SelectTrigger>
-                                        <SelectContent className="max-h-[200px] overflow-y-auto">
-                                            {TIME_SLOTS
-                                                .filter(s => !draft.start_time || s.value > draft.start_time)
-                                                .map(s => (
-                                                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                                                ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                            {/* End Time - disabled */}
+                            <div className="flex flex-col gap-1.5">
+                                <Label className="text-xs text-muted-foreground uppercase tracking-wide">End Time (auto)</Label>
+                                <Select value={draft.end_time} onValueChange={() => {}} disabled>
+                                    <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm bg-gray-50 cursor-not-allowed">
+                                        <SelectValue placeholder="Auto‑calculated" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {WORKING_TIME_SLOTS.map(s => (
+                                            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
+                            {/* Notes */}
                             <div className="flex flex-col gap-1.5">
                                 <Label className="text-xs text-muted-foreground uppercase tracking-wide">Notes</Label>
                                 <Textarea
@@ -588,6 +663,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                                 />
                             </div>
 
+                            {/* Save / Cancel buttons */}
                             <div className="flex gap-2 pt-1">
                                 <Button size="sm" className="flex-1" onClick={handleSave} disabled={isSaving || effectiveDisabled}>
                                     {isSaving
@@ -636,19 +712,10 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                 className="h-auto"
             >
                 <div className="flex justify-end space-x-3 my-3">
-                    <Button
-                        variant="outline"
-                        onClick={() => setDeleteConfirmOpen(false)}
-                        className="w-[200px]"
-                    >
+                    <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)} className="w-[200px]">
                         Cancel
                     </Button>
-                    <Button
-                        variant="destructive"
-                        onClick={handleDeleteConfirm}
-                        disabled={isDeleting}
-                        className="w-[140px]"
-                    >
+                    <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isDeleting} className="w-[140px]">
                         {isDeleting ? 'Deleting…' : 'Delete'}
                     </Button>
                 </div>
@@ -657,7 +724,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
     );
 };
 
-// ─── Loading / Error helpers (unchanged) ──────────────────────────────
+// ─── Loading / Error helpers ──────────────────────────────────────────────
 
 const LoadingSkeleton = () => (
     <div className="flex flex-col min-h-screen">
@@ -772,10 +839,8 @@ const FabDetailsPage = () => {
             return;
         }
         try {
-            // Assumes mutation expects { file_id: number }
             await deleteFile({ file_id: Number(fileId) }).unwrap();
             toast.success('File deleted successfully');
-
             refetchRevisions();
         } catch (error: any) {
             toast.error(error?.data?.message || 'Failed to delete file');
@@ -831,12 +896,10 @@ const FabDetailsPage = () => {
         if (fab.cnc_data?.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.cnc_data.files) });
         if (fab.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.files) });
 
-        // Operator files
         if (fab.operator_files?.length) {
             sources.push({ kind: 'raw', data: toUnifiedFiles(fab.operator_files) });
         }
 
-        // Shop revision files – collect from all revisions
         const shopRevisionFiles: any[] = [];
         (fab.shop_revisions || []).forEach((rev: any) => {
             if (rev.files?.length) {
@@ -852,7 +915,7 @@ const FabDetailsPage = () => {
 
     const totalFileCount = fileSources.reduce((count, source) => count + (source.kind === 'raw' ? source.data.length : 0), 0);
 
-    // ─── Other handlers (unchanged) ────────────────────────────────────
+    // ─── Other handlers ────────────────────────────────────────────────────
 
     const handleAddNote = async () => {
         if (!noteText.trim()) { toast.warning('Note cannot be empty.'); return; }
@@ -983,7 +1046,7 @@ const FabDetailsPage = () => {
                         </CardContent>
                     </Card>
 
-                    {/* FAB Files Card – with delete support */}
+                    {/* FAB Files Card */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-[#111827] leading-[32px] text-2xl font-bold">
@@ -1000,8 +1063,8 @@ const FabDetailsPage = () => {
                                 onFileClick={handleFileClick}
                                 defaultLayout="card"
                                 emptyMessage="No files have been uploaded for this FAB yet."
-                                onDeleteFile={handleDeleteClick}      // <--- NEW
-                                showDeleteButton={true}               // <--- NEW
+                                onDeleteFile={handleDeleteClick}
+                                showDeleteButton={true}
                             />
                         </CardContent>
                     </Card>
@@ -1022,26 +1085,24 @@ const FabDetailsPage = () => {
                                             A pending shop revision exists. Plan edits and new plan creation are disabled until the revision is resolved.
                                         </p>
                                     )}
-
                                 </div>
                                 <div>
-
+                                    {showCncWarning && (
+                                        <Badge variant="destructive" className="mr-2">
+                                            <Info className="h-4 w-4 shrink-0" />
+                                            <span>CNC Programming not complete.</span>
+                                        </Badge>
+                                    )}
+                                    <Button
+                                        size="sm"
+                                        onClick={() => setShowCreatePlanModal(true)}
+                                        className="bg-green-600 hover:bg-green-700"
+                                        disabled={!canEditPlans}
+                                    >
+                                        <Plus className="h-4 w-4 mr-1" />
+                                        Create Plan
+                                    </Button>
                                 </div>
-                                {showCncWarning && (
-                                    <Badge variant="destructive">
-                                        <Info className="h-4 w-4 shrink-0" />
-                                        <span>CNC Programming not complete.</span>
-                                    </Badge>
-                                )}
-                                <Button
-                                    size="sm"
-                                    onClick={() => setShowCreatePlanModal(true)}
-                                    className="bg-green-600 hover:bg-green-700"
-                                    disabled={!canEditPlans}
-                                >
-                                    <Plus className="h-4 w-4 mr-1" />
-                                    Create Plan
-                                </Button>
                             </div>
                         </CardHeader>
                         <CardContent className="pt-6">
@@ -1138,7 +1199,6 @@ const FabDetailsPage = () => {
 
                 {/* RIGHT SIDEBAR */}
                 <div className="border-l space-y-6">
-                    {/* Estimated Completion Date */}
                     <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
                         <CardHeader className="pb-3 border-b border-[#e2e4ed]">
                             <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
@@ -1151,7 +1211,6 @@ const FabDetailsPage = () => {
                         </CardContent>
                     </Card>
 
-                    {/* Shop Suggested Date */}
                     <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
                         <CardHeader className="pb-3 border-b border-[#e2e4ed]">
                             <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
@@ -1164,7 +1223,6 @@ const FabDetailsPage = () => {
                         </CardContent>
                     </Card>
 
-                    {/* Schedule Dates */}
                     <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
                         <CardHeader className="pb-3 border-b border-[#e2e4ed]">
                             <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
@@ -1183,7 +1241,6 @@ const FabDetailsPage = () => {
                         </CardContent>
                     </Card>
 
-                    {/* Shop Revision History */}
                     <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
                         <CardHeader className="pb-3 border-b border-[#e2e4ed]">
                             <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
@@ -1229,7 +1286,6 @@ const FabDetailsPage = () => {
                         </CardContent>
                     </Card>
 
-                    {/* Shop Revision Details */}
                     <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
                         <CardHeader className="pb-3 border-b border-[#e2e4ed]">
                             <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
@@ -1259,7 +1315,6 @@ const FabDetailsPage = () => {
                                     <InfoRow label="Status" value={selectedRevision.revision_completed ? <span className="text-green-700">Completed</span> : <span className="text-orange-700">Pending</span>} />
                                     {selectedRevision.revision_feedback && <InfoRow label="Feedback" value={selectedRevision.revision_feedback} />}
 
-                                    {/* Upload button – only for pending revisions */}
                                     {canUpload && (
                                         <Button
                                             onClick={() => {
@@ -1283,16 +1338,14 @@ const FabDetailsPage = () => {
                 </div>
             </div>
 
-            {/* ─── Modals (unchanged) ────────────────────────────────────── */}
+            {/* ─── Modals ────────────────────────────────────────────────────── */}
 
-            {/* File Viewer */}
             {activeFile && (
                 <div className="fixed inset-0 z-50 bg-white overflow-auto">
                     <FileViewer file={activeFile} onClose={() => setActiveFile(null)} />
                 </div>
             )}
 
-            {/* Create Revision Dialog */}
             <Dialog open={showRevisionDialog} onOpenChange={setShowRevisionDialog}>
                 <DialogContent>
                     <DialogHeader><DialogTitle>Create Shop Revision</DialogTitle></DialogHeader>
@@ -1336,7 +1389,6 @@ const FabDetailsPage = () => {
                 </DialogContent>
             </Dialog>
 
-            {/* Upload modal for shop revisions */}
             {showShopUploadModal && selectedRevision && selectedRevision.id && (
                 <UniversalUploadModal
                     open={showShopUploadModal}
@@ -1361,7 +1413,6 @@ const FabDetailsPage = () => {
                 />
             )}
 
-            {/* Create Plan Sheet */}
             <CreatePlanSheet
                 open={showCreatePlanModal}
                 onOpenChange={setShowCreatePlanModal}
@@ -1369,6 +1420,7 @@ const FabDetailsPage = () => {
                 hideAddStageButton={true}
                 onEventCreated={() => refetch()}
             />
+
             <Popup
                 isOpen={deleteConfirmationOpen}
                 onClose={handleDeleteCancel}
@@ -1391,7 +1443,6 @@ const FabDetailsPage = () => {
                     </Button>
                 </div>
             </Popup>
-
         </div>
     );
 };
