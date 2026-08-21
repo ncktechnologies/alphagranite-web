@@ -379,7 +379,6 @@ export function OperatorDashboard() {
                 <TooltipContent side="center" sideOffset={6} className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
                     <div className="space-y-1">
                         <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
-                        <p><span className="font-semibold">Operator:</span> {event.operator_name || 'N/A'}</p>
                         <p><span className="font-semibold">Workstation:</span> {event.workstation_name || 'N/A'}</p>
                         <p><span className="font-semibold">Est. Hours:</span> {event.estimated_hours ?? 'N/A'}</p>
                         <p><span className="font-semibold">% Complete:</span> {event.work_percentage ?? 0}%</p>
