@@ -447,7 +447,7 @@ const ShopCalendarPage: React.FC = () => {
   return (
     <div className="bg-white min-h-screen flex flex-col">
       {/* ─── Sticky Header ─── */}
-      <div className="sticky top-0 z-50 bg-white border-b border-[#dfdfdf] shadow-sm">
+      <div className="sticky top-0 z-10 bg-white border-b border-[#dfdfdf] shadow-sm">
         <div className="px-10 pt-5 pb-5">
           <div className="flex items-center justify-between gap-10">
             <div className="flex flex-col gap-2">
@@ -803,7 +803,7 @@ const ShopCalendarPage: React.FC = () => {
                   {viewMode !== 'month' && !isAxisSwapped && (
                     <div className="min-w-max">
                       {/* Top row: day headers – sticky horizontally when scrolling vertically */}
-                      <div className="flex sticky top-0 z-20 bg-white border-b border-[#e2e4ed]">
+                      <div className="flex sticky top-0 z-10 bg-white border-b border-[#e2e4ed]">
                         {/* Left time label column – sticky left and top */}
                         <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] sticky left-0 z-30 bg-white" />
                         {displayDays.map((day) => (
@@ -884,7 +884,7 @@ const ShopCalendarPage: React.FC = () => {
                                 <div className="absolute left-0 right-0 z-10 pointer-events-none" style={{ top: getTimePosition(currentTime.getHours() + currentTime.getMinutes() / 60) }}>
                                   <div className="relative flex items-center">
                                     <div
-                                      className="absolute -left-[90px] flex items-center justify-center rounded-[4px] px-1 py-0.5 z-20"
+                                      className="absolute left-0 -translate-x-full flex items-center justify-center rounded-[4px] px-1 py-0.5 z-20"
                                       style={{ backgroundColor: '#ee1a1d' }}
                                     >
                                       <span className="text-[9px] font-semibold text-white whitespace-nowrap">
