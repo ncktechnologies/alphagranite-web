@@ -56,6 +56,9 @@ export interface CalculatedCutListData {
     cnc_ln_ft: number;
     milter_ln_ft: number;
     saw_cut_lnft?: number;
+    // ✨ New fields
+    wj_miter_lnft?: number;
+    saw_miter_lnft?: number;
     cost_of_stone: number;
     revenue: number;
     fp_completed: string;
@@ -105,6 +108,9 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         cnc_ln_ft: fabWithExtraFields.cnc_linft || 0,
         milter_ln_ft: fabWithExtraFields.miter_linft || 0,
         saw_cut_lnft: fabWithExtraFields.saw_cut_lnft || 0,
+        // ✨ Map new fields
+        wj_miter_lnft: fabWithExtraFields.wj_miter_lnft || 0,
+        saw_miter_lnft: fabWithExtraFields.saw_miter_lnft || 0,
         cost_of_stone: fabWithExtraFields.cost_of_stone || 0,
         revenue: fabWithExtraFields.revenue || 0,
         fp_completed: fabWithExtraFields.final_programming_complete ? 'Yes' : 'No',
@@ -185,7 +191,6 @@ export const CutListTableWithCalculations = ({
     setDateRange,
     onAddNote,
     onToggleSuccess,
-    // Permission props (default to false)
     canAddNote = false,
     canToggleOnHold = false,
     canExport = false,
@@ -237,8 +242,8 @@ export const CutListTableWithCalculations = ({
                 return String(sp);
             }).filter(Boolean).sort();
         }
-        // return Array.from(new Set(jobs.map(job => job.sales_person_name).filter(Boolean))).sort();
-    }, [ salesPersons]);
+        return [];
+    }, [salesPersons]);
     // ── Filtered data - NO client-side filtering, backend handles everything ──
     const filteredData = useMemo(() => {
         if (!calculatedCutLists || !Array.isArray(calculatedCutLists)) return [];
@@ -383,6 +388,12 @@ export const CutListTableWithCalculations = ({
                 header: ({ column }) => <DataGridColumnHeader title="WJ:LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.wl_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
             },
+             {
+                id: 'wj_miter_lnft', accessorKey: 'wj_miter_lnft',
+                header: ({ column }) => <DataGridColumnHeader title="WJ MITER:LIN FT" column={column} />,
+                cell: ({ row }) => <span className="text-sm block">{row.original.wj_miter_lnft?.toFixed(2) ?? '0.00'}</span>,
+                enableSorting: true,
+            },
             {
                 id: 'edging_ln_ft', accessorKey: 'edging_ln_ft',
                 header: ({ column }) => <DataGridColumnHeader title="EDGING: LIN FT" column={column} />,
@@ -402,6 +413,12 @@ export const CutListTableWithCalculations = ({
                 id: 'saw_cut_lnft', accessorKey: 'saw_cut_lnft',
                 header: ({ column }) => <DataGridColumnHeader title="SAW:LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.saw_cut_lnft?.toFixed(2) ?? '0.00'}</span>,
+                enableSorting: true,
+            },
+            {
+                id: 'saw_miter_lnft', accessorKey: 'saw_miter_lnft',
+                header: ({ column }) => <DataGridColumnHeader title="SAW MITER:LIN FT" column={column} />,
+                cell: ({ row }) => <span className="text-sm block">{row.original.saw_miter_lnft?.toFixed(2) ?? '0.00'}</span>,
                 enableSorting: true,
             },
             {

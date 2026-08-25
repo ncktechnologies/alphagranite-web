@@ -26,6 +26,9 @@ const submissionSchema = z.object({
   cncLinFt:     z.string().min(1, "CNC Lin Ft is required"),
   miterLinFt:   z.string().min(1, "Miter Lin Ft is required"),
   sawCutLnft:   z.string().min(1, "Saw Cut Ln Ft is required"),
+  // ✨ New fields
+  wjMiterLnft:  z.string().min(1, "WJ Miter Lin Ft is required"),
+  sawMiterLnft: z.string().min(1, "Saw Miter Lin Ft is required"),
 });
 
 type SubmissionData = z.infer<typeof submissionSchema>;
@@ -79,6 +82,9 @@ export function SubmissionModal({
       cncLinFt:    "",
       miterLinFt:  "",
       sawCutLnft:  "",
+      // ✨ New default values
+      wjMiterLnft: "",
+      sawMiterLnft: "",
     },
   });
 
@@ -128,6 +134,9 @@ export function SubmissionModal({
         cnc_linft:     parseFloat(values.cncLinFt),
         miter_linft:   parseFloat(values.miterLinFt),
         saw_cut_lnft:  parseFloat(values.sawCutLnft),
+        // ✨ New fields in payload
+        wj_miter_lnft: parseFloat(values.wjMiterLnft),
+        saw_miter_lnft: parseFloat(values.sawMiterLnft),
       };
 
       await updateFab({ id: fabId, data: fabUpdateData }).unwrap();
@@ -196,7 +205,7 @@ export function SubmissionModal({
                   name="wjLinFt"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>WJ Lin Ft *</FormLabel>
+                      <FormLabel>WJ LinFt *</FormLabel>
                       <FormControl>
                         <Input placeholder="0.00" type="number" step="0.01" {...field} />
                       </FormControl>
@@ -214,7 +223,7 @@ export function SubmissionModal({
                   name="edgingLinFt"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Edging Lin Ft *</FormLabel>
+                      <FormLabel>Edging LinFt *</FormLabel>
                       <FormControl>
                         <Input placeholder="0.00" type="number" step="0.01" {...field} />
                       </FormControl>
@@ -227,7 +236,7 @@ export function SubmissionModal({
                   name="cncLinFt"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>CNC Lin Ft *</FormLabel>
+                      <FormLabel>CNC LinFt *</FormLabel>
                       <FormControl>
                         <Input placeholder="0.00" type="number" step="0.01" {...field} />
                       </FormControl>
@@ -240,7 +249,7 @@ export function SubmissionModal({
                   name="miterLinFt"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Miter Lin Ft *</FormLabel>
+                      <FormLabel>Miter LinFt *</FormLabel>
                       <FormControl>
                         <Input placeholder="0.00" type="number" step="0.01" {...field} />
                       </FormControl>
@@ -253,7 +262,39 @@ export function SubmissionModal({
                   name="sawCutLnft"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Saw Cut Ln Ft *</FormLabel>
+                      <FormLabel>Saw Cut LinFt *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="0.00" type="number" step="0.01" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* ✨ New row for WJ Miter and Saw Miter */}
+            <div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="wjMiterLnft"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>WJ Miter LinFt *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="0.00" type="number" step="0.01" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="sawMiterLnft"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Saw Miter LinFt *</FormLabel>
                       <FormControl>
                         <Input placeholder="0.00" type="number" step="0.01" {...field} />
                       </FormControl>

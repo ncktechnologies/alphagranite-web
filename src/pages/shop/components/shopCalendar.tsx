@@ -905,7 +905,7 @@ const ShopCalendarPage: React.FC = () => {
                   {viewMode !== 'month' && isAxisSwapped && (
                     <div className="min-w-max">
                       {/* Top row: time header – sticky vertically */}
-                      <div className="flex border-b border-[#e2e4ed] bg-white sticky top-0 z-20">
+                      <div className="flex border-b border-[#e2e4ed] bg-white sticky top-0 z-10">
                         <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] sticky left-0 z-30 bg-white" />
                         <div className="relative" style={{ minWidth: DISPLAY_HOURS * HOUR_WIDTH, height: 50 }}>
                           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {

@@ -16,7 +16,7 @@ export const RoleCard = ({ role, isSelected, onClick }: RoleCardProps) => {
     <>
     <Card 
       className={`cursor-pointer transition-all hover:shadow-md ${
-        isSelected ? 'ring-1 ring-[#8BAD2B] bg-[#F0FDF4]' : ''
+        isSelected ? ' border border-[#8BAD2B] bg-[#F0FDF4]' : ''
       }`}
       onClick={() => onClick(role)}
     >

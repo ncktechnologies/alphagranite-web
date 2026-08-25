@@ -42,8 +42,6 @@ import { useTableState } from '@/hooks/use-table-state';
 import { NotesModal } from '@/components/common/NotesModal';
 import { toast } from 'sonner';
 import { safeFormatDate } from './statusDetails';
-// import { toast 
-// } from 'sonner';
 
 export interface ShopPlanRow {
     fab_id: string;
@@ -64,6 +62,9 @@ export interface ShopPlanRow {
     edging_ln_ft: number;
     cnc_ln_ft: number;
     milter_ln_ft: number;
+    // ✨ New fields
+    wj_miter_lnft: number;
+    saw_miter_lnft: number;
     total_cut_ln_ft: number;
     percent_complete: number;
     plan_id: number;
@@ -103,16 +104,19 @@ const computeOverallTotals = (rows: ShopPlanRow[]) => {
             acc.edging_ln_ft += row.edging_ln_ft;
             acc.cnc_ln_ft += row.cnc_ln_ft;
             acc.milter_ln_ft += row.milter_ln_ft;
+            // ✨ New fields in totals
+            acc.wj_miter_lnft += row.wj_miter_lnft;
+            acc.saw_miter_lnft += row.saw_miter_lnft;
         }
         return acc;
     }, {
         pieces: 0, total_sq_ft: 0, total_cut_ln_ft: 0,
         wl_ln_ft: 0, sl_ln_ft: 0, edging_ln_ft: 0, cnc_ln_ft: 0, milter_ln_ft: 0,
+        wj_miter_lnft: 0, saw_miter_lnft: 0,
     });
 };
 
 const ShopTable: React.FC<ShopTableProps> = ({
-
     canManageShopPlans = false,
     canAddNote = false,
     canExport = false,
@@ -247,6 +251,9 @@ const ShopTable: React.FC<ShopTableProps> = ({
                 edging_ln_ft: fab.edging_linft || 0,
                 cnc_ln_ft: fab.cnc_linft || 0,
                 milter_ln_ft: fab.miter_linft || 0,
+                // ✨ New fields mapping
+                wj_miter_lnft: fab.wj_miter_lnft || 0,
+                saw_miter_lnft: fab.saw_miter_lnft || 0,
                 total_cut_ln_ft: fab.total_cut_lnft || 0,
                 percent_complete: fab.percentage_completion || 0,
                 fab_notes: Array.isArray(fab.fab_notes)
@@ -294,7 +301,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
                         : undefined,
                     shop_est_completion_date: fab.shop_est_completion_date
                         ? safeFormatDate(fab.shop_est_completion_date, 'MM/dd/yyyy')
-                            : undefined,
+                        : undefined,
                 });
             }
         });
@@ -435,7 +442,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
             enableSorting: false,
             size: 400,
         },
-        
+
         {
             id: 'total_sq_ft',
             accessorFn: r => r.total_sq_ft,
@@ -461,6 +468,14 @@ const ShopTable: React.FC<ShopTableProps> = ({
             enableSorting: true,
         },
         {
+            id: 'wj_miter_lnft',
+            accessorFn: r => r.wj_miter_lnft,
+            header: ({ column }) => <DataGridColumnHeader title="WJ MITER:LN FT" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.wj_miter_lnft.toFixed(2)}</span>,
+            enableSorting: true,
+            size: 100,
+        },
+        {
             id: 'sl_ln_ft',
             accessorFn: r => r.sl_ln_ft,
             header: ({ column }) => <DataGridColumnHeader title="SAW:LN FT" column={column} />,
@@ -475,6 +490,14 @@ const ShopTable: React.FC<ShopTableProps> = ({
                 />
             ),
             enableSorting: true,
+        },
+        {
+            id: 'saw_miter_lnft',
+            accessorFn: r => r.saw_miter_lnft,
+            header: ({ column }) => <DataGridColumnHeader title="SAW MITER:LN FT" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.saw_miter_lnft.toFixed(2)}</span>,
+            enableSorting: true,
+            size: 100,
         },
         {
             id: 'edging_ln_ft',
@@ -606,14 +629,6 @@ const ShopTable: React.FC<ShopTableProps> = ({
             enableSorting: false,
             size: 220,
         },
-        // {
-        //     id: 'notes',
-        //     accessorFn: r => r.plan_notes,
-        //     header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
-        //     cell: ({ row }) => <span className="text-sm text-text">{row.original.plan_notes || '-'}</span>,
-        //     enableSorting: true,
-        //     size: 300,
-        // },
     ], [canManageShopPlans, canAddNote, handleViewCalendar, handleCreatePlan, handleAutoSchedule, handleAddNote, refetch]);
 
     const table = useReactTable({
@@ -747,9 +762,13 @@ const ShopTable: React.FC<ShopTableProps> = ({
                                                         if (colId === 'total_sq_ft') return <td key={colId} className={cls}>{overallTotals.total_sq_ft.toFixed(2)}</td>;
                                                         if (colId === 'wl_ln_ft') return <td key={colId} className={cls}>{overallTotals.wl_ln_ft.toFixed(2)}</td>;
                                                         if (colId === 'sl_ln_ft') return <td key={colId} className={cls}>{overallTotals.sl_ln_ft.toFixed(2)}</td>;
+                                                        // ✨ New totals for Saw Miter
+                                                        if (colId === 'saw_miter_lnft') return <td key={colId} className={cls}>{overallTotals.saw_miter_lnft.toFixed(2)}</td>;
                                                         if (colId === 'edging_ln_ft') return <td key={colId} className={cls}>{overallTotals.edging_ln_ft.toFixed(2)}</td>;
                                                         if (colId === 'cnc_ln_ft') return <td key={colId} className={cls}>{overallTotals.cnc_ln_ft.toFixed(2)}</td>;
                                                         if (colId === 'milter_ln_ft') return <td key={colId} className={cls}>{overallTotals.milter_ln_ft.toFixed(2)}</td>;
+                                                        // ✨ New totals for WJ Miter
+                                                        if (colId === 'wj_miter_lnft') return <td key={colId} className={cls}>{overallTotals.wj_miter_lnft.toFixed(2)}</td>;
                                                         if (colId === 'total_cut_ln_ft') return <td key={colId} className={cls}>{overallTotals.total_cut_ln_ft.toFixed(2)}</td>;
                                                         return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
                                                     })}

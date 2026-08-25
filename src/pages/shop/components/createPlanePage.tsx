@@ -1045,10 +1045,12 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
                       { label: 'No. of Pieces', val: selectedFab.no_of_pieces || 0 },
                       { label: 'Total Sq Ft', val: selectedFab.total_sqft?.toFixed(2) || '0.00' },
                       { label: 'WJ LinFt', val: selectedFab.wj_linft?.toFixed(2) || '0.00' },
+                      { label: 'WJ Miter LinFt', val: selectedFab.wj_miter_lnft?.toFixed(2) || '0.00' },
                       { label: 'Edging LinFt', val: selectedFab.edging_linft?.toFixed(2) || '0.00' },
                       { label: 'CNC LinFt', val: selectedFab.cnc_linft?.toFixed(2) || '0.00' },
                       { label: 'Miter LinFt', val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
                       { label: 'Saw Cut LinFt', val: selectedFab.saw_cut_lnft?.toFixed(2) || '0.00' },
+                      { label: 'Saw Miter LinFt', val: selectedFab.saw_miter_lnft?.toFixed(2) || '0.00' },
                     ].map(({ label, val }) => (
                       <div key={label}>
                         <Label className="text-xs text-[#7c8689]">{label}</Label>

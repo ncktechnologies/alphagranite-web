@@ -72,7 +72,7 @@ export const JobsList = ({
                         <div
                             key={job.id}
                             className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedJobId === job.id
-                                    ? 'ring-1 ring-[#8BAD2B] bg-[#F0FDF4]' : ''
+                                    ? 'border border-[#8BAD2B] bg-[#F0FDF4]' : ''
                                 }`}
                             onClick={() => onJobSelect(job)}
                         >

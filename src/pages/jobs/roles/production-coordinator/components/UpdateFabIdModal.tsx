@@ -40,9 +40,11 @@ const updateFabSchema = z.object({
   cncLinFt: z.string().optional(),
   miterLinFt: z.string().optional(),
   sawCutLnft: z.string().optional(),
+  // ✨ new fields
+  wjMiterLnft: z.string().optional(),
+  sawMiterLnft: z.string().optional(),
   shopDate: z.string().optional(),
   installationDate: z.string().optional(),
-  // ✅ renamed from revisionComplete → cutlistComplete
   cutlistComplete: z.boolean().optional(),
 });
 
@@ -97,6 +99,9 @@ export function UpdateFabIdModal({
       cncLinFt: "",
       miterLinFt: "",
       sawCutLnft: "",
+      // ✨ new default values
+      wjMiterLnft: "",
+      sawMiterLnft: "",
       shopDate: "",
       installationDate: "",
       cutlistComplete: false,
@@ -104,11 +109,9 @@ export function UpdateFabIdModal({
   });
 
   // ── Populate form from backend data ──────────────────────────────────────
-  // Priority: cutListData (specific cut-list endpoint) → fabData (general FAB)
   useEffect(() => {
     if (!open || !fabData) return;
 
-    // cutListData?.data is the authoritative backend source for cut-list fields
     const cutData = cutListData?.data;
 
     form.reset({
@@ -119,18 +122,18 @@ export function UpdateFabIdModal({
       cncLinFt: (cutData?.cnc_linft ?? fabData.cnc_linft ?? "").toString() || "",
       miterLinFt: (cutData?.miter_linft ?? fabData.miter_linft ?? "").toString() || "",
       sawCutLnft: (cutData?.saw_cut_lnft ?? fabData.saw_cut_lnft ?? "").toString() || "",
+      // ✨ populate new fields
+      wjMiterLnft: (cutData?.wj_miter_lnft ?? fabData.wj_miter_lnft ?? "").toString() || "",
+      sawMiterLnft: (cutData?.saw_miter_lnft ?? fabData.saw_miter_lnft ?? "").toString() || "",
       shopDate: cutData?.shop_date_schedule ?? fabData.shop_date_schedule ?? "",
       installationDate: cutData?.installation_date ?? fabData.installation_date ?? "",
-      // ✅ read cutlist_complete from backend; fall back to fabData field
       cutlistComplete: cutData?.cutlist_complete === true || fabData?.cutlist_complete === true,
     });
   }, [open, cutListData, fabData, form]);
 
-
   const cncLinFtValue = form.watch('cncLinFt');
   const cncLinFtNum = parseFloat(cncLinFtValue) || 0;
 
-  // ── Read required fields from backend ──────────────────────────────────
   const finalProgrammingComplete =
     cutListData?.data?.final_programming_complete ??
     fabData?.final_programming_complete ??
@@ -140,11 +143,8 @@ export function UpdateFabIdModal({
     cutListData?.data?.cnc_data ?? fabData?.cnc_data
   );
 
-  // ── Determine if checkbox should be disabled ──────────────────────────
   const isCutlistCompleteDisabled = !finalProgrammingComplete;
 
-
-  // ── Job info display ──────────────────────────────────────────────────────
   const jobInfo = [
     { label: "Job #", value: fabData?.job_details?.job_number || "-" },
     { label: "FAB type", value: fabData?.fab_type || "-" },
@@ -160,7 +160,6 @@ export function UpdateFabIdModal({
   const onSubmit = async (values: UpdateFabData) => {
     setIsSubmitting(true);
     try {
-      // Build schedule payload — only include defined values
       const requestData: Record<string, any> = {
         fab_id: fabData?.id,
         no_of_pieces: values.pieces ? parseInt(values.pieces) : undefined,
@@ -170,6 +169,9 @@ export function UpdateFabIdModal({
         cnc_linft: values.cncLinFt ? parseFloat(values.cncLinFt) : undefined,
         miter_linft: values.miterLinFt ? parseFloat(values.miterLinFt) : undefined,
         saw_cut_lnft: values.sawCutLnft ? parseFloat(values.sawCutLnft) : undefined,
+        // ✨ include new fields in payload
+        wj_miter_lnft: values.wjMiterLnft ? parseFloat(values.wjMiterLnft) : undefined,
+        saw_miter_lnft: values.sawMiterLnft ? parseFloat(values.sawMiterLnft) : undefined,
         shop_date_schedule: values.shopDate || null,
         installation_date: values.installationDate || null,
       };
@@ -183,7 +185,6 @@ export function UpdateFabIdModal({
         data: cleanedData,
       }).unwrap();
 
-      // ✅ Send cutlist_complete (not revision_complete) to backend
       if (values.cutlistComplete) {
         await updateCutList({
           fab_id: fabData?.id,
@@ -205,7 +206,6 @@ export function UpdateFabIdModal({
     }
   };
 
-  // ── FAB type background colour ────────────────────────────────────────────
   const fabBgMap: Record<string, string> = {
     "standard": "bg-[#9eeb47]",
     "fab only": "bg-[#5bd1d7]",
@@ -220,7 +220,6 @@ export function UpdateFabIdModal({
     ?.replace(/_/g, " ")
     ?.trim();
 
-  // ── Loading state ─────────────────────────────────────────────────────────
   if (isCutListLoading) {
     return (
       <Dialog open={open} onOpenChange={onClose}>
@@ -233,7 +232,6 @@ export function UpdateFabIdModal({
     );
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent
@@ -243,7 +241,6 @@ export function UpdateFabIdModal({
           <DialogTitle>Update FAB ID</DialogTitle>
         </DialogHeader>
 
-        {/* FAB identifier */}
         <div className="space-y-1 mb-4">
           <p className="font-bold text-lg">
             {fabData?.fabId ||  ""}
@@ -253,7 +250,6 @@ export function UpdateFabIdModal({
           </p>
         </div>
 
-        {/* Job info grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6">
           {jobInfo.map((item, idx) => (
             <div key={idx}>
@@ -269,7 +265,6 @@ export function UpdateFabIdModal({
 
         <Separator />
 
-        {/* Scrollable form body */}
         <div className="overflow-y-auto overflow-x-visible flex-grow pr-2 -mr-2">
           <Form {...form}>
             <form
@@ -278,7 +273,7 @@ export function UpdateFabIdModal({
               className="space-y-6 py-4"
             >
               {/* ── Quantities row ── */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <FormField
                   control={form.control}
                   name="pieces"
@@ -312,10 +307,21 @@ export function UpdateFabIdModal({
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="wjMiterLnft"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>WJ Miter LinFt</FormLabel>
+                      <FormControl><Input placeholder="0" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               {/* ── Linear ft row ── */}
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-4 lg:grid-cols-5 gap-4">
                 <FormField
                   control={form.control}
                   name="edgingLinFt"
@@ -354,13 +360,26 @@ export function UpdateFabIdModal({
                   name="sawCutLnft"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Saw Cut LnFt</FormLabel>
+                      <FormLabel>Saw Cut LinFt</FormLabel>
+                      <FormControl><Input placeholder="0" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="sawMiterLnft"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Saw Miter LinFt</FormLabel>
                       <FormControl><Input placeholder="0" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+
+              
 
               {/* ── Dates + cut list complete ── */}
               <div className="grid grid-cols-3 gap-4">
@@ -374,7 +393,6 @@ export function UpdateFabIdModal({
                         mode="date"
                         value={parseDateString(field.value)}
                         onChange={(date) => field.onChange(formatDate(date))}
-                        // minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
                       />
                       <FormMessage />
                     </FormItem>
@@ -395,8 +413,6 @@ export function UpdateFabIdModal({
                     </FormItem>
                   )}
                 />
-
-                {/* ✅ cutlistComplete — reads cutlist_complete from backend */}
                 <FormField
                   control={form.control}
                   name="cutlistComplete"
@@ -407,13 +423,12 @@ export function UpdateFabIdModal({
                         <Checkbox
                           checked={field.value === true}
                           onCheckedChange={field.onChange}
-                          disabled={isCutlistCompleteDisabled}   // ✅ added
+                          disabled={isCutlistCompleteDisabled}
                         />
                       </FormControl>
                     </FormItem>
                   )}
                 />
-             
               </div>
             </form>
           </Form>
