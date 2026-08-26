@@ -99,7 +99,6 @@ export function UpdateFabIdModal({
       cncLinFt: "",
       miterLinFt: "",
       sawCutLnft: "",
-      // ✨ new default values
       wjMiterLnft: "",
       sawMiterLnft: "",
       shopDate: "",
@@ -301,7 +300,7 @@ export function UpdateFabIdModal({
                   name="wjLinFt"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>WJ LinFt</FormLabel>
+                      <FormLabel>WJ Str LinFt</FormLabel>
                       <FormControl><Input placeholder="0" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -360,7 +359,7 @@ export function UpdateFabIdModal({
                   name="sawCutLnft"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Saw Cut LinFt</FormLabel>
+                      <FormLabel>Saw Str LinFt</FormLabel>
                       <FormControl><Input placeholder="0" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>

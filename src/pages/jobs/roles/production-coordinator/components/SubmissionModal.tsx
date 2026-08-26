@@ -205,7 +205,7 @@ export function SubmissionModal({
                   name="wjLinFt"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>WJ LinFt *</FormLabel>
+                      <FormLabel>WJ Str LinFt *</FormLabel>
                       <FormControl>
                         <Input placeholder="0.00" type="number" step="0.01" {...field} />
                       </FormControl>
@@ -262,7 +262,7 @@ export function SubmissionModal({
                   name="sawCutLnft"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Saw Cut LinFt *</FormLabel>
+                      <FormLabel>Saw Str LinFt *</FormLabel>
                       <FormControl>
                         <Input placeholder="0.00" type="number" step="0.01" {...field} />
                       </FormControl>
