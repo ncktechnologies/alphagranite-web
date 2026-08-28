@@ -285,6 +285,15 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           size: 200,
           meta: { format: (value: string) => value || '' },
         },
+            {
+          id: 'account_name',
+          accessorFn: (row) => row.account_name,
+          header: ({ column }) => <DataGridColumnHeader title="ACCOUNT NAME" column={column} />,
+          cell: ({ row }) => <span className="text-sm text-text">{row.original.account_name || 'N/A'}</span>,
+          enableSorting: true,
+          size: 150,
+          meta: { format: (value: string) => value || 'N/A' },
+        },
         {
           id: 'job_number',
           accessorFn: (row) => row.job_number,
@@ -336,15 +345,6 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           enableSorting: true,
           size: 150,
           meta: { format: (value: any) => formatDateForExport(value) },
-        },
-        {
-          id: 'account_name',
-          accessorFn: (row) => row.account_name,
-          header: ({ column }) => <DataGridColumnHeader title="ACCOUNT NAME" column={column} />,
-          cell: ({ row }) => <span className="text-sm text-text">{row.original.account_name || 'N/A'}</span>,
-          enableSorting: true,
-          size: 150,
-          meta: { format: (value: string) => value || 'N/A' },
         },
         {
           id: 'sales_person_name',
@@ -534,6 +534,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           columnsMovable: true,
           columnsVisibility: true,
           cellBorder: true,
+          headerSticky: true,
         }}
       >
         <Container>

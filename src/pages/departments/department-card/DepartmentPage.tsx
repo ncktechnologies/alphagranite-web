@@ -16,7 +16,7 @@ export function DepartmentPage() {
                     <ToolbarHeading title=" Department" description="Manage all Alpha Granite departments" />
 
                     <ToolbarActions>
-                        <Can action="update" on="department">
+                        <Can action="create" on="department">
                             <DepartmentFormSheet trigger={
 
                                 <Button className="">

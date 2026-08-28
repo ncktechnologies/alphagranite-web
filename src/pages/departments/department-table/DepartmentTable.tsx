@@ -83,7 +83,7 @@ const DepartmentTable = ({ employees }: employeeProps) => {
 
     const columns = useMemo<ColumnDef<DepartmentUser>[]>(
         () => [
-            
+
             {
                 id: 'name',
                 accessorFn: (row) => `${row.first_name} ${row.last_name}`,
@@ -221,6 +221,8 @@ const DepartmentTable = ({ employees }: employeeProps) => {
                 columnsMovable: true,
                 columnsVisibility: true,
                 cellBorder: true,
+                headerSticky: true,
+
             }}
         >
             <Card>

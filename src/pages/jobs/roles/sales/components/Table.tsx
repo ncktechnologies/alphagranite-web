@@ -1114,6 +1114,8 @@ export const JobSalesTable = ({
                 columnsVisibility: true,
                 columnsResizable: true,
                 cellBorder: true,
+                headerSticky: true,
+
             }}
             onRowClick={onRowClick ? (row) => handleRowClickInternal(row) : undefined}
         >

@@ -32,7 +32,7 @@ export function DropdownMenu5({ trigger, onView, department }: { trigger: ReactN
             </DropdownMenuItem>
           </Can>
           
-          <Can action="update" on="department">
+          <Can action="create" on="department">
             <DropdownMenuItem onClick={() => setEditSheetOpen(true)}>
               <span>Edit</span>
             </DropdownMenuItem>

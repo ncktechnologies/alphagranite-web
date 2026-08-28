@@ -147,17 +147,17 @@ const Employees = () => {
 
     const columns = useMemo<ColumnDef<Employee>[]>(
         () => [
-           {
-            id: 'hcp_employee_id',
-            accessorFn: (row) => row.hcp_employee_id,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="HCP EMPLOYEE ID" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm text-text truncate block max-w-[150px]">{row.original.hcp_employee_id || ''}</span>
-            ),
-            meta: { format: (value: string) => value || '' },
-           },
+            {
+                id: 'hcp_employee_id',
+                accessorFn: (row) => row.hcp_employee_id,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="HCP EMPLOYEE ID" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text truncate block max-w-[150px]">{row.original.hcp_employee_id || ''}</span>
+                ),
+                meta: { format: (value: string) => value || '' },
+            },
             {
                 id: 'name',
                 accessorFn: (row) => row.name,
@@ -198,7 +198,7 @@ const Employees = () => {
                 size: 200,
                 meta: { format: (value: string) => value || '' },
             },
-           
+
             {
                 id: 'department',
                 accessorFn: (row) => row.department_name,
@@ -307,6 +307,8 @@ const Employees = () => {
                     columnsMovable: true,
                     columnsVisibility: true,
                     cellBorder: true,
+                    headerSticky: true,
+
                 }}
             >
                 <Card>
