@@ -8,7 +8,7 @@ import { IJob } from '../../components/job';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useGetFabsQuery, Fab } from '@/store/api/job';
-import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
@@ -17,12 +17,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { AssignTechnicianModal } from './components/AssignTech';
 import { RescheduleTechnicianModal } from './components/RescheduleTechnicianModal';
-// 👇 Import permission hooks
 import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
+import { useGetRolesQuery } from "@/store/api";
 
 const formatDate = (dateString?: string): string => {
     if (!dateString) return '-';
-
     try {
         const date = new Date(dateString);
         const day = date.getDate().toString().padStart(2, '0');
@@ -45,21 +44,17 @@ const transformFabToJob = (fab: Fab): IJob => {
         date: fab.templating_schedule_start_date || '',
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
-        // Optional fields with default values
         acct_name: fab.account_name || '',
         template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '',
         template_schedule_raw: fab.templating_schedule_start_date || '',
         template_received: fab.template_received ? 'Yes' : 'No',
         templater: fab.technician_name || '-',
-        // no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
         total_sq_ft: String(fab.total_sqft || "-"),
         revenue: fab.revenue?.toString() || "-",
-        // gp: "-",
         revised: '',
         sct_completed: '',
         draft_completed: '',
         fab_notes: fab.fab_notes || [],
-        // Add material specification fields
         stone_type_name: fab.stone_type_name || '',
         stone_color_name: fab.stone_color_name || '',
         stone_thickness_value: fab.stone_thickness_value || '',
@@ -69,70 +64,74 @@ const transformFabToJob = (fab: Fab): IJob => {
         job_id: fab.job_id,
         on_hold: fab.on_hold,
         status_id: fab.status_id,
-        // Map stage_data fields for rescheduling logic
         templating_completed: fab?.is_complete,
         templating_id: fab.stage_data?.templating_id,
         rescheduled: fab.stage_data?.rescheduled,
-        technician_id: fab.stage_data?.technician_id,          // ← add this
-
+        technician_id: fab.stage_data?.technician_id,
     };
 };
 
 export function TemplatingPage() {
     const navigate = useNavigate();
 
-    // 👇 Get permissions for the 'templating' menu
     const permissions = usePermission('templating');
     const isSuperAdmin = useIsSuperAdmin();
 
-    // Determine what actions the user is allowed to do
     const canReschedule = isSuperAdmin || permissions.can_create;
     const canAssignTemplater = isSuperAdmin || permissions.can_create;
     const canAddNote = isSuperAdmin || permissions.can_create;
     const canToggleOnHold = isSuperAdmin || permissions.can_create;
-    // Fetch templaters data for filter dropdown
-    const { data: templatersData } = useGetSalesPersonsQuery();
 
-    // Separate state for templater filter
-    const [templaterFilter, setTemplaterFilter] = useState<string>('all');
+    // ─── Get templater role ID ──────────────────────────────────────────────
+    const { data: rolesData } = useGetRolesQuery();
+    const templaterRoleId = useMemo(() => {
+        if (!rolesData) return null;
+        const roles = rolesData?.data?.data ?? rolesData?.data ?? rolesData;
+        if (!Array.isArray(roles)) return null;
+        const role = roles.find((r: any) =>
+            (r.name || '').toLowerCase() === 'templator' ||
+            (r.name || '').toLowerCase() === 'template scheduler'
+        );
+        return role?.id ?? null;
+    }, [rolesData]);
 
-    // State for date grouping (default to month for hierarchical view)
-    const [dateGrouping, setDateGrouping] = useState<'date' | 'month' | 'none'>('month');
+    // ─── Fetch employees with templater role ──────────────────────────────
+    const { data: templaterEmployees, isLoading: templatersLoading } = useGetEmployeesQuery(
+        {
+            role_id: templaterRoleId ?? undefined,
+            sort_by: 'first_name',
+            sort_order: 'asc',
+            limit: 500,
+        },
+        { skip: !templaterRoleId }
+    );
 
-    // State for modals
-    const [assignModalOpen, setAssignModalOpen] = useState(false);
-    const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
-    const [selectedJob, setSelectedJob] = useState<IJob | null>(null);
+    // ─── Build templater list and map ──────────────────────────────────────
+    const templaters = useMemo(() => {
+        if (!templaterEmployees) return [];
+        const employees = templaterEmployees?.data ?? templaterEmployees;
+        if (!Array.isArray(employees)) return [];
+        return employees.map((emp: any) =>
+            `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.email || String(emp.id)
+        ).sort();
+    }, [templaterEmployees]);
 
-    const handleAssignClick = (job: IJob) => {
-        setSelectedJob(job);
-        setAssignModalOpen(true);
-    };
-
-    const handleRescheduleClick = (job: IJob) => {
-        setSelectedJob(job);
-        setRescheduleModalOpen(true);
-    };
-
-    // Create map of templater names to IDs
     const templaterIdMap = useMemo(() => {
-        if (!templatersData) return new Map<string, number>();
-        let rawData: any[] = [];
-        if (Array.isArray(templatersData)) rawData = templatersData;
-        else if (typeof templatersData === 'object' && 'data' in templatersData) rawData = (templatersData as any).data || [];
         const map = new Map<string, number>();
-        rawData.forEach(item => {
-            if (typeof item === 'object' && item !== null && item.id) {
-                const name = item.name || `${item.first_name} ${item.last_name}`.trim() || String(item);
-                map.set(name, item.id);
-            }
+        if (!templaterEmployees) return map;
+        const employees = templaterEmployees?.data ?? templaterEmployees;
+        if (!Array.isArray(employees)) return map;
+        employees.forEach((emp: any) => {
+            const name = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.email || String(emp.id);
+            map.set(name, emp.id);
         });
         return map;
-    }, [templatersData]);
+    }, [templaterEmployees]);
 
-    const templaters = useMemo(() => Array.from(templaterIdMap.keys()).sort(), [templaterIdMap]);
+    // ─── Filter state ──────────────────────────────────────────────────────
+    const [templaterFilter, setTemplaterFilter] = useState<string>('all');
 
-    // Use independent table state for templating table
+    // ─── Table state ──────────────────────────────────────────────────────
     const tableState = useTableState({
         tableId: 'templating-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
@@ -151,6 +150,8 @@ export function TemplatingPage() {
         if (tableState.searchQuery) params.search = tableState.searchQuery;
         if (tableState.searchType) params.type = tableState.searchType;
         if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') params.fab_type = tableState.fabTypeFilter;
+
+        // ─── Templater filter ──────────────────────────────────────────────
         if (templaterFilter !== 'all') {
             if (templaterFilter === 'no_templater') params.templater_id = 0;
             else {
@@ -158,6 +159,7 @@ export function TemplatingPage() {
                 if (templaterId) params.templater_id = templaterId;
             }
         }
+
         if (tableState.scheduleFilter && tableState.scheduleFilter !== 'all') params.schedule_status = tableState.scheduleFilter;
         if (tableState.dateFilter && tableState.dateFilter !== 'all') {
             if (tableState.dateFilter === 'custom') {
@@ -179,6 +181,21 @@ export function TemplatingPage() {
     };
 
     const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
+
+    // ─── Modal states ──────────────────────────────────────────────────────
+    const [assignModalOpen, setAssignModalOpen] = useState(false);
+    const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+    const [selectedJob, setSelectedJob] = useState<IJob | null>(null);
+
+    const handleAssignClick = (job: IJob) => {
+        setSelectedJob(job);
+        setAssignModalOpen(true);
+    };
+
+    const handleRescheduleClick = (job: IJob) => {
+        setSelectedJob(job);
+        setRescheduleModalOpen(true);
+    };
 
     if (isLoading && !data) {
         return (
@@ -241,15 +258,13 @@ export function TemplatingPage() {
                             const hasTemplateTechnician = job.templater && job.templater !== '-' && job.templater.trim() !== '';
                             return hasTemplateTechnician ? 'templating-details' : 'templating';
                         }}
-                        // 👇 Pass permission props
                         canReschedule={canReschedule}
                         canAssignTemplater={canAssignTemplater}
                         canAddNote={canAddNote}
-                        // Existing callbacks
                         onRescheduleClick={handleRescheduleClick}
                         onAssignClick={handleAssignClick}
                         pageRole="templater"
-                        canViewTemplaterTimer={permissions.can_create}  
+                        canViewTemplaterTimer={permissions.can_create}
                         canToggleOnHold={canToggleOnHold}
                     />
 

@@ -72,7 +72,7 @@ export function AssignTechnicianModal({
     const roles = rolesData?.data?.data ?? rolesData?.data ?? rolesData;
     if (!Array.isArray(roles)) return null;
     const templaterRole = roles.find((role: any) =>
-      (role.name || '').toLowerCase()=== 'template scheduler'
+      (role.name || '').toLowerCase()=== 'templator' || (role.name || '').toLowerCase() === 'template scheduler'
     );
     return templaterRole?.id ?? null;
   }, [rolesData]);
