@@ -20,6 +20,70 @@ const $ = (v: number) => `$${v.toLocaleString(undefined, { minimumFractionDigits
 const num = (v: number, d = 2) => v.toFixed(d);
 const pct = (v: number) => num(v, 2) + '%';
 
+// ─── Helper: get metric labels for installer ──────────────────────────────
+const getMetricLabel = (key: string): string => {
+    const labels: Record<string, string> = {
+        number_of_days_per_week: 'Number of Days Per Week',
+        install_sqft_per_week: 'Install Sq. Ft per week',
+        completed_sqft_per_week: 'Completed Sq. Ft per week',
+        average_sqft_per_day: 'Average Sq. Ft. per Day',
+        gross_revenue: 'Gross Revenue',
+        gross_profit: 'Gross Profit',
+        average_revenue_per_day: 'Avg Revenue per Day',
+        total_head_count: 'Total Head Count',
+        wages_basic_installer: 'Wages Basic Installer',
+        overtime_installer: 'Overtime Installer',
+        cost_of_overtime_pct: '% Overtime',
+        total_labor_cost: 'Total Labor Cost',
+        regular_hours: 'Regular Hours',
+        overtime_hours: 'Overtime Hours',
+        overtime_hours_pct: '% Overtime Of Total Hours',
+        total_hours: 'Total Hours',
+        hourly_labor_cost_for_all_installers: 'Hourly Labor Cost for All Installers',
+        hourly_overhead_cost_for_all_installers: 'Hourly Overhead Cost for All Installers',
+        hourly_cost_of_all_installers_inc_overhead: 'Hourly Cost Of all Installers inc Overhead',
+        hourly_cost_per_installer_inc_overhead: 'Hourly Cost Per Installer inc Overhead',
+        sqft_per_labor_hour: 'Sq. Ft. Per Labor Hour',
+        installer_productivity_sqft_per_hour: 'Installer Productivity Sq.Ft per Hour',
+        labor_cost_per_sq_ft: 'Labor Cost Per sq Ft.',
+        labor_cost_pct_per_dollar_sold: 'Labor Cost as % per Dollar Sold',
+        overhead_cost_per_sqft: 'Overhead cost per sq.ft installed',
+        cost_to_install_per_sqft: 'Cost To Install Per Sq. ft.',
+        gross_profit_per_sf_installed: 'Gross Profit per s.f. Installed',
+        gross_profit_less_installer_total_cost_psf: 'Gross Profit less Installer total cost psf',
+        gross_revenue_per_sq_ft: 'Gross Revenue Per Sq. ft',
+    };
+    return labels[key] || key.replace(/_/g, ' ').toUpperCase();
+};
+
+// ─── Helper: determine if metric is currency, percentage, or number ──────
+const isCurrencyMetric = (key: string): boolean => {
+    return ['gross_revenue', 'gross_profit', 'average_revenue_per_day', 'total_labor_cost',
+        'wages_basic_installer', 'overtime_installer', 'hourly_labor_cost_for_all_installers',
+        'hourly_overhead_cost_for_all_installers', 'hourly_cost_of_all_installers_inc_overhead',
+        'hourly_cost_per_installer_inc_overhead', 'labor_cost_per_sq_ft', 'overhead_cost_per_sqft',
+        'cost_to_install_per_sqft', 'gross_profit_per_sf_installed',
+        'gross_profit_less_installer_total_cost_psf', 'gross_revenue_per_sq_ft', 'overhead_per_week'].includes(key);
+};
+
+const isPercentMetric = (key: string): boolean => {
+    return ['cost_of_overtime_pct', 'overtime_hours_pct', 'labor_cost_pct_per_dollar_sold'].includes(key);
+};
+
+const isHeadCountMetric = (key: string): boolean => {
+    return key === 'total_head_count';
+};
+
+// ─── Format a single value for export ─────────────────────────────────────
+const formatValue = (key: string, val: any): string => {
+    if (val === undefined || val === null) return '-';
+    if (isCurrencyMetric(key)) return $(Number(val));
+    if (isPercentMetric(key)) return pct(Number(val));
+    if (isHeadCountMetric(key)) return num(Number(val), 1);
+    return num(Number(val), 2);
+};
+
+// ─── Pivot transformation ───────────────────────────────────────────────────
 const pivotWeeklyData = (weeklyData: any[]) => {
     if (!weeklyData.length) return { rows: [], weeks: [] };
     const weeks = weeklyData.map(w => format(new Date(w.week_ending), 'MMM dd'));
@@ -105,6 +169,7 @@ export function WeeklyInstallerCostReport() {
 
     const { rows: pivotedRows, weeks } = useMemo(() => pivotWeeklyData(weeklyData), [weeklyData]);
 
+    // ─── Pivoted columns with meta.format ──────────────────────────────────
     const pivotedColumns = useMemo<ColumnDef<any>[]>(() => {
         const cols: ColumnDef<any>[] = [
             {
@@ -113,41 +178,13 @@ export function WeeklyInstallerCostReport() {
                 header: ({ column }) => <DataGridColumnHeader title="METRIC" column={column} />,
                 cell: ({ row }) => {
                     const key = row.original.metric;
-                    const labels: Record<string, string> = {
-                        number_of_days_per_week: 'Number of Days Per Week',
-                        install_sqft_per_week: 'Install Sq. Ft per week',
-                        completed_sqft_per_week: 'Completed Sq. Ft per week',
-                        average_sqft_per_day: 'Average Sq. Ft. per Day',
-                        gross_revenue: 'Gross Revenue',
-                        gross_profit: 'Gross Profit',
-                        average_revenue_per_day: 'Avg Revenue per Day',
-                        total_head_count: 'Total Head Count',
-                        wages_basic_installer: 'Wages Basic Installer',
-                        overtime_installer: 'Overtime Installer',
-                        cost_of_overtime_pct: '% Overtime',
-                        total_labor_cost: 'Total Labor Cost',
-                        regular_hours: 'Regular Hours',
-                        overtime_hours: 'Overtime Hours',
-                        overtime_hours_pct: '% Overtime Of Total Hours',
-                        total_hours: 'Total Hours',
-                        hourly_labor_cost_for_all_installers: 'Hourly Labor Cost for All Installers',
-                        hourly_overhead_cost_for_all_installers: 'Hourly Overhead Cost for All Installers',
-                        hourly_cost_of_all_installers_inc_overhead: 'Hourly Cost Of all Installers inc Overhead',
-                        hourly_cost_per_installer_inc_overhead: 'Hourly Cost Per Installer inc Overhead',
-                        sqft_per_labor_hour: 'Sq. Ft. Per Labor Hour',
-                        installer_productivity_sqft_per_hour: 'Installer Productivity Sq.Ft per Hour',
-                        labor_cost_per_sq_ft: 'Labor Cost Per sq Ft.',
-                        labor_cost_pct_per_dollar_sold: 'Labor Cost as % per Dollar Sold',
-                        overhead_cost_per_sqft: 'Overhead cost per sq.ft installed',
-                        cost_to_install_per_sqft: 'Cost To Install Per Sq. ft.',
-                        gross_profit_per_sf_installed: 'Gross Profit per s.f. Installed',
-                        gross_profit_less_installer_total_cost_psf: 'Gross Profit less Installer total cost psf',
-                        gross_revenue_per_sq_ft: 'Gross Revenue Per Sq. ft',
-                    };
-                    return <span className="text-sm font-medium">{labels[key] || key.replace(/_/g, ' ').toUpperCase()}</span>;
+                    return <span className="text-sm font-medium">{getMetricLabel(key)}</span>;
                 },
                 size: 280,
                 enableSorting: true,
+                meta: {
+                    format: (value: any, row: any) => getMetricLabel(row.metric),
+                },
             },
         ];
 
@@ -160,24 +197,17 @@ export function WeeklyInstallerCostReport() {
                     const val = row.original[`week_${idx}`];
                     if (val === undefined || val === null) return <span className="text-sm">-</span>;
                     const key = row.original.metric;
-                    if (['gross_revenue', 'gross_profit', 'average_revenue_per_day', 'total_labor_cost',
-                        'wages_basic_installer', 'overtime_installer', 'hourly_labor_cost_for_all_installers',
-                        'hourly_overhead_cost_for_all_installers', 'hourly_cost_of_all_installers_inc_overhead',
-                        'hourly_cost_per_installer_inc_overhead', 'labor_cost_per_sq_ft', 'overhead_cost_per_sqft',
-                        'cost_to_install_per_sqft', 'gross_profit_per_sf_installed',
-                        'gross_profit_less_installer_total_cost_psf', 'gross_revenue_per_sq_ft', 'overhead_per_week'].includes(key)) {
-                        return <span className="text-sm">{$(val)}</span>;
-                    }
-                    if (['cost_of_overtime_pct', 'overtime_hours_pct', 'labor_cost_pct_per_dollar_sold'].includes(key)) {
-                        return <span className="text-sm">{pct(val)}</span>;
-                    }
-                    if (['total_head_count'].includes(key)) {
-                        return <span className="text-sm">{num(val, 1)}</span>;
-                    }
-                    return <span className="text-sm">{num(val)}</span>;
+                    return <span className="text-sm">{formatValue(key, val)}</span>;
                 },
                 size: 120,
                 enableSorting: true,
+                meta: {
+                    format: (value: any, row: any) => {
+                        const val = row[`week_${idx}`];
+                        if (val === undefined || val === null) return '-';
+                        return formatValue(row.metric, val);
+                    },
+                },
             });
         });
 
@@ -189,24 +219,17 @@ export function WeeklyInstallerCostReport() {
                 const val = row.original.total;
                 if (val === undefined || val === null) return <span className="text-sm">-</span>;
                 const key = row.original.metric;
-                if (['gross_revenue', 'gross_profit', 'average_revenue_per_day', 'total_labor_cost',
-                    'wages_basic_installer', 'overtime_installer', 'hourly_labor_cost_for_all_installers',
-                    'hourly_overhead_cost_for_all_installers', 'hourly_cost_of_all_installers_inc_overhead',
-                    'hourly_cost_per_installer_inc_overhead', 'labor_cost_per_sq_ft', 'overhead_cost_per_sqft',
-                    'cost_to_install_per_sqft', 'gross_profit_per_sf_installed',
-                    'gross_profit_less_installer_total_cost_psf', 'gross_revenue_per_sq_ft', 'overhead_per_week'].includes(key)) {
-                    return <span className="text-sm font-semibold">{$(val)}</span>;
-                }
-                if (['cost_of_overtime_pct', 'overtime_hours_pct', 'labor_cost_pct_per_dollar_sold'].includes(key)) {
-                    return <span className="text-sm font-semibold">{pct(val)}</span>;
-                }
-                if (['total_head_count'].includes(key)) {
-                    return <span className="text-sm font-semibold">{num(val, 1)}</span>;
-                }
-                return <span className="text-sm font-semibold">{num(val)}</span>;
+                return <span className="text-sm font-semibold">{formatValue(key, val)}</span>;
             },
             size: 160,
             enableSorting: true,
+            meta: {
+                format: (value: any, row: any) => {
+                    const val = row.total;
+                    if (val === undefined || val === null) return '-';
+                    return formatValue(row.metric, val);
+                },
+            },
         });
 
         return cols;
@@ -225,15 +248,74 @@ export function WeeklyInstallerCostReport() {
         columnResizeMode: 'onEnd',
     });
 
+    // ─── Annual summary columns with meta.format ───────────────────────────
     const annualColumns = useMemo<ColumnDef<any>[]>(() => [
-        { accessorKey: 'month', header: ({ column }) => <DataGridColumnHeader title="MONTH" column={column} />, cell: ({ row }) => <span className="font-medium">{row.original.month}</span>, size: 120, enableSorting: true },
-        { accessorKey: 'number_of_weeks', header: ({ column }) => <DataGridColumnHeader title="WEEKS" column={column} />, size: 80, enableSorting: true },
-        { accessorKey: 'completed_sqft', header: ({ column }) => <DataGridColumnHeader title="SQFT" column={column} />, cell: ({ row }) => num(row.original.completed_sqft), size: 100, enableSorting: true },
-        { accessorKey: 'gross_revenue', header: ({ column }) => <DataGridColumnHeader title="GROSS REVENUE" column={column} />, cell: ({ row }) => $(row.original.gross_revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })), size: 140, enableSorting: true },
-        { accessorKey: 'gross_profit', header: ({ column }) => <DataGridColumnHeader title="GROSS PROFIT" column={column} />, cell: ({ row }) => $(row.original.gross_profit.toLocaleString(undefined, { minimumFractionDigits: 2 })), size: 130, enableSorting: true },
-        { accessorKey: 'total_labor_cost', header: ({ column }) => <DataGridColumnHeader title="LABOR COST" column={column} />, cell: ({ row }) => $(row.original.total_labor_cost.toLocaleString(undefined, { minimumFractionDigits: 2 })), size: 120, enableSorting: true },
-        { accessorKey: 'total_hours', header: ({ column }) => <DataGridColumnHeader title="TOTAL HRS" column={column} />, cell: ({ row }) => num(row.original.total_hours), size: 100, enableSorting: true },
-        { accessorKey: 'gross_profit_less_installer_total_cost_psf', header: ({ column }) => <DataGridColumnHeader title="GP LESS COST/SQFT" column={column} />, cell: ({ row }) => { const v = row.original.gross_profit_less_installer_total_cost_psf; return <span className={v < 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>{$(v)}</span>; }, size: 160, enableSorting: true },
+        {
+            accessorKey: 'month',
+            header: ({ column }) => <DataGridColumnHeader title="MONTH" column={column} />,
+            cell: ({ row }) => <span className="font-medium">{row.original.month}</span>,
+            size: 120,
+            enableSorting: true,
+            meta: { format: (value: string) => value || '' },
+        },
+        {
+            accessorKey: 'number_of_weeks',
+            header: ({ column }) => <DataGridColumnHeader title="WEEKS" column={column} />,
+            size: 80,
+            enableSorting: true,
+            meta: { format: (value: number) => String(value) },
+        },
+        {
+            accessorKey: 'completed_sqft',
+            header: ({ column }) => <DataGridColumnHeader title="SQFT" column={column} />,
+            cell: ({ row }) => num(row.original.completed_sqft),
+            size: 100,
+            enableSorting: true,
+            meta: { format: (value: number) => num(value) },
+        },
+        {
+            accessorKey: 'gross_revenue',
+            header: ({ column }) => <DataGridColumnHeader title="GROSS REVENUE" column={column} />,
+            cell: ({ row }) => $(row.original.gross_revenue),
+            size: 140,
+            enableSorting: true,
+            meta: { format: (value: number) => $(value) },
+        },
+        {
+            accessorKey: 'gross_profit',
+            header: ({ column }) => <DataGridColumnHeader title="GROSS PROFIT" column={column} />,
+            cell: ({ row }) => $(row.original.gross_profit),
+            size: 130,
+            enableSorting: true,
+            meta: { format: (value: number) => $(value) },
+        },
+        {
+            accessorKey: 'total_labor_cost',
+            header: ({ column }) => <DataGridColumnHeader title="LABOR COST" column={column} />,
+            cell: ({ row }) => $(row.original.total_labor_cost),
+            size: 120,
+            enableSorting: true,
+            meta: { format: (value: number) => $(value) },
+        },
+        {
+            accessorKey: 'total_hours',
+            header: ({ column }) => <DataGridColumnHeader title="TOTAL HRS" column={column} />,
+            cell: ({ row }) => num(row.original.total_hours),
+            size: 100,
+            enableSorting: true,
+            meta: { format: (value: number) => num(value) },
+        },
+        {
+            accessorKey: 'gross_profit_less_installer_total_cost_psf',
+            header: ({ column }) => <DataGridColumnHeader title="GP LESS COST/SQFT" column={column} />,
+            cell: ({ row }) => {
+                const v = row.original.gross_profit_less_installer_total_cost_psf;
+                return <span className={v < 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>{$(v)}</span>;
+            },
+            size: 160,
+            enableSorting: true,
+            meta: { format: (value: number) => $(value) },
+        },
     ], []);
 
     const annualTable = useReactTable({
@@ -316,7 +398,7 @@ export function WeeklyInstallerCostReport() {
                     <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(pivotedTable, `installer-cost-${getTitle()}`)}>
                         Export CSV
                     </Button>
-                <BackButton/>  
+                <BackButton/>
                 </div>
             </div>
 

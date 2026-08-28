@@ -46,7 +46,7 @@ interface RedoItem {
     person_name: string | null;
     note: string | null;
     reason: string | null;
-    department_options: string | null; // comma-separated string
+    department_options: string | null;
 }
 
 const fabTypeColorMap: Record<string, string> = {
@@ -73,7 +73,6 @@ const formatDate = (dateStr: string) => {
 };
 
 export function RedosReport() {
-    // Permission check – allows editing only if user has update permission for 'redos'
     const { can_create: canEditRedo } = usePermission('Redos');
 
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -131,7 +130,7 @@ export function RedosReport() {
         return [totalRow, ...slicedData];
     }, [totals, slicedData]);
 
-    // Build columns – include action column only if user can edit
+    // ─── Columns with meta.format ──────────────────────────────────────────────────
     const columns = useMemo<ColumnDef<RedoItem>[]>(() => {
         const baseColumns: ColumnDef<RedoItem>[] = [
             {
@@ -144,6 +143,7 @@ export function RedosReport() {
                 },
                 size: 110,
                 enableSorting: true,
+                meta: { format: (value: string) => value === 'TOTAL' ? '—' : formatDate(value) },
             },
             {
                 accessorKey: 'fab_type',
@@ -151,6 +151,7 @@ export function RedosReport() {
                 cell: ({ row }) => <span className="uppercase text-sm">{row.original.fab_type}</span>,
                 size: 120,
                 enableSorting: true,
+                meta: { format: (value: string) => value?.toUpperCase() || '' },
             },
             {
                 accessorKey: 'fab_id',
@@ -163,6 +164,7 @@ export function RedosReport() {
                 },
                 size: 80,
                 enableSorting: true,
+                meta: { format: (value: number) => String(value) },
             },
             {
                 accessorKey: 'job_number',
@@ -175,6 +177,7 @@ export function RedosReport() {
                 },
                 size: 100,
                 enableSorting: true,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: 'fab_info',
@@ -190,6 +193,13 @@ export function RedosReport() {
                 },
                 size: 350,
                 enableSorting: false,
+                meta: {
+                    format: (value: any, row: RedoItem) => {
+                        if (row._isTotalRow) return '—';
+                        const parts = [row.account_name, row.job_name, row.input_area, row.stone_type_name, row.stone_color_name, row.stone_thickness_value, row.edge_name].filter(Boolean);
+                        return parts.join(' - ') || row.fab_info || '';
+                    },
+                },
             },
             {
                 accessorKey: 'no_of_pieces',
@@ -197,6 +207,7 @@ export function RedosReport() {
                 cell: ({ row }) => row.original.no_of_pieces?.toString() ?? '-',
                 size: 80,
                 enableSorting: true,
+                meta: { format: (value: number | null) => value?.toString() ?? '-' },
             },
             {
                 accessorKey: 'sqft',
@@ -204,6 +215,7 @@ export function RedosReport() {
                 cell: ({ row }) => row.original.sqft.toFixed(2),
                 size: 80,
                 enableSorting: true,
+                meta: { format: (value: number) => value.toFixed(2) },
             },
             {
                 accessorKey: 'cost_per_sqft',
@@ -213,6 +225,7 @@ export function RedosReport() {
                     : '-',
                 size: 120,
                 enableSorting: true,
+                meta: { format: (value: number | null) => value !== null && value !== undefined ? `$${value.toFixed(2)}` : '-' },
             },
             {
                 accessorKey: 'total_cost',
@@ -220,6 +233,7 @@ export function RedosReport() {
                 cell: ({ row }) => row.original.total_cost !== null ? `$${row.original.total_cost.toFixed(2)}` : '-',
                 size: 110,
                 enableSorting: true,
+                meta: { format: (value: number | null) => value !== null ? `$${value.toFixed(2)}` : '-' },
             },
             {
                 accessorKey: 'cost_of_stone',
@@ -227,6 +241,7 @@ export function RedosReport() {
                 cell: ({ row }) => row.original.cost_of_stone !== null ? `$${row.original.cost_of_stone.toFixed(2)}` : '-',
                 size: 120,
                 enableSorting: true,
+                meta: { format: (value: number) => value !== null ? `$${value.toFixed(2)}` : '-' },
             },
             {
                 accessorKey: 'department',
@@ -234,6 +249,7 @@ export function RedosReport() {
                 cell: ({ row }) => row.original.department || '-',
                 size: 150,
                 enableSorting: true,
+                meta: { format: (value: string) => value || '-' },
             },
             {
                 accessorKey: 'person_name',
@@ -241,6 +257,7 @@ export function RedosReport() {
                 cell: ({ row }) => row.original.person_name || '-',
                 size: 150,
                 enableSorting: true,
+                meta: { format: (value: string) => value || '-' },
             },
             {
                 accessorKey: 'reason',
@@ -248,10 +265,10 @@ export function RedosReport() {
                 cell: ({ row }) => row.original.reason || '-',
                 size: 150,
                 enableSorting: true,
+                meta: { format: (value: string) => value || '-' },
             },
         ];
 
-        // If user can edit, prepend the action column
         if (canEditRedo) {
             return [
                 {
@@ -267,11 +284,11 @@ export function RedosReport() {
                     },
                     size: 80,
                     enableSorting: false,
+                    meta: { format: () => '' },
                 },
                 ...baseColumns,
             ];
         }
-
         return baseColumns;
     }, [canEditRedo]);
 
@@ -333,7 +350,6 @@ export function RedosReport() {
                 </div>
             </div>
 
-            {/* Summary Cards */}
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">

@@ -237,39 +237,62 @@ function ReportRenderer({ useQueryHook, title, groupBy, reportId }: { useQueryHo
         return { listData, widgetData, totals };
     }, [rawData]);
 
-    // Build columns dynamically
+    // ─── Build columns dynamically with meta.format ──────────────────────────────
     const columns = useMemo<ColumnDef<any>[]>(() => {
         if (!listData.length) return [];
         const firstItem = listData[0];
         if (typeof firstItem !== 'object' || firstItem === null) return [];
-        return Object.keys(firstItem).map(key => ({
-            id: key,
-            accessorKey: key,
-            size: key === 'fab_info' ? 450 : 180,
-            header: ({ column }) => <DataGridColumnHeader title={formatLabel(key).toUpperCase()} column={column} className="text-[#7c8689] text-[15px] font-normal" />,
-            cell: ({ row, getValue }) => {
-                let val = getValue();
-                const isTotalRow = row.original?._isTotalRow;
-                if (key === 'stage' || key === 'activity_type' || key === 'fab_type') val = formatLabel(val as string);
-                if (key === 'fab_info' && typeof val === 'string') {
-                    const { leftLine1, leftLine2, right } = parseFabInfo(val);
-                    return (
-                        <div className="flex gap-4 text-xs max-w-[500px]">
-                            <div className="flex-1 min-w-0">
-                                {leftLine1.length > 0 && <div className="truncate text-gray-600" title={leftLine1.join(' - ')}>{leftLine1.join(' - ')}</div>}
-                                {leftLine2.length > 0 && <div className="truncate text-gray-600" title={leftLine2.join(' - ')}>{leftLine2.join(' - ')}</div>}
-                                {!leftLine1.length && !leftLine2.length && <div className="truncate text-gray-400 italic">No details</div>}
+
+        return Object.keys(firstItem).map(key => {
+            const isDateField = [
+                'created_at', 'updated_at', 'date', 'activity_date', 'fab_created_date',
+                'week_ending', 'shop_date_schedule', 'install_date', 'completion_date',
+                'scheduled_start_date', 'scheduled_end_date', 'actual_start_date', 'actual_end_date',
+                'template_completed_date', 'draft_completed_date', 'final_programming_completed_date'
+            ].includes(key);
+
+            const isFabInfo = key === 'fab_info';
+            const isLabelField = ['stage', 'activity_type', 'fab_type'].includes(key);
+
+            return {
+                id: key,
+                accessorKey: key,
+                size: key === 'fab_info' ? 450 : 180,
+                header: ({ column }) => <DataGridColumnHeader title={formatLabel(key).toUpperCase()} column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+                cell: ({ row, getValue }) => {
+                    let val = getValue();
+                    const isTotalRow = row.original?._isTotalRow;
+                    if (isLabelField) val = formatLabel(val as string);
+                    if (isFabInfo && typeof val === 'string') {
+                        const { leftLine1, leftLine2, right } = parseFabInfo(val);
+                        return (
+                            <div className="flex gap-4 text-xs max-w-[500px]">
+                                <div className="flex-1 min-w-0">
+                                    {leftLine1.length > 0 && <div className="truncate text-gray-600" title={leftLine1.join(' - ')}>{leftLine1.join(' - ')}</div>}
+                                    {leftLine2.length > 0 && <div className="truncate text-gray-600" title={leftLine2.join(' - ')}>{leftLine2.join(' - ')}</div>}
+                                    {!leftLine1.length && !leftLine2.length && <div className="truncate text-gray-400 italic">No details</div>}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    {right.length ? <div className="truncate text-gray-600" title={right.join(' - ')}>{right.join(' - ')}</div> : <div className="truncate text-gray-400 italic">—</div>}
+                                </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                                {right.length ? <div className="truncate text-gray-600" title={right.join(' - ')}>{right.join(' - ')}</div> : <div className="truncate text-gray-400 italic">—</div>}
-                            </div>
-                        </div>
-                    );
-                }
-                const formattedValue = formatDateValue(val, key);
-                return <span className={cn('text-sm text-[#4b545d] truncate max-w-[200px] block', isTotalRow && 'font-semibold')}>{formattedValue}</span>;
-            },
-        }));
+                        );
+                    }
+                    const formattedValue = isDateField ? formatDateValue(val, key) : val;
+                    return <span className={cn('text-sm text-[#4b545d] truncate max-w-[200px] block', isTotalRow && 'font-semibold')}>{String(formattedValue)}</span>;
+                },
+                // ─── meta.format for CSV export ──────────────────────────────────
+                meta: {
+                    format: (value: any, row: any) => {
+                        if (isLabelField) return formatLabel(value);
+                        if (isDateField) return formatDateValue(value, key);
+                        if (isFabInfo) return String(value ?? '');
+                        if (value === null || value === undefined) return '';
+                        return String(value);
+                    },
+                },
+            };
+        });
     }, [listData]);
 
     if (isLoading && !isFetching && listData.length === 0) return <div className="p-4 flex items-center text-[#7c8689]"><div className="animate-spin mr-2 border-2 border-primary border-t-transparent rounded-full h-4 w-4"></div> Loading report...</div>;

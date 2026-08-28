@@ -64,6 +64,16 @@ const pivotTurnaroundData = (rows: any[]) => {
     return { rows: pivoted, stageKeys };
 };
 
+// ─── Helper to format date for export ─────────────────────────────────────
+const formatDateForExport = (value: any): string => {
+    if (!value) return '-';
+    try {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) return format(date, 'MMM dd, yyyy');
+    } catch {}
+    return String(value);
+};
+
 export function TurnaroundTimesReport() {
     // ─── Date mode ──────────────────────────────────────────────────────────
     const [dateMode, setDateMode] = useState<'monthly' | 'custom'>('monthly');
@@ -119,7 +129,7 @@ export function TurnaroundTimesReport() {
     // ─── Pivot the data ────────────────────────────────────────────────────
     const { rows: pivotedRows } = useMemo(() => pivotTurnaroundData(rawRows), [rawRows]);
 
-    // ─── Summary columns ────────────────────────────────────────────────────
+    // ─── Summary columns with meta.format ────────────────────────────────────────────────────
     const summaryColumns = useMemo<ColumnDef<any>[]>(() => [
         {
             id: 'metric',
@@ -128,6 +138,7 @@ export function TurnaroundTimesReport() {
             cell: ({ row }) => <span className="text-sm font-medium">{row.original.metric}</span>,
             size: 200,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
         {
             accessorKey: 'total',
@@ -135,6 +146,7 @@ export function TurnaroundTimesReport() {
             cell: ({ row }) => <span className="text-sm">{row.original.total.toFixed(1)}</span>,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(1) ?? '' },
         },
         {
             accessorKey: 'average',
@@ -142,6 +154,7 @@ export function TurnaroundTimesReport() {
             cell: ({ row }) => <span className="text-sm">{row.original.average.toFixed(1)}</span>,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(1) ?? '' },
         },
         {
             accessorKey: 'max',
@@ -149,6 +162,7 @@ export function TurnaroundTimesReport() {
             cell: ({ row }) => <span className="text-sm">{row.original.max.toFixed(1)}</span>,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(1) ?? '' },
         },
         {
             accessorKey: 'min',
@@ -156,6 +170,7 @@ export function TurnaroundTimesReport() {
             cell: ({ row }) => <span className="text-sm">{row.original.min.toFixed(1)}</span>,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(1) ?? '' },
         },
         {
             accessorKey: 'count',
@@ -163,6 +178,7 @@ export function TurnaroundTimesReport() {
             cell: ({ row }) => <span className="text-sm">{row.original.count}</span>,
             size: 100,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? '') },
         },
     ], []);
 
@@ -179,7 +195,7 @@ export function TurnaroundTimesReport() {
         columnResizeMode: 'onEnd',
     });
 
-    // ─── Detail columns ────────────────────────────────────────────────────
+    // ─── Detail columns with meta.format ────────────────────────────────────────────────────
     const detailColumns = useMemo<ColumnDef<any>[]>(() => {
         if (!rawRows.length) return [];
         const first = rawRows[0];
@@ -192,7 +208,10 @@ export function TurnaroundTimesReport() {
         const dataCols = keys
             .filter(key => !compositeFabFields.includes(key))
             .map(key => {
-                let headerTitle = key.replace(/_/g, ' ').toUpperCase();
+                const isDateField = key.includes('date');
+                const isNumeric = typeof first[key] === 'number';
+                const headerTitle = key.replace(/_/g, ' ').toUpperCase();
+
                 return {
                     accessorKey: key,
                     header: ({ column }) => <DataGridColumnHeader title={headerTitle} column={column} />,
@@ -200,29 +219,20 @@ export function TurnaroundTimesReport() {
                     enableSorting: true,
                     cell: ({ row }) => {
                         let val = row.original[key];
-                        if (key.includes('date') && val) {
+                        if (isDateField && val) {
                             try { val = format(new Date(val), 'MMM dd, yyyy'); } catch {}
                         }
                         if (typeof val === 'number') val = val.toLocaleString();
                         if (val == null) return <span className="text-sm">-</span>;
-
-                        // if (key === 'fab_id') {
-                        //     const link = getFabIdLink(Number(val));
-                        //     return renderLink(link);
-                        // }
-                        // if (key === 'job_number') {
-                        //     const link = getJobNumberLink(String(val));
-                        //     return renderLink(link);
-                        // }
-                        // if (key === 'job_name') {
-                        //     const jobId = row.original.job_id;
-                        //     if (jobId) {
-                        //         const link = getJobNameLink(String(val), jobId);
-                        //         if (link) return renderLink(link);
-                        //     }
-                        //     return <span className="text-sm">{val}</span>;
-                        // }
                         return <span className="text-sm">{val}</span>;
+                    },
+                    meta: {
+                        format: (value: any) => {
+                            if (value == null) return '-';
+                            if (isDateField) return formatDateForExport(value);
+                            if (isNumeric) return String(value);
+                            return String(value);
+                        },
                     },
                 };
             });
@@ -233,12 +243,26 @@ export function TurnaroundTimesReport() {
             cell: ({ row }) => <FabInfoCell data={row.original} />,
             size: 400,
             enableSorting: false,
+            meta: {
+                format: (value: any, row: any) => {
+                    const parts = [
+                        row.acct_name || row.account_name,
+                        row.job_name,
+                        row.input_area,
+                        row.stone_type_name,
+                        row.stone_color_name,
+                        row.stone_thickness_value,
+                        row.edge_name,
+                    ].filter(Boolean);
+                    return parts.join(' - ') || '';
+                },
+            },
         };
 
         const jobNumberIndex = dataCols.findIndex(col => col.accessorKey === 'job_number');
         const insertIndex = jobNumberIndex !== -1 ? jobNumberIndex + 1 : 1;
         const finalCols = [...dataCols.slice(0, insertIndex)];
-        // finalCols.push(fabInfoCol);
+        finalCols.push(fabInfoCol);
         finalCols.push(...dataCols.slice(insertIndex));
         return finalCols;
     }, [rawRows]);
@@ -292,16 +316,6 @@ export function TurnaroundTimesReport() {
                             {fabTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
                         </SelectContent>
                     </Select>
-
-                    {/* <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
-                        <SelectTrigger className="w-[120px] h-[34px] border-[#e2e4ed]">
-                            <SelectValue placeholder="Period" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="monthly">Monthly</SelectItem>
-                            <SelectItem value="custom">Custom Range</SelectItem>
-                        </SelectContent>
-                    </Select> */}
 
                     {dateMode === 'monthly' ? (
                         <>

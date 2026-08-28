@@ -125,12 +125,14 @@ export function OwnerOverviewReport() {
                 const b = rowB.original._sortOrder;
                 return a - b;
             },
+            meta: { format: (value: string) => formatStage(value) || '' },
         },
         {
             accessorKey: 'count',
             header: ({ column }) => <DataGridColumnHeader title="COUNT" column={column} />,
             size: 100,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
     ], []);
 

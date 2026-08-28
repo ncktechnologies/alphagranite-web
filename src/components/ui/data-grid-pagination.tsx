@@ -23,7 +23,7 @@ function DataGridPagination(props: DataGridPaginationProps) {
   const { table, recordCount, isLoading } = useDataGrid();
 
   const defaultProps: Partial<DataGridPaginationProps> = {
-    sizes: [5, 10, 25, 50, 100],
+    sizes: [5, 10, 25, 50, 100, 200],
     sizesLabel: 'Show',
     sizesDescription: 'per page',
     sizesSkeleton: <Skeleton className="h-8 w-44" />,

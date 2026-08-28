@@ -30,27 +30,22 @@ import { useSelector } from 'react-redux';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const DAY_START_HOUR = 7;          // 7 AM
-const DAY_END_HOUR = 18;           // 6 PM
+const DAY_END_HOUR = 16;           // 4 PM
 const BREAK_START_HOUR = 12;       // 12 PM
 const BREAK_END_HOUR = 13;         // 1 PM
 const BREAK_DURATION = BREAK_END_HOUR - BREAK_START_HOUR; // 1 hour
-const TOTAL_WORK_HOURS = DAY_END_HOUR - DAY_START_HOUR - BREAK_DURATION; // 10 hours
+const TOTAL_WORK_HOURS = DAY_END_HOUR - DAY_START_HOUR; // 9 hours (including break slot)
 const HOUR_WIDTH = 120;
-const ROW_HEIGHT = 80;
+const ROW_LANE_HEIGHT = 44;        // fixed lane height (like Shop Calendar)
 const TIME_LABEL_HEIGHT = 40;
 const DATE_LABEL_WIDTH = 80;
 const GRID_WIDTH = DATE_LABEL_WIDTH + TOTAL_WORK_HOURS * HOUR_WIDTH;
 
-// ─── Helper: calculate horizontal position accounting for break ──────────
-const getTimePosition = (hour: number): number => {
-    if (hour < BREAK_START_HOUR) {
-        return (hour - DAY_START_HOUR) * HOUR_WIDTH;
-    }
-    // At or after break, subtract break duration to close the gap
-    return (hour - DAY_START_HOUR - BREAK_DURATION) * HOUR_WIDTH;
-};
+// ─── Helper: calculate horizontal position (linear, no break gap) ──────────
+const getTimePosition = (hour: number): number => (hour - DAY_START_HOUR) * HOUR_WIDTH;
+const getHorizontalPosition = getTimePosition;
 
-// ─── Color mapping (unchanged) ────────────────────────────────────────────
+// ─── Color mapping ──────────────────────────────────────────────────────────
 const FAB_TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
     'standard': { bg: '#9eeb47', border: '#7bc62e', text: '#2c5a0e' },
     'fab only': { bg: '#5bd1d7', border: '#2fa7ae', text: '#0a5c62' },
@@ -101,6 +96,7 @@ export function OperatorDashboard() {
     const [currentDate, setCurrentDate] = useState(getInitialDate);
     const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>(getInitialViewMode);
     const [selectedWorkstation, setSelectedWorkstation] = useState<number | null>(null);
+    const [isAxisSwapped, setIsAxisSwapped] = useState(false);
 
     useEffect(() => {
         const nextView = viewMode;
@@ -167,7 +163,7 @@ export function OperatorDashboard() {
         return false;
     }, [currentDate, viewMode]);
 
-    // ─── Events grouped by day with splitting across days ──────────────────
+    // ─── Reliable event splitting (break + multi‑day) ──────────────────────
     const eventsByDay = useMemo(() => {
         const grouped: Record<string, any[]> = {};
         const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
@@ -183,59 +179,56 @@ export function OperatorDashboard() {
             .forEach((task: any) => {
                 const startDate = new Date(task.scheduled_start_date);
                 if (!startDate) return;
-                const startHour = startDate.getHours() + startDate.getMinutes() / 60;
-                const estimatedHours = task.estimated_hours || 1;
-                const endHour = startHour + estimatedHours;
+                let remainingHours = Number(task.estimated_hours) || 1;
+                let currentDate = startDate;
+                let currentHour = startDate.getHours() + startDate.getMinutes() / 60;
+                const originalHours = remainingHours;
 
-                const dateKey = format(startDate, 'yyyy-MM-dd');
-
-                // ─── If event fits within the day ──────────────────────────────
-                if (endHour <= DAY_END_HOUR) {
-                    if (dateKey in grouped) {
-                        grouped[dateKey].push({
-                            ...task,
-                            work_percentage: task.work_percentage || 0,
-                            plan_name: task.planning_section_name || task.current_stage || '',
-                            _isSplitPart: false,
-                            _originalHours: estimatedHours,
-                        });
-                    }
-                    return;
-                }
-
-                // ─── Split event across days ──────────────────────────────────────
-                const hoursOnFirstDay = DAY_END_HOUR - startHour;
-                if (hoursOnFirstDay > 0 && dateKey in grouped) {
-                    grouped[dateKey].push({
+                const addPart = (day: Date, hour: number, hours: number) => {
+                    const key = format(day, 'yyyy-MM-dd');
+                    if (hours <= 0 || !(key in grouped)) return;
+                    const partStart = new Date(day);
+                    partStart.setHours(Math.floor(hour), Math.round((hour % 1) * 60), 0, 0);
+                    grouped[key].push({
                         ...task,
+                        _isSplitPart: true,
+                        _originalHours: originalHours,
+                        estimated_hours: hours,
+                        scheduled_start_date: partStart.toISOString(),
                         work_percentage: task.work_percentage || 0,
                         plan_name: task.planning_section_name || task.current_stage || '',
-                        _isSplitPart: true,
-                        _originalHours: estimatedHours,
-                        estimated_hours: hoursOnFirstDay,
                     });
-                }
-
-                let remainingHours = estimatedHours - hoursOnFirstDay;
-                let currentDate = addDays(startDate, 1);
-                let currentDayKey = format(currentDate, 'yyyy-MM-dd');
+                };
 
                 while (remainingHours > 0) {
-                    const hoursOnThisDay = Math.min(remainingHours, DAY_END_HOUR - DAY_START_HOUR);
-                    if (hoursOnThisDay > 0 && currentDayKey in grouped) {
-                        grouped[currentDayKey].push({
-                            ...task,
-                            work_percentage: task.work_percentage || 0,
-                            plan_name: task.planning_section_name || task.current_stage || '',
-                            _isSplitPart: true,
-                            _originalHours: estimatedHours,
-                            estimated_hours: hoursOnThisDay,
-                            scheduled_start_date: format(currentDate, 'yyyy-MM-dd') + 'T' + String(DAY_START_HOUR).padStart(2, '0') + ':00:00',
-                        });
+                    if (currentHour >= BREAK_START_HOUR && currentHour < BREAK_END_HOUR) {
+                        currentHour = BREAK_END_HOUR;
                     }
-                    remainingHours -= hoursOnThisDay;
-                    currentDate = addDays(currentDate, 1);
-                    currentDayKey = format(currentDate, 'yyyy-MM-dd');
+
+                    if (currentHour < BREAK_START_HOUR) {
+                        const beforeBreak = Math.min(remainingHours, BREAK_START_HOUR - currentHour);
+                        if (beforeBreak > 0) {
+                            addPart(currentDate, currentHour, beforeBreak);
+                            remainingHours -= beforeBreak;
+                            currentHour += beforeBreak;
+                        }
+                        if (remainingHours > 0) {
+                            currentHour = BREAK_END_HOUR;
+                            continue;
+                        }
+                    } else if (currentHour >= BREAK_END_HOUR) {
+                        const afterBreak = Math.min(remainingHours, DAY_END_HOUR - currentHour);
+                        if (afterBreak > 0) {
+                            addPart(currentDate, currentHour, afterBreak);
+                            remainingHours -= afterBreak;
+                            currentHour += afterBreak;
+                        }
+                    }
+
+                    if (remainingHours > 0) {
+                        currentDate = addDays(currentDate, 1);
+                        currentHour = DAY_START_HOUR;
+                    }
                 }
             });
 
@@ -263,9 +256,9 @@ export function OperatorDashboard() {
         navigate(`/operator/task/${task.job_id}?${params.toString()}`);
     }, [navigate]);
 
-    // ─── Event positioning with break support ──────────────────────────────
+    // ─── Event positioning with dynamic row height ──────────────────────────
     const getEventsWithXPositions = useCallback((events: any[]) => {
-        if (!events.length) return [];
+        if (!events.length) return { events: [], rowHeight: ROW_LANE_HEIGHT };
 
         const sorted = [...events].sort(
             (a, b) => new Date(a.scheduled_start_date).getTime() - new Date(b.scheduled_start_date).getTime()
@@ -273,7 +266,11 @@ export function OperatorDashboard() {
 
         const ranges = sorted.map((ev) => {
             const s = new Date(ev.scheduled_start_date).getTime();
-            const e = s + (ev.estimated_hours || 1) * 3_600_000;
+            const start = new Date(ev.scheduled_start_date);
+            const startHour = start.getHours() + start.getMinutes() / 60;
+            const productiveHours = Number(ev.estimated_hours) || 1;
+            const endHour = startHour + productiveHours;
+            const e = new Date(start).setHours(Math.floor(endHour), Math.round((endHour % 1) * 60), 0, 0);
             return { s, e };
         });
 
@@ -286,18 +283,21 @@ export function OperatorDashboard() {
             lanes[i] = c;
         });
         const maxLane = Math.max(...lanes, 0) + 1;
+        const rowHeight = maxLane * ROW_LANE_HEIGHT;
 
-        return sorted.map((ev, i) => {
+        const positioned = sorted.map((ev, i) => {
             const start = new Date(ev.scheduled_start_date);
             const startH = start.getHours() + start.getMinutes() / 60;
             const left = Math.max(0, getTimePosition(startH));
-            const width = Math.max(HOUR_WIDTH * 0.5, (ev.estimated_hours || 1) * HOUR_WIDTH);
-            const laneH = ROW_HEIGHT / maxLane;
-            const top = lanes[i] * laneH;
-            const height = laneH - 4;
+            const duration = Number(ev.estimated_hours) || 1;
+            const width = Math.max(HOUR_WIDTH * 0.5, duration * HOUR_WIDTH);
+            const top = lanes[i] * ROW_LANE_HEIGHT;
+            const height = ROW_LANE_HEIGHT - 4;
 
             return { ...ev, _left: left, _width: width, _top: top, _height: height, _lane: lanes[i], _maxLane: maxLane };
         });
+
+        return { events: positioned, rowHeight };
     }, []);
 
     // ─── Render a single event card ──────────────────────────────────────────
@@ -308,11 +308,11 @@ export function OperatorDashboard() {
         const startTime = event.scheduled_start_date
             ? format(new Date(event.scheduled_start_date), 'h:mma')
             : null;
-        const endTime = event.scheduled_start_date && event.estimated_hours
-            ? format(new Date(new Date(event.scheduled_start_date).getTime() + event.estimated_hours * 3_600_000), 'h:mma')
+        const tooltipHours = event._originalHours ?? event.estimated_hours;
+        const endTime = event.scheduled_start_date && tooltipHours
+            ? format(new Date(new Date(event.scheduled_start_date).getTime() + Number(tooltipHours) * 3_600_000), 'h:mma')
             : null;
 
-        // Use percentage-based left/width so tooltip positioning matches shop calendar
         return (
             <Tooltip key={`${event.task_id || event.id}`} delayDuration={300}>
                 <TooltipTrigger asChild>
@@ -362,7 +362,7 @@ export function OperatorDashboard() {
                             {event._height > 58 && startTime && (
                                 <p className="text-[9px] leading-tight" style={{ color: text, opacity: 0.6 }}>
                                     {startTime}{endTime ? ` – ${endTime}` : ''}
-                                    {event.estimated_hours ? ` · ${event.estimated_hours}h` : ''}
+                                    {tooltipHours ? ` · ${tooltipHours}h` : ''}
                                 </p>
                             )}
                             {event._height > 68 && event.work_percentage > 0 && (
@@ -380,7 +380,7 @@ export function OperatorDashboard() {
                     <div className="space-y-1">
                         <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
                         <p><span className="font-semibold">Workstation:</span> {event.workstation_name || 'N/A'}</p>
-                        <p><span className="font-semibold">Est. Hours:</span> {event.estimated_hours ?? 'N/A'}</p>
+                        <p><span className="font-semibold">Est. Hours:</span> {event._originalHours ?? event.estimated_hours ?? 'N/A'}</p>
                         <p><span className="font-semibold">% Complete:</span> {event.work_percentage ?? 0}%</p>
                         <p><span className="font-semibold">Job:</span> {`${event.job_name}-${event.job_number}` || 'N/A'}</p>
                         <p><span className="font-semibold">Job No:</span> {event.job_number || 'N/A'}</p>
@@ -404,15 +404,18 @@ export function OperatorDashboard() {
     // ─── Stats ──────────────────────────────────────────────────────────────
     const totalTasksCount = Object.values(eventsByDay).reduce((acc, evs) => acc + evs.length, 0);
     const workstationCount = selectedWorkstation ? 1 : (workstationsData as any)?.data?.length || 0;
+    const activeTimerFabs = Array.isArray((tasksData as any)?.active_timer_fabs)
+        ? (tasksData as any).active_timer_fabs
+        : Array.isArray((tasksData as any)?.data?.active_timer_fabs)
+            ? (tasksData as any).data.active_timer_fabs
+            : [];
 
-    // Generate hours to display (skip break hour)
+    // Hours to render (7 to 16)
     const hoursToRender: number[] = [];
-    for (let h = DAY_START_HOUR; h < DAY_END_HOUR; h++) {
-        if (h === BREAK_START_HOUR) continue;
-        hoursToRender.push(h);
-    }
+    for (let h = DAY_START_HOUR; h < DAY_END_HOUR; h++) hoursToRender.push(h);
 
-    if (isTasksLoading || isTasksFetching) {
+    // ─── Show loading skeleton only on first load ───────────────────────────
+    if (isTasksLoading && !tasksData) {
         return (
             <div className="bg-white min-h-screen">
                 <div className="border-b border-[#dfdfdf]">
@@ -442,16 +445,29 @@ export function OperatorDashboard() {
                             </p>
                         </div>
 
-                        {!isWorkstationsLoading && workstationsData && (
-                            <WorkstationToggle
-                                workstations={Array.isArray(workstationsData) ? workstationsData : (workstationsData as any)?.data || []}
-                                selectedWorkstation={selectedWorkstation}
-                                onSelect={setSelectedWorkstation}
-                            />
-                        )}
+                        <div className="flex flex-col items-end gap-3">
+                            {!isWorkstationsLoading && workstationsData && (
+                                <WorkstationToggle
+                                    workstations={Array.isArray(workstationsData) ? workstationsData : (workstationsData as any)?.data || []}
+                                    selectedWorkstation={selectedWorkstation}
+                                    onSelect={setSelectedWorkstation}
+                                />
+                            )}
+                            {activeTimerFabs.length > 0 && (
+                                <div className="flex max-w-[760px] flex-wrap justify-end gap-2" aria-label="Active FAB timers">
+                                    {activeTimerFabs.slice(0, 5).map((fab: any) => (
+                                        <div key={fab.fab_id ?? fab.id} className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm">
+                                            <span className="size-2 rounded-full bg-emerald-500" aria-hidden="true" />
+                                            <span className="font-semibold text-foreground">{fab.fab_number ?? fab.fab_id ?? fab.id}</span>
+                                            {fab.elapsed_time && <span className="font-mono text-xs text-muted-foreground">{fab.elapsed_time}</span>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="flex items-center px-10 h-[65px]">
+                    <div className="flex items-center justify-between px-10 h-[65px]">
                         <div className="bg-[#f9f9f9] h-[45px] rounded-[6px] flex items-start pt-[4px] px-[4px] gap-2">
                             {(['day', 'week', 'month'] as const).map((mode) => (
                                 <button
@@ -468,13 +484,16 @@ export function OperatorDashboard() {
                                 </button>
                             ))}
                         </div>
+                        {viewMode !== 'month' && (
+                            <div className="flex items-center gap-1 rounded-md border border-[#e2e4ed] bg-white p-1" aria-label="Calendar orientation">
+                                <button type="button" onClick={() => setIsAxisSwapped(false)} className={`rounded px-2 py-1.5 ${!isAxisSwapped ? 'bg-[#f1f4e8] text-[#5f7600]' : 'text-[#7c8689]'}`} aria-pressed={!isAxisSwapped} title="Column view"><Columns3 className="size-4" /></button>
+                                <button type="button" onClick={() => setIsAxisSwapped(true)} className={`rounded px-2 py-1.5 ${isAxisSwapped ? 'bg-[#f1f4e8] text-[#5f7600]' : 'text-[#7c8689]'}`} aria-pressed={isAxisSwapped} title="Row view"><Rows3 className="size-4" /></button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 <div className="p-6 space-y-4">
-                    {/* Workstation filter */}
-
-
                     <div className="flex items-center gap-3">
                         <button
                             onClick={handlePrevious}
@@ -519,62 +538,56 @@ export function OperatorDashboard() {
                         )}
                     </div>
 
-                    {/* Calendar grid */}
-                    <div className="bg-white border border-[#e2e4ed] rounded-[8px] overflow-auto">
+                    {/* ─── Calendar Grid ───────────────────────────────────── */}
+                    <div className="relative bg-white border border-[#e2e4ed] rounded-[8px] max-h-[70vh] overflow-auto">
+                        {/* ── Loading overlay (when fetching) ── */}
+                        {isTasksFetching && (
+                            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-[8px]">
+                                <div className="bg-white border border-[#e2e4ed] rounded-[8px] px-4 py-2 shadow-sm flex items-center gap-2">
+                                    <div className="animate-spin border-2 border-[#7a9705] border-t-transparent rounded-full h-4 w-4" />
+                                    <span className="text-[13px] font-medium text-[#4b545d]">Updating calendar...</span>
+                                </div>
+                            </div>
+                        )}
 
-                        {/* Day / Week view */}
                         {(viewMode === 'day' || viewMode === 'week') && (
                             <div style={{ minWidth: GRID_WIDTH }}>
-                                {/* Time header row with 6 PM label */}
+                                {/* Time header row */}
                                 <div className="flex sticky top-0 z-10 bg-[#f9fafb] border-b border-[#e2e4ed]" style={{ minWidth: GRID_WIDTH }}>
-                                    <div
-                                        className="flex-shrink-0 border-r border-[#e2e4ed]"
-                                        style={{ width: DATE_LABEL_WIDTH, height: TIME_LABEL_HEIGHT }}
-                                    />
+                                    <div className="flex-shrink-0 border-r border-[#e2e4ed]" style={{ width: DATE_LABEL_WIDTH, height: TIME_LABEL_HEIGHT }} />
                                     <div className="relative" style={{ height: TIME_LABEL_HEIGHT, flex: 1 }}>
                                         {hoursToRender.map((hour) => (
                                             <div
                                                 key={hour}
                                                 className="absolute text-[11px] text-[#7c8689] flex items-center justify-center font-medium"
-                                                style={{
-                                                    left: getTimePosition(hour),
-                                                    width: HOUR_WIDTH,
-                                                    height: TIME_LABEL_HEIGHT,
-                                                }}
+                                                style={{ left: getTimePosition(hour), width: HOUR_WIDTH, height: TIME_LABEL_HEIGHT }}
                                             >
                                                 {format(setHoursLocal(new Date(), hour), 'h a')}
                                             </div>
                                         ))}
-                                        {/* 6 PM label at the end */}
                                         <div
                                             className="absolute text-[11px] text-[#7c8689] flex items-center justify-center font-medium"
-                                            style={{
-                                                left: getTimePosition(DAY_END_HOUR),
-                                                width: HOUR_WIDTH,
-                                                height: TIME_LABEL_HEIGHT,
-                                            }}
+                                            style={{ left: getTimePosition(DAY_END_HOUR), width: HOUR_WIDTH, height: TIME_LABEL_HEIGHT }}
                                         >
                                             {format(setHoursLocal(new Date(), DAY_END_HOUR), 'h a')}
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* One row per day */}
                                 {displayDays.map((day, dayIdx) => {
                                     const dateKey = format(day, 'yyyy-MM-dd');
                                     const events = eventsByDay[dateKey] || [];
-                                    const eventsWithPositions = getEventsWithXPositions(events);
+                                    const { events: positioned, rowHeight } = getEventsWithXPositions(events);
                                     const isToday = isSameDay(day, new Date());
 
                                     return (
                                         <div
                                             key={dayIdx}
                                             className="flex border-b border-[#e2e4ed] last:border-b-0"
-                                            style={{ height: ROW_HEIGHT }}
+                                            style={{ height: Math.max(ROW_LANE_HEIGHT, rowHeight) }}
                                         >
                                             <div
-                                                className={`flex-shrink-0 flex flex-col items-center justify-center border-r border-[#e2e4ed] px-2 ${isToday ? 'bg-[#f0f4e8]' : 'bg-[#f9fafb]'
-                                                    }`}
+                                                className={`flex-shrink-0 flex flex-col items-center justify-center border-r border-[#e2e4ed] px-2 ${isToday ? 'bg-[#f0f4e8]' : 'bg-[#f9fafb]'}`}
                                                 style={{ width: DATE_LABEL_WIDTH }}
                                             >
                                                 <span className={`text-[11px] font-semibold ${isToday ? 'text-[#7a9705]' : 'text-[#4b545d]'}`}>
@@ -587,24 +600,19 @@ export function OperatorDashboard() {
 
                                             <div
                                                 className="relative flex-1"
-                                                style={{ height: ROW_HEIGHT }}
+                                                style={{ height: Math.max(ROW_LANE_HEIGHT, rowHeight) }}
                                             >
+                                                <div className="absolute inset-y-0  flex items-center justify-center bg-orange-100/95 border-x border-orange-300 pointer-events-none" style={{ left: getTimePosition(BREAK_START_HOUR), width: HOUR_WIDTH }}>
+                                                    <span className="text-[10px] font-semibold uppercase text-orange-600 [writing-mode:vertical-rl]">Break</span>
+                                                </div>
                                                 {hoursToRender.map((hour, idx) => {
                                                     const left = getTimePosition(hour);
                                                     return (
-                                                        <div
-                                                            key={idx}
-                                                            className="absolute top-0 bottom-0 border-r border-[#e2e4ed]"
-                                                            style={{ left }}
-                                                        />
+                                                        <div key={idx} className="absolute top-0 bottom-0 border-r border-[#e2e4ed]" style={{ left }} />
                                                     );
                                                 })}
-                                                {/* Final grid line at 6 PM */}
-                                                <div
-                                                    className="absolute top-0 bottom-0 border-r border-[#e2e4ed]"
-                                                    style={{ left: getTimePosition(DAY_END_HOUR) }}
-                                                />
-                                                {eventsWithPositions.map((event: any) => renderEventCard(event))}
+                                                <div className="absolute top-0 bottom-0 border-r border-[#e2e4ed]" style={{ left: getTimePosition(DAY_END_HOUR) }} />
+                                                {positioned.map((event: any) => renderEventCard(event))}
                                             </div>
                                         </div>
                                     );
@@ -612,7 +620,6 @@ export function OperatorDashboard() {
                             </div>
                         )}
 
-                        {/* Month view */}
                         {viewMode === 'month' && (
                             <div className="grid grid-cols-7 gap-px bg-[#e2e4ed]">
                                 {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => (
@@ -633,42 +640,27 @@ export function OperatorDashboard() {
                                                     key={dayIdx}
                                                     className={`min-h-[120px] bg-white p-2 ${!isCurrentMonth ? 'bg-[#f9fafb]' : ''}`}
                                                 >
-                                                    <div className={`text-[13px] mb-2 ${isToday ? 'text-[#7a9705] font-bold'
-                                                        : isCurrentMonth ? 'text-[#4b545d]'
-                                                            : 'text-[#9ca3af]'
-                                                        }`}>
+                                                    <div className={`text-[13px] mb-2 ${isToday ? 'text-[#7a9705] font-bold' : isCurrentMonth ? 'text-[#4b545d]' : 'text-[#9ca3af]'}`}>
                                                         {format(day, 'd')}
                                                     </div>
                                                     <div className="space-y-1">
                                                         {events.slice(0, 3).map((event: any) => {
                                                             const { bg, border, text } = getColorForFabType(event.fab_type);
                                                             const cardBorderColor = event.has_pending_shop_revision ? '#ff0000' : border;
-
                                                             return (
                                                                 <div
                                                                     key={event.task_id || event.id}
                                                                     className="text-[11px] px-2 py-1 rounded cursor-pointer truncate"
-                                                                    style={{
-                                                                        backgroundColor: bg,
-                                                                        borderColor: cardBorderColor,
-                                                                        color: text,
-                                                                        borderWidth: event.has_pending_shop_revision ? 2 : 1,
-                                                                    }}
+                                                                    style={{ backgroundColor: bg, borderColor: cardBorderColor, color: text, borderWidth: event.has_pending_shop_revision ? 2 : 1 }}
                                                                     onClick={() => handleEventClick(event)}
+                                                                    title={`${event.fab_number || event.fab_id || 'FAB'} . ${event.planning_section_name || event.plan_name || 'Plan'} · ${event.estimated_hours ?? 'N/A'}h · ${event.work_percentage ?? 0}% complete`}
                                                                 >
-                                                                    <div className="font-medium truncate">
-                                                                        {event.fab_number || event.fab_id}
-                                                                    </div>
-                                                                    {event.plan_name && (
-                                                                        <div className="text-[9px] opacity-70 truncate">{event.plan_name}</div>
-                                                                    )}
+                                                                    <div className="font-medium truncate">{event.fab_number || event.fab_id}</div>
+                                                                    {event.plan_name && <div className="text-[9px] opacity-70 truncate">{event.plan_name}</div>}
                                                                     {event.work_percentage > 0 && (
                                                                         <div className="flex items-center gap-1 mt-0.5">
                                                                             <div className="flex-1 bg-white/50 rounded-full h-1">
-                                                                                <div
-                                                                                    className="h-1 rounded-full"
-                                                                                    style={{ width: `${event.work_percentage}%`, backgroundColor: text }}
-                                                                                />
+                                                                                <div className="h-1 rounded-full" style={{ width: `${event.work_percentage}%`, backgroundColor: text }} />
                                                                             </div>
                                                                             <span className="text-[8px] font-medium">{event.work_percentage}%</span>
                                                                         </div>
@@ -678,7 +670,7 @@ export function OperatorDashboard() {
                                                         })}
                                                         {events.length > 3 && (
                                                             <div className="text-[10px] text-[#7c8689] pl-2">
-                                                                {t('COMMON.MORE_COUNT', { count: events.length - 3 })}
+                                                                +{events.length - 3} more
                                                             </div>
                                                         )}
                                                     </div>

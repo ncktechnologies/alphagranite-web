@@ -52,7 +52,7 @@ import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
 import { UniversalUploadModal } from '@/components/universal-upload';
 import { Input } from '@/components/ui/input';
 import Popup from '@/components/ui/popup';
-import { addWorkingHours, createLocalDateTime } from '@/lib/shop-time'; // <-- import helpers
+import { addWorkingHours, createLocalDateTime } from '@/lib/shop-time';
 
 // ─── Constants & Helpers ──────────────────────────────────────────────────
 
@@ -976,6 +976,40 @@ const FabDetailsPage = () => {
         : '#';
     const statusInfo = getFabStatusInfo(fab?.status_id);
 
+    // ─── Compute schedule warning ──────────────────────────────────────────
+    const estCompletionDate = parseDateForDisplay(fab?.shop_est_completion_date);
+    const scheduleDateStrings: { label: string; date: Date | undefined }[] = [];
+
+    if (fab) {
+        const addDate = (label: string, value: string | undefined) => {
+            const parsed = parseDateForDisplay(value);
+            if (parsed) scheduleDateStrings.push({ label, date: parsed });
+        };
+        addDate('Shop Suggested', fab.estimated_completion_date);
+        addDate('Shop Date Scheduled', fab.shop_date_schedule);
+        addDate('Installation Date', fab.installation_date);
+        // Plans
+        (fab.plans || []).forEach((plan: any) => {
+            if (plan.scheduled_start_date) {
+                const parsed = parseDateForDisplay(plan.scheduled_start_date);
+                if (parsed) {
+                    const section = planSections.find(s => s.id === plan.planning_section_id);
+                    const label = section ? `${section.plan_name} Start` : 'Plan Start';
+                    scheduleDateStrings.push({ label, date: parsed });
+                }
+            }
+        });
+    }
+
+    const lateDates = scheduleDateStrings.filter(({ date }) => {
+        if (!estCompletionDate || !date) return false;
+        return date > estCompletionDate;
+    });
+
+    const showDateWarning = estCompletionDate && lateDates.length > 0;
+
+    // ─── Render ──────────────────────────────────────────────────────────────
+
     if (isLoading) return <LoadingSkeleton />;
     if (isError) return <ErrorAlert error={error} />;
     if (!fab) return <NotFoundAlert />;
@@ -1031,6 +1065,34 @@ const FabDetailsPage = () => {
                     </Toolbar>
                 </div>
             </div>
+
+            {/* ─── SCHEDULE WARNING BANNER ─────────────────────────────────── */}
+            {showDateWarning && (
+                <div className="px-4 sm:px-6 lg:px-8 mt-4">
+                    <Alert variant="destructive" className="border-red-500 bg-red-50">
+                        <AlertCircle className="h-5 w-5 text-red-600" />
+                        <AlertTitle className="text-red-800 font-bold text-base">
+                            Schedule Conflict Detected
+                        </AlertTitle>
+                        <AlertDescription className="text-red-700">
+                            <p className="font-medium">
+                                The following scheduled dates are <strong>after</strong> the estimated completion date (
+                                <span className="font-bold">{safeFormatDate(fab.shop_est_completion_date, 'MMM dd, yyyy')}</span>):
+                            </p>
+                            <ul className="list-disc list-inside mt-1 space-y-0.5">
+                                {lateDates.map(({ label, date }) => (
+                                    <li key={label}>
+                                        <span className="font-semibold">{label}:</span> {format(date, 'MMM dd, yyyy')}
+                                    </li>
+                                ))}
+                            </ul>
+                            <p className="mt-2 text-sm font-medium">
+                                Please adjust the schedule or update the estimated completion date to avoid conflicts.
+                            </p>
+                        </AlertDescription>
+                    </Alert>
+                </div>
+            )}
 
             {/* Main content grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6 px-4 sm:px-6 lg:px-8">

@@ -112,6 +112,7 @@ const DepartmentTable = ({ employees }: employeeProps) => {
                 size: 200,
                 meta: {
                     skeleton: <Skeleton className="h-5 w-[160px]" />,
+                    format: (_value: any, row: DepartmentUser) => `${row.first_name} ${row.last_name}`,
                 },
             },
             {
@@ -127,6 +128,7 @@ const DepartmentTable = ({ employees }: employeeProps) => {
                 ),
                 enableSorting: true,
                 size: 200,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: 'address',
@@ -141,6 +143,7 @@ const DepartmentTable = ({ employees }: employeeProps) => {
                 ),
                 enableSorting: false,
                 size: 280,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: 'phone',
@@ -155,6 +158,7 @@ const DepartmentTable = ({ employees }: employeeProps) => {
                 ),
                 enableSorting: false,
                 size: 130,
+                meta: { format: (value: string) => value || '-' },
             },
             {
                 id: 'role',
@@ -167,6 +171,7 @@ const DepartmentTable = ({ employees }: employeeProps) => {
                 ),
                 enableSorting: true,
                 size: 120,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: 'status',
@@ -177,6 +182,14 @@ const DepartmentTable = ({ employees }: employeeProps) => {
                 cell: ({ row }) => <StatusBadge status={row.original.status} />,
                 enableSorting: true,
                 size: 110,
+                meta: {
+                    format: (value: string | number | undefined) => {
+                        const s = value === undefined || value === null ? '' : String(value);
+                        if (s === '1') return 'Active';
+                        if (s === '0') return 'Inactive';
+                        return s;
+                    },
+                },
             },
         ],
         [],

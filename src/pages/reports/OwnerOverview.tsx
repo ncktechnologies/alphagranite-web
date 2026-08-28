@@ -83,6 +83,7 @@ export function OwnerOverview() {
             cell: ({ row }) => <span className="text-sm font-medium">{formatStage(row.original.stage)}</span>,
             size: 260,
             enableSorting: true,
+            meta: { format: (value: string) => formatStage(value) || '' },
         },
         {
             accessorKey: 'count',
@@ -94,6 +95,7 @@ export function OwnerOverview() {
             ),
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
     ], []);
 

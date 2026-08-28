@@ -361,6 +361,7 @@ export const JobSalesTable = ({
             enableSorting: false,
             enableHiding: false,
             size: 48,
+            meta: { format: () => '' },
         },
 
         // Actions column – now passes canAddNote to ActionsCell
@@ -377,6 +378,7 @@ export const JobSalesTable = ({
             ),
             enableSorting: false,
             size: 60,
+            meta: { format: () => '' },
         },
 
         // Fab Type
@@ -387,6 +389,7 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs uppercase">{row.original.fab_type}</span>,
             size: 100,
             enableSorting: true,
+            meta: { format: (value: string) => value?.toUpperCase() || '' },
         },
 
         // Fab ID
@@ -401,6 +404,7 @@ export const JobSalesTable = ({
             ),
             size: 80,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
         // Job Name
@@ -411,6 +415,7 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs break-words max-w-[180px]">{row.original.job_name}</span>,
             size: 160,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
         // Job No
@@ -445,6 +450,7 @@ export const JobSalesTable = ({
             },
             size: 100,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
         // Fab Info
@@ -479,6 +485,7 @@ export const JobSalesTable = ({
             },
             size: 400,
             enableSorting: false,
+            meta: { format: (_value: any, row: IJob) => { const jobInfo = [row.acct_name || row.account_name, row.job_name].filter(Boolean); const stoneInfo = [row.stone_type_name, row.stone_color_name, row.stone_thickness_value].filter(Boolean); const materialInfo = [row.input_area, row.edge_name].filter(Boolean); return [...jobInfo, ...stoneInfo, ...materialInfo].join(' - '); } },
         },
 
         // Template Needed
@@ -489,6 +496,7 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs">{row.original.template_needed}</span>,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
         // Acct Name
@@ -499,6 +507,7 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs break-words max-w-[140px]">{row.original.acct_name}</span>,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
         // No of pieces
@@ -509,6 +518,7 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs break-words max-w-[110px]">{row.original.no_of_pieces}</span>,
             size: 100,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
         // Template Schedule
@@ -519,6 +529,7 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs">{row.original.template_schedule}</span>,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
         // Template Received
@@ -529,6 +540,7 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs">{row.original.template_received}</span>,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
         // Templater
@@ -539,6 +551,7 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs">{row.original.templater}</span>,
             size: 130,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
         // Drafter
@@ -571,6 +584,7 @@ export const JobSalesTable = ({
             },
             size: 160,
             enableSorting: true,
+            meta: { format: (value: string) => value || '—' },
         },
 
         // CNC Operator
@@ -602,6 +616,7 @@ export const JobSalesTable = ({
             },
             size: 160,
             enableSorting: true,
+            meta: { format: (value: string) => value || '—' },
         },
 
         // Total Sq Ft
@@ -612,6 +627,7 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs break-words max-w-[100px]">{row.original.total_sq_ft}</span>,
             size: 100,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
         // Revisor
@@ -622,6 +638,7 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs break-words max-w-[120px]">{row.original.revisor}</span>,
             size: 100,
             enableSorting: true,
+            meta: { format: (value: string) => value || '—' },
         },
 
         // Revised

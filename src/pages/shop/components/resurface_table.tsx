@@ -359,6 +359,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
         return { jobInfo, materialInfo, stoneInfo };
     };
 
+    // ─── Columns with meta.format ──────────────────────────────────────────────
     const columns = useMemo<ColumnDef<ShopPlanRow>[]>(() => [
         {
             id: 'actions',
@@ -377,6 +378,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             ),
             enableSorting: false,
             size: 50,
+            meta: { format: () => '' }, // skip export
         },
         {
             id: 'shop_est_completion_date',
@@ -389,6 +391,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             ),
             enableSorting: true,
             size: 150,
+            meta: {
+                format: (value, row) => row.shop_est_completion_date ? safeFormatDate(row.shop_est_completion_date, 'MM/dd/yyyy') : '-',
+            },
         },
         {
             id: 'shop_cut_date_scheduled',
@@ -401,6 +406,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             ),
             enableSorting: true,
             size: 150,
+            meta: {
+                format: (value, row) => row.scheduled_start_date ? format(new Date(row.scheduled_start_date), 'MM/dd/yyyy') : '-',
+            },
         },
         {
             id: 'shop_office_date_scheduled',
@@ -411,6 +419,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             ),
             enableSorting: true,
             size: 150,
+            meta: {
+                format: (value, row) => row.shop_office_date_scheduled || '-',
+            },
         },
         {
             id: 'fab_type',
@@ -419,6 +430,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             cell: ({ row }) => <span className="text-sm text-text whitespace-nowrap">{row.original.fab_type}</span>,
             enableSorting: true,
             size: 130,
+            meta: {
+                format: (value, row) => row.fab_type || '',
+            },
         },
         {
             id: 'fab_id',
@@ -431,6 +445,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             ),
             enableSorting: true,
             size: 100,
+            meta: {
+                format: (value, row) => row.fab_id,
+            },
         },
         {
             id: 'job_no',
@@ -451,6 +468,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             ),
             enableSorting: true,
             size: 100,
+            meta: {
+                format: (value, row) => row.job_no,
+            },
         },
         {
             id: 'fab_info',
@@ -486,6 +506,20 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             },
             enableSorting: false,
             size: 400,
+            meta: {
+                format: (value, row) => {
+                    const parts = [
+                        row.acct_name,
+                        row.job_name,
+                        row.input_area,
+                        row.stone_type_name,
+                        row.stone_color_name,
+                        row.stone_thickness,
+                        row.edge_name,
+                    ].filter(Boolean);
+                    return parts.join(' - ');
+                },
+            },
         },
         {
             id: 'pieces',
@@ -493,6 +527,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             header: ({ column }) => <DataGridColumnHeader title="NO. OF PIECES" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.pieces}</span>,
             enableSorting: true,
+            meta: {
+                format: (value, row) => String(row.pieces),
+            },
         },
         {
             id: 'total_sq_ft',
@@ -500,6 +537,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.total_sq_ft.toFixed(2)}</span>,
             enableSorting: true,
+            meta: {
+                format: (value, row) => row.total_sq_ft.toFixed(2),
+            },
         },
         {
             id: 'wl_ln_ft',
@@ -507,6 +547,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             header: ({ column }) => <DataGridColumnHeader title="WJ:LN FT" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.wl_ln_ft.toFixed(2)}</span>,
             enableSorting: true,
+            meta: {
+                format: (value, row) => row.wl_ln_ft.toFixed(2),
+            },
         },
         {
             id: 'sl_ln_ft',
@@ -514,6 +557,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             header: ({ column }) => <DataGridColumnHeader title="SAW:LN FT" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.sl_ln_ft.toFixed(2)}</span>,
             enableSorting: true,
+            meta: {
+                format: (value, row) => row.sl_ln_ft.toFixed(2),
+            },
         },
         {
             id: 'edging_ln_ft',
@@ -521,6 +567,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             header: ({ column }) => <DataGridColumnHeader title="EDGING:LN FT" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.edging_ln_ft.toFixed(2)}</span>,
             enableSorting: true,
+            meta: {
+                format: (value, row) => row.edging_ln_ft.toFixed(2),
+            },
         },
         {
             id: 'cnc_ln_ft',
@@ -528,6 +577,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             header: ({ column }) => <DataGridColumnHeader title="CNC:LN FT" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.cnc_ln_ft.toFixed(2)}</span>,
             enableSorting: true,
+            meta: {
+                format: (value, row) => row.cnc_ln_ft.toFixed(2),
+            },
         },
         {
             id: 'milter_ln_ft',
@@ -535,6 +587,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             header: ({ column }) => <DataGridColumnHeader title="MITER:LN FT" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.milter_ln_ft.toFixed(2)}</span>,
             enableSorting: true,
+            meta: {
+                format: (value, row) => row.milter_ln_ft.toFixed(2),
+            },
         },
         {
             id: 'total_cut_ln_ft',
@@ -542,6 +597,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             header: ({ column }) => <DataGridColumnHeader title="TOTAL CUT LN FT" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.total_cut_ln_ft.toFixed(2)}</span>,
             enableSorting: true,
+            meta: {
+                format: (value, row) => row.total_cut_ln_ft.toFixed(2),
+            },
         },
         {
             id: 'shop_fab_notes',
@@ -571,6 +629,16 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             },
             enableSorting: false,
             size: 220,
+            meta: {
+                format: (value, row) => {
+                    const shopNotes = Array.isArray(row.fab_notes)
+                        ? row.fab_notes.filter((n: any) => n.stage === 'shop')
+                        : [];
+                    if (shopNotes.length === 0) return 'No notes';
+                    const latest = shopNotes[0];
+                    return `${latest.note} (by ${latest.created_by_name || 'Unknown'})`;
+                },
+            },
         },
         // {
         //     id: 'notes',
@@ -579,8 +647,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
         //     cell: ({ row }) => <span className="text-sm text-text">{row.original.plan_notes || '-'}</span>,
         //     enableSorting: true,
         //     size: 300,
+        //     meta: { format: (value, row) => row.plan_notes || '-' },
         // },
-    ], []);
+    ], [canManageShopPlans, canAddNote, handleViewCalendar, handleCreatePlan, handleAutoSchedule, handleAddNote]);
 
     const table = useReactTable({
         columns,
@@ -692,9 +761,11 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
                         </div>
 
                         <CardToolbar>
-                            <Button variant="outline" onClick={() => exportTableToCSV(table, 'shop-cut-planning')} disabled={isApiLoading || externalLoading}>
-                                Export CSV
-                            </Button>
+                            {canExport && (
+                                <Button variant="outline" onClick={() => exportTableToCSV(table, 'shop-resurfacing')} disabled={isApiLoading || externalLoading}>
+                                    Export CSV
+                                </Button>
+                            )}
                         </CardToolbar>
                     </CardHeader>
 

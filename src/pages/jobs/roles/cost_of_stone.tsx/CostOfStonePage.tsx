@@ -137,7 +137,7 @@ const CostOfStonePage = () => {
                 visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'revenue', 'stone_cost']}
                 // 👇 Pass permission props for Add Note and On Hold toggle
                 canAddNote={canAddNote}
-                canToggleOnHold={canToggleOnHold}
+                // canToggleOnHold={canToggleOnHold}
                 customActionsColumn={(job) => {
                     const isEditable = (job as any).is_cost_of_stone_editable;
                     // Show the edit button only if the user has permission AND the record is editable

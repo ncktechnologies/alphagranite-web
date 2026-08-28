@@ -224,6 +224,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             cell: ({ row }) => <span className="text-xs uppercase font-semibold">{row.original.fab_type}</span>,
             enableSorting: true,
             size: 110,
+            meta: { format: (value: string) => value?.toUpperCase() || '' },
         },
         {
             id: 'fab_id',
@@ -232,6 +233,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             cell: ({ row }) => <span className="text-xs font-medium hover:underline cursor-pointer">{row.original.fab_id}</span>,
             enableSorting: true,
             size: 80,
+            meta: { format: (value: string) => value || '' },
         },
         {
             id: 'job_no',
@@ -240,6 +242,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             cell: ({ row }) => <span className="text-xs">{row.original.job_no}</span>,
             enableSorting: true,
             size: 80,
+            meta: { format: (value: string) => value || '' },
         },
         {
             id: 'fab_info',
@@ -256,6 +259,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
                 );
             },
             size: 280,
+            meta: { format: (_value: any, row: JobStatusRow) => { const r = row; const line1 = [r.acct_name, r.job_name, r.input_area].filter(Boolean).join(' - '); const line2 = [r.stone_type_name, r.stone_color_name, r.stone_thickness_value, r.edge_name].filter(Boolean).join(' - '); return [line1, line2].filter(Boolean).join(' | '); } },
         },
         {
             id: 'pieces',
@@ -264,6 +268,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             cell: ({ row }) => <span className="text-xs">{row.original.pieces || '—'}</span>,
             enableSorting: true,
             size: 90,
+            meta: { format: (value: any) => value || '—' },
         },
         {
             id: 'total_sq_ft',
@@ -272,6 +277,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             cell: ({ row }) => <span className="text-xs">{row.original.total_sq_ft.toFixed(1)}</span>,
             enableSorting: true,
             size: 100,
+            meta: { format: (value: number) => value?.toFixed(1) ?? '0' },
         },
            // NEW COLUMN: REVENUE
         {
@@ -284,6 +290,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             },
             enableSorting: true,
             size: 100,
+            meta: { format: (value: number) => '$' + value?.toFixed(2) },
         },
         // NEW COLUMN: COST OF STONE
         {
@@ -296,30 +303,35 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             },
             enableSorting: true,
             size: 120,
+            meta: { format: (value: number) => '$' + value?.toFixed(2) },
         },
         {
             id: 'template',
             header: ({ column }) => <DataGridColumnHeader title="TEMPLATE" column={column} />,
             cell: ({ row }) => <StageCell needed={row.original.template_needed} date={row.original.template_date} />,
             size: 110,
+            meta: { format: (_value: any, row: JobStatusRow) => row.template_date ? row.template_date : (row.template_needed ? 'Needed' : '—') },
         },
         {
             id: 'pre_draft_review',
             header: ({ column }) => <DataGridColumnHeader title="PRE-DRAFT REVIEW" column={column} />,
             cell: ({ row }) => <StageCell needed={row.original.pre_draft_needed} date={row.original.pre_draft_review_date} />,
             size: 140,
+            meta: { format: (_value: any, row: JobStatusRow) => row.pre_draft_review_date ? row.pre_draft_review_date : (row.pre_draft_needed ? 'Needed' : '—') },
         },
         {
             id: 'draft',
             header: ({ column }) => <DataGridColumnHeader title="DRAFT" column={column} />,
             cell: ({ row }) => <StageCell needed={row.original.draft_needed} date={row.original.draft_date} />,
             size: 110,
+            meta: { format: (_value: any, row: JobStatusRow) => row.draft_date ? row.draft_date : (row.draft_needed ? 'Needed' : '—') },
         },
         {
             id: 'sct',
             header: ({ column }) => <DataGridColumnHeader title="SCT" column={column} />,
             cell: ({ row }) => <StageCell needed={row.original.sct_needed} date={row.original.sct_date} />,
             size: 110,
+            meta: { format: (_value: any, row: JobStatusRow) => row.sct_date ? row.sct_date : (row.sct_needed ? 'Needed' : '—') },
         },
         {
             id: 'been_revised',
@@ -327,18 +339,21 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             header: ({ column }) => <DataGridColumnHeader title="BEEN REVISED" column={column} />,
             cell: ({ row }) => <YesNoBadge value={row.original.been_revised} />,
             size: 110,
+            meta: { format: (value: boolean) => value ? 'Yes' : 'No' },
         },
         {
             id: 'slabsmith',
             header: ({ column }) => <DataGridColumnHeader title="SLABSMITH COMPLETED" column={column} />,
             cell: ({ row }) => <StageCell needed={row.original.slabsmith_needed} date={row.original.slabsmith_date} />,
             size: 160,
+            meta: { format: (_value: any, row: JobStatusRow) => row.slabsmith_date ? row.slabsmith_date : (row.slabsmith_needed ? 'Needed' : '—') },
         },
         {
             id: 'final_programming',
             header: ({ column }) => <DataGridColumnHeader title="FINAL PROGRAMMING" column={column} />,
             cell: ({ row }) => <StageCell needed={row.original.fp_needed} date={row.original.final_programming_date} />,
             size: 150,
+            meta: { format: (_value: any, row: JobStatusRow) => row.final_programming_date ? row.final_programming_date : (row.fp_needed ? 'Needed' : '—') },
         },
         {
             id: 'shop_date',
@@ -350,6 +365,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             },
             enableSorting: true,
             size: 110,
+            meta: { format: (value: string) => value ? format(new Date(value), 'MM/dd/yyyy') : '—' },
         },
         {
             id: 'est_completion_date',
@@ -361,6 +377,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             },
             enableSorting: true,
             size: 160,
+            meta: { format: (value: string) => value ? format(new Date(value), 'MM/dd/yyyy') : '—' },
         },
         {
             id: 'percent_complete',
@@ -377,6 +394,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             },
             enableSorting: true,
             size: 120,
+            meta: { format: (value: number) => (value ?? 0).toFixed(2) + '%' },
         },
         {
             id: 'shop_completion_date',
@@ -388,6 +406,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             },
             enableSorting: true,
             size: 160,
+            meta: { format: (value: string) => value ? format(new Date(value), 'MM/dd/yyyy') : '—' },
         },
         {
             id: 'install_date',
@@ -399,6 +418,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             },
             enableSorting: true,
             size: 120,
+            meta: { format: (value: string) => value ? format(new Date(value), 'MM/dd/yyyy') : '—' },
         },
         {
             id: 'install_confirmed',
@@ -406,6 +426,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             header: ({ column }) => <DataGridColumnHeader title="INSTALL CONFIRMED" column={column} />,
             cell: ({ row }) => <YesNoBadge value={row.original.install_confirmed} />,
             size: 140,
+            meta: { format: (value: boolean) => value ? 'Yes' : 'No' },
         },
         {
             id: 'installed',
@@ -413,6 +434,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             header: ({ column }) => <DataGridColumnHeader title="INSTALLED" column={column} />,
             cell: ({ row }) => <YesNoBadge value={row.original.installed} />,
             size: 120,
+            meta: { format: (value: boolean) => value ? 'Yes' : 'No' },
         },
     ], []);
 

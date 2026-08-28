@@ -54,6 +54,24 @@ import JobFormSheet from './components/JobFormSheet';
 import { Link } from 'react-router';
 import { useToggleNeedToInvoiceMutation, useMarkJobInvoicedMutation, useAddJobNotesMutation } from '@/store/api/job';
 import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
+import { format } from 'date-fns';
+
+// ─── Helper functions for formatting ──────────────────────────────────────
+const formatDateForExport = (value: any): string => {
+  if (!value) return '-';
+  try {
+    const date = new Date(value);
+    if (!isNaN(date.getTime())) return format(date, 'MMM dd, yyyy');
+  } catch {}
+  return String(value);
+};
+
+const formatCurrency = (value: any): string => {
+  if (value == null || value === 'N/A' || value === '') return 'N/A';
+  const num = Number(value);
+  if (isNaN(num)) return 'N/A';
+  return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+};
 
 // Update the ExtendedJob interface to include API fields
 interface ExtendedJob extends Omit<Job, 'project_value'> {
@@ -231,7 +249,7 @@ export const NeedToInvoicePage = () => {
     setInvoicedPagination(prev => ({ ...prev, pageIndex: 0 }));
   }, [invoicedSearchQuery, invoicedSelectedStatus]);
 
-  // Common columns
+  // ─── Common columns with meta.format ──────────────────────────────────────
   const commonColumns = useMemo<ColumnDef<ExtendedJob>[]>(() => [
     {
       id: 'name',
@@ -240,6 +258,7 @@ export const NeedToInvoicePage = () => {
       cell: ({ row }) => <span className="text-sm text-text">{row.original.name}</span>,
       enableSorting: true,
       size: 200,
+      meta: { format: (value: string) => value || '' },
     },
     {
       id: 'job_number',
@@ -256,6 +275,7 @@ export const NeedToInvoicePage = () => {
       ),
       enableSorting: true,
       size: 150,
+      meta: { format: (value: string) => value || '' },
     },
     {
       id: 'project_value',
@@ -268,6 +288,7 @@ export const NeedToInvoicePage = () => {
       ),
       enableSorting: true,
       size: 150,
+      meta: { format: (value: any) => formatCurrency(value) },
     },
     {
       id: 'created_at',
@@ -280,6 +301,7 @@ export const NeedToInvoicePage = () => {
       ),
       enableSorting: true,
       size: 150,
+      meta: { format: (value: any) => formatDateForExport(value) },
     },
     {
       id: 'sales_person_name',
@@ -288,6 +310,7 @@ export const NeedToInvoicePage = () => {
       cell: ({ row }) => <span className="text-sm text-text">{row.original.sales_person_name || 'N/A'}</span>,
       enableSorting: true,
       size: 150,
+      meta: { format: (value: string) => value || 'N/A' },
     },
     {
       id: 'account_name',
@@ -296,6 +319,7 @@ export const NeedToInvoicePage = () => {
       cell: ({ row }) => <span className="text-sm text-text">{row.original.account_name || 'N/A'}</span>,
       enableSorting: true,
       size: 150,
+      meta: { format: (value: string) => value || 'N/A' },
     },
     {
       id: 'notes',
@@ -321,10 +345,20 @@ export const NeedToInvoicePage = () => {
       },
       size: 150,
       enableSorting: true,
+      meta: {
+        format: (value: any) => {
+          if (typeof value === 'string') return value;
+          if (Array.isArray(value) && value.length > 0) {
+            const first = value[0];
+            return typeof first === 'string' ? first : first?.note || '';
+          }
+          return '-';
+        },
+      },
     },
   ], []);
 
-  // Columns for the "Need to Invoice" table – NO toggle
+  // ─── Columns for the "Need to Invoice" table ──────────────────────────────
   const needToInvoiceColumns = useMemo<ColumnDef<ExtendedJob>[]>(() => {
     const baseColumns: ColumnDef<ExtendedJob>[] = [...commonColumns];
     baseColumns.push({
@@ -360,11 +394,12 @@ export const NeedToInvoicePage = () => {
       ),
       enableSorting: false,
       size: 60,
+      meta: { format: () => '' }, // skip export
     });
     return baseColumns;
   }, [commonColumns, canManageInvoice, handleView, handleOpenNoteModal, handleOpenConfirm]);
 
-  // Columns for the "Invoiced" table
+  // ─── Columns for the "Invoiced" table ─────────────────────────────────────
   const invoicedColumns = useMemo<ColumnDef<ExtendedJob>[]>(() => [
     ...commonColumns,
     {
@@ -380,6 +415,7 @@ export const NeedToInvoicePage = () => {
       ),
       enableSorting: false,
       size: 120,
+      meta: { format: () => 'Invoiced' },
     },
     {
       id: 'actions',
@@ -400,12 +436,12 @@ export const NeedToInvoicePage = () => {
                 Add Note
               </DropdownMenuItem>
             )}
-            {/* Optionally allow Unmark? */}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
       enableSorting: false,
       size: 60,
+      meta: { format: () => '' }, // skip export
     },
   ], [commonColumns, canManageInvoice, handleView, handleOpenNoteModal]);
 

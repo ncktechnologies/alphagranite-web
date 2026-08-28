@@ -20,6 +20,70 @@ const $ = (v: number) => `$${v.toLocaleString(undefined, { minimumFractionDigits
 const num = (v: number, d = 2) => v.toFixed(d);
 const pct = (v: number) => num(v, 2) + '%';
 
+// ─── Helper: get metric labels ─────────────────────────────────────────────
+const getMetricLabel = (key: string): string => {
+    const labels: Record<string, string> = {
+        number_of_days: 'Number of Days',
+        cut_sqft_saw: 'Cut Sq. Ft (saw)',
+        wj_sqft: 'WJ Sq. Ft.',
+        completed_sqft: 'Completed Sq. Ft',
+        average_sqft_per_day: 'Average Sq. Ft. per Day',
+        gross_revenue: 'Gross Revenue',
+        gross_profit: 'Gross Profit',
+        average_revenue_per_day: 'Average Revenue per Day',
+        total_head_count_inc_yard: 'Total Head Count (Inc yard)',
+        wages_basic_shop_yard: 'Wages Basic Shop & Yard',
+        overtime_shop_yard: 'Overtime Shop & Yard',
+        cost_of_overtime_pct: 'Cost Of Overtime as a % of Basic Wages',
+        total_labor_cost: 'Total Labor Cost',
+        regular_hours: 'Regular Hours',
+        overtime_hours: 'Overtime Hours',
+        overtime_hours_pct: 'Overtime Hours as % of Total Hours',
+        total_hours: 'Total Hours',
+        shop_labor_per_hour: 'Shop Labor Per hour',
+        shop_overhead_per_hour: 'Shop Overhead per hour',
+        shop_labor_overhead_per_hour: 'Shop labor & overhead per hour',
+        manpower_cost_per_hour: 'Manpower cost per hour',
+        sqft_per_labor_hour: 'Sq. Ft. Per Labor Hour',
+        shop_productivity_sqft_per_hour: 'Shop Productivity - Sq. Ft per Hour',
+        labor_cost_per_sq_ft: 'Labor Cost Per sq. Ft.',
+        labor_cost_pct_per_dollar_sold: 'Labor Cost as % per Dollar Sold',
+        shop_overhead_cost_per_sqft: 'Shop overhead cost per sq.ft fabricated',
+        shop_total_cost_per_sqft: 'Shop total cost per sq.ft fabricated',
+        gross_profit_per_sf_completed: 'Gross Profit per s.f. completed',
+        gross_profit_less_shop_total_cost_psf: 'Gross Profit less Shop total cost psf',
+        gross_revenue_per_sqft_fabricated: 'Gross Revenue per sq.ft fabricated',
+    };
+    return labels[key] || key.replace(/_/g, ' ').toUpperCase();
+};
+
+// ─── Helper: determine if metric is currency, percentage, or number ──────
+const isCurrencyMetric = (key: string): boolean => {
+    return ['gross_revenue', 'gross_profit', 'average_revenue_per_day', 'total_labor_cost',
+        'wages_basic_shop_yard', 'overtime_shop_yard', 'shop_labor_per_hour',
+        'shop_overhead_per_hour', 'shop_labor_overhead_per_hour', 'manpower_cost_per_hour',
+        'labor_cost_per_sq_ft', 'shop_overhead_cost_per_sqft', 'shop_total_cost_per_sqft',
+        'gross_profit_per_sf_completed', 'gross_profit_less_shop_total_cost_psf',
+        'gross_revenue_per_sqft_fabricated'].includes(key);
+};
+
+const isPercentMetric = (key: string): boolean => {
+    return ['cost_of_overtime_pct', 'overtime_hours_pct', 'labor_cost_pct_per_dollar_sold'].includes(key);
+};
+
+const isHeadCountMetric = (key: string): boolean => {
+    return key === 'total_head_count_inc_yard';
+};
+
+// ─── Format a single value for export ─────────────────────────────────────
+const formatValue = (key: string, val: any): string => {
+    if (val === undefined || val === null) return '-';
+    if (isCurrencyMetric(key)) return $(Number(val));
+    if (isPercentMetric(key)) return pct(Number(val));
+    if (isHeadCountMetric(key)) return num(Number(val), 1);
+    return num(Number(val), 2);
+};
+
 // ─── Pivot transformation ───────────────────────────────────────────────────
 const pivotWeeklyData = (weeklyData: any[]) => {
     if (!weeklyData.length) return { rows: [], weeks: [] };
@@ -68,12 +132,11 @@ const pivotWeeklyData = (weeklyData: any[]) => {
 };
 
 export function WeeklyFabricationCostReport() {
-    // ─── Month/Year filter (instead of date range) ────────────────────────
+    // ─── Month/Year filter ──────────────────────────────────────────────────
     const now = new Date();
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date(now.getFullYear(), now.getMonth(), 1));
     const [tempDate, setTempDate] = useState<Date | undefined>(selectedDate);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-    // This is the month displayed in the calendar
     const [calendarMonth, setCalendarMonth] = useState<Date>(selectedDate || now);
 
     // ─── Pagination & sorting ──────────────────────────────────────────────
@@ -86,7 +149,6 @@ export function WeeklyFabricationCostReport() {
         if (selectedDate) {
             params.year = selectedDate.getFullYear();
             params.month = selectedDate.getMonth() + 1;
-            // Also set start/end for the API (if needed)
             const start = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
             const end = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
             params.start_date = format(start, 'yyyy-MM-dd');
@@ -109,7 +171,7 @@ export function WeeklyFabricationCostReport() {
     // ─── Pivot the weekly data ───────────────────────────────────────────────
     const { rows: pivotedRows, weeks } = useMemo(() => pivotWeeklyData(weeklyData), [weeklyData]);
 
-    // ─── Dynamic columns for pivoted table ──────────────────────────────────
+    // ─── Dynamic columns for pivoted table with meta.format ──────────────────
     const pivotedColumns = useMemo<ColumnDef<any>[]>(() => {
         const cols: ColumnDef<any>[] = [
             {
@@ -118,42 +180,13 @@ export function WeeklyFabricationCostReport() {
                 header: ({ column }) => <DataGridColumnHeader title="METRIC" column={column} />,
                 cell: ({ row }) => {
                     const key = row.original.metric;
-                    const labels: Record<string, string> = {
-                        number_of_days: 'Number of Days',
-                        cut_sqft_saw: 'Cut Sq. Ft (saw)',
-                        wj_sqft: 'WJ Sq. Ft.',
-                        completed_sqft: 'Completed Sq. Ft',
-                        average_sqft_per_day: 'Average Sq. Ft. per Day',
-                        gross_revenue: 'Gross Revenue',
-                        gross_profit: 'Gross Profit',
-                        average_revenue_per_day: 'Average Revenue per Day',
-                        total_head_count_inc_yard: 'Total Head Count (Inc yard)',
-                        wages_basic_shop_yard: 'Wages Basic Shop & Yard',
-                        overtime_shop_yard: 'Overtime Shop & Yard',
-                        cost_of_overtime_pct: 'Cost Of Overtime as a % of Basic Wages',
-                        total_labor_cost: 'Total Labor Cost',
-                        regular_hours: 'Regular Hours',
-                        overtime_hours: 'Overtime Hours',
-                        overtime_hours_pct: 'Overtime Hours as % of Total Hours',
-                        total_hours: 'Total Hours',
-                        shop_labor_per_hour: 'Shop Labor Per hour',
-                        shop_overhead_per_hour: 'Shop Overhead per hour',
-                        shop_labor_overhead_per_hour: 'Shop labor & overhead per hour',
-                        manpower_cost_per_hour: 'Manpower cost per hour',
-                        sqft_per_labor_hour: 'Sq. Ft. Per Labor Hour',
-                        shop_productivity_sqft_per_hour: 'Shop Productivity - Sq. Ft per Hour',
-                        labor_cost_per_sq_ft: 'Labor Cost Per sq. Ft.',
-                        labor_cost_pct_per_dollar_sold: 'Labor Cost as % per Dollar Sold',
-                        shop_overhead_cost_per_sqft: 'Shop overhead cost per sq.ft fabricated',
-                        shop_total_cost_per_sqft: 'Shop total cost per sq.ft fabricated',
-                        gross_profit_per_sf_completed: 'Gross Profit per s.f. completed',
-                        gross_profit_less_shop_total_cost_psf: 'Gross Profit less Shop total cost psf',
-                        gross_revenue_per_sqft_fabricated: 'Gross Revenue per sq.ft fabricated',
-                    };
-                    return <span className="text-sm font-medium">{labels[key] || key.replace(/_/g, ' ').toUpperCase()}</span>;
+                    return <span className="text-sm font-medium">{getMetricLabel(key)}</span>;
                 },
                 size: 250,
                 enableSorting: true,
+                meta: {
+                    format: (value: any, row: any) => getMetricLabel(row.metric),
+                },
             },
         ];
 
@@ -166,24 +199,17 @@ export function WeeklyFabricationCostReport() {
                     const val = row.original[`week_${idx}`];
                     if (val === undefined || val === null) return <span className="text-sm">-</span>;
                     const key = row.original.metric;
-                    if (['gross_revenue', 'gross_profit', 'average_revenue_per_day', 'total_labor_cost',
-                        'wages_basic_shop_yard', 'overtime_shop_yard', 'shop_labor_per_hour',
-                        'shop_overhead_per_hour', 'shop_labor_overhead_per_hour', 'manpower_cost_per_hour',
-                        'labor_cost_per_sq_ft', 'shop_overhead_cost_per_sqft', 'shop_total_cost_per_sqft',
-                        'gross_profit_per_sf_completed', 'gross_profit_less_shop_total_cost_psf',
-                        'gross_revenue_per_sqft_fabricated'].includes(key)) {
-                        return <span className="text-sm">{$(val)}</span>;
-                    }
-                    if (['cost_of_overtime_pct', 'overtime_hours_pct', 'labor_cost_pct_per_dollar_sold'].includes(key)) {
-                        return <span className="text-sm">{pct(val)}</span>;
-                    }
-                    if (['total_head_count_inc_yard'].includes(key)) {
-                        return <span className="text-sm">{num(val, 1)}</span>;
-                    }
-                    return <span className="text-sm">{num(val)}</span>;
+                    return <span className="text-sm">{formatValue(key, val)}</span>;
                 },
                 size: 120,
                 enableSorting: true,
+                meta: {
+                    format: (value: any, row: any) => {
+                        const val = row[`week_${idx}`];
+                        if (val === undefined || val === null) return '-';
+                        return formatValue(row.metric, val);
+                    },
+                },
             });
         });
 
@@ -195,24 +221,17 @@ export function WeeklyFabricationCostReport() {
                 const val = row.original.total;
                 if (val === undefined || val === null) return <span className="text-sm">-</span>;
                 const key = row.original.metric;
-                if (['gross_revenue', 'gross_profit', 'average_revenue_per_day', 'total_labor_cost',
-                    'wages_basic_shop_yard', 'overtime_shop_yard', 'shop_labor_per_hour',
-                    'shop_overhead_per_hour', 'shop_labor_overhead_per_hour', 'manpower_cost_per_hour',
-                    'labor_cost_per_sq_ft', 'shop_overhead_cost_per_sqft', 'shop_total_cost_per_sqft',
-                    'gross_profit_per_sf_completed', 'gross_profit_less_shop_total_cost_psf',
-                    'gross_revenue_per_sqft_fabricated'].includes(key)) {
-                    return <span className="text-sm font-semibold">{$(val)}</span>;
-                }
-                if (['cost_of_overtime_pct', 'overtime_hours_pct', 'labor_cost_pct_per_dollar_sold'].includes(key)) {
-                    return <span className="text-sm font-semibold">{pct(val)}</span>;
-                }
-                if (['total_head_count_inc_yard'].includes(key)) {
-                    return <span className="text-sm font-semibold">{num(val, 1)}</span>;
-                }
-                return <span className="text-sm font-semibold">{num(val)}</span>;
+                return <span className="text-sm font-semibold">{formatValue(key, val)}</span>;
             },
             size: 140,
             enableSorting: true,
+            meta: {
+                format: (value: any, row: any) => {
+                    const val = row.total;
+                    if (val === undefined || val === null) return '-';
+                    return formatValue(row.metric, val);
+                },
+            },
         });
 
         return cols;
@@ -231,16 +250,70 @@ export function WeeklyFabricationCostReport() {
         columnResizeMode: 'onEnd',
     });
 
-    // ─── Annual Summary Table ──────────────────────────────────────────────
+    // ─── Annual Summary Table with meta.format ──────────────────────────────
     const annualColumns = useMemo<ColumnDef<any>[]>(() => [
-        { accessorKey: 'month', header: ({ column }) => <DataGridColumnHeader title="Month" column={column} />, size: 120, enableSorting: true },
-        { accessorKey: 'number_of_weeks', header: ({ column }) => <DataGridColumnHeader title="Weeks" column={column} />, size: 80, enableSorting: true },
-        { accessorKey: 'completed_sqft', header: ({ column }) => <DataGridColumnHeader title="Completed Sqft" column={column} />, cell: ({ row }) => num(row.original.completed_sqft), size: 130, enableSorting: true },
-        { accessorKey: 'gross_revenue', header: ({ column }) => <DataGridColumnHeader title="Gross Revenue" column={column} />, cell: ({ row }) => $(row.original.gross_revenue?.toLocaleString(undefined, { minimumFractionDigits: 2 })), size: 130, enableSorting: true },
-        { accessorKey: 'gross_profit', header: ({ column }) => <DataGridColumnHeader title="Gross Profit" column={column} />, cell: ({ row }) => $(row.original.gross_profit?.toLocaleString(undefined, { minimumFractionDigits: 2 })), size: 120, enableSorting: true },
-        { accessorKey: 'total_labor_cost', header: ({ column }) => <DataGridColumnHeader title="Labor Cost" column={column} />, cell: ({ row }) => $(row.original.total_labor_cost?.toLocaleString(undefined, { minimumFractionDigits: 2 })), size: 120, enableSorting: true },
-        { accessorKey: 'total_hours', header: ({ column }) => <DataGridColumnHeader title="Total Hours" column={column} />, cell: ({ row }) => num(row.original.total_hours), size: 110, enableSorting: true },
-        { accessorKey: 'gross_profit_less_shop_total_cost_psf', header: ({ column }) => <DataGridColumnHeader title="GP less total cost $/Sqft" column={column} />, cell: ({ row }) => $(row.original.gross_profit_less_shop_total_cost_psf?.toLocaleString(undefined, { minimumFractionDigits: 2 })), size: 170, enableSorting: true },
+        {
+            accessorKey: 'month',
+            header: ({ column }) => <DataGridColumnHeader title="Month" column={column} />,
+            size: 120,
+            enableSorting: true,
+            meta: { format: (value: string) => value || '' },
+        },
+        {
+            accessorKey: 'number_of_weeks',
+            header: ({ column }) => <DataGridColumnHeader title="Weeks" column={column} />,
+            size: 80,
+            enableSorting: true,
+            meta: { format: (value: number) => String(value) },
+        },
+        {
+            accessorKey: 'completed_sqft',
+            header: ({ column }) => <DataGridColumnHeader title="Completed Sqft" column={column} />,
+            cell: ({ row }) => num(row.original.completed_sqft),
+            size: 130,
+            enableSorting: true,
+            meta: { format: (value: number) => num(value) },
+        },
+        {
+            accessorKey: 'gross_revenue',
+            header: ({ column }) => <DataGridColumnHeader title="Gross Revenue" column={column} />,
+            cell: ({ row }) => $(row.original.gross_revenue),
+            size: 130,
+            enableSorting: true,
+            meta: { format: (value: number) => $(value) },
+        },
+        {
+            accessorKey: 'gross_profit',
+            header: ({ column }) => <DataGridColumnHeader title="Gross Profit" column={column} />,
+            cell: ({ row }) => $(row.original.gross_profit),
+            size: 120,
+            enableSorting: true,
+            meta: { format: (value: number) => $(value) },
+        },
+        {
+            accessorKey: 'total_labor_cost',
+            header: ({ column }) => <DataGridColumnHeader title="Labor Cost" column={column} />,
+            cell: ({ row }) => $(row.original.total_labor_cost),
+            size: 120,
+            enableSorting: true,
+            meta: { format: (value: number) => $(value) },
+        },
+        {
+            accessorKey: 'total_hours',
+            header: ({ column }) => <DataGridColumnHeader title="Total Hours" column={column} />,
+            cell: ({ row }) => num(row.original.total_hours),
+            size: 110,
+            enableSorting: true,
+            meta: { format: (value: number) => num(value) },
+        },
+        {
+            accessorKey: 'gross_profit_less_shop_total_cost_psf',
+            header: ({ column }) => <DataGridColumnHeader title="GP less total cost $/Sqft" column={column} />,
+            cell: ({ row }) => $(row.original.gross_profit_less_shop_total_cost_psf),
+            size: 170,
+            enableSorting: true,
+            meta: { format: (value: number) => $(value) },
+        },
     ], []);
 
     const [annualPagination, setAnnualPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 });
@@ -304,7 +377,6 @@ export function WeeklyFabricationCostReport() {
                                     size="sm"
                                     onClick={() => {
                                         if (tempDate) {
-                                            // Set to the first of the selected month
                                             const firstOfMonth = new Date(tempDate.getFullYear(), tempDate.getMonth(), 1);
                                             setSelectedDate(firstOfMonth);
                                         } else {

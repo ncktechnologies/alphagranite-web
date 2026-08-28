@@ -1,11 +1,18 @@
 import { Table } from "@tanstack/react-table";
 
-/**
- * Exports TanStack table data to CSV.
- *
- * @param table - TanStack table instance
- * @param filename - Desired CSV file name (without extension)
- */
+type ValueFormatter<T> = (value: any, row: T) => string;
+
+interface ExportOptions<T> {
+  currentPageOnly?: boolean;
+  formatters?: Record<string, ValueFormatter<T>>;
+}
+
+const defaultFormat = (value: any): string => {
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (value === null || value === undefined) return "";
+  return String(value);
+};
+
 const extractHeaderTitle = (header: any, colId: string): string => {
   if (typeof header === "string") return header;
   if (header?.props?.title) return header.props.title;
@@ -15,37 +22,48 @@ const extractHeaderTitle = (header: any, colId: string): string => {
 
 export function exportTableToCSV<T extends Record<string, any>>(
   table: Table<T>,
-  filename: string
+  filename: string,
+  options?: ExportOptions<T>
 ) {
-  const allRows = table.getPrePaginationRowModel().rows; // ✅ all rows, not just visible
-  if (!allRows || allRows.length === 0) {
+  const { currentPageOnly = false, formatters = {} } = options || {};
+
+  const rows = currentPageOnly
+    ? table.getRowModel().rows
+    : table.getFilteredRowModel().rows;
+
+  if (!rows || rows.length === 0) {
     console.warn("No data available to export.");
     return;
   }
 
-  // Extract columns with headers
   const visibleColumns = table
     .getAllLeafColumns()
-    .filter((col) => col.columnDef.header && col.id !== "actions");
+    .filter((col) => col.getIsVisible() && col.id !== "actions");
 
   const headers = visibleColumns.map((col) =>
     extractHeaderTitle(col.columnDef.header, col.id)
   );
 
-  // Generate CSV rows
-  const rows = allRows.map((row) =>
-    visibleColumns
+  const csvRows = rows.map((row) => {
+    return visibleColumns
       .map((col) => {
-        const value = row.getValue(col.id);
-        return `"${String(value ?? "").replace(/"/g, '""')}"`
+        const raw = row.getValue(col.id);
+        const metaFormat = col.columnDef.meta?.format as ValueFormatter<T> | undefined;
+        let formatted: string;
+        if (metaFormat) {
+          formatted = metaFormat(raw, row.original);
+        } else if (formatters[col.id]) {
+          formatted = formatters[col.id](raw, row.original);
+        } else {
+          formatted = defaultFormat(raw);
+        }
+        return `"${String(formatted ?? "").replace(/"/g, '""')}"`;
       })
-      .join(",")
-  );
+      .join(",");
+  });
 
-  // Combine into one CSV string
-  const csvContent = [headers.join(","), ...rows].join("\n");
+  const csvContent = [headers.join(","), ...csvRows].join("\n");
 
-  // Create and trigger download
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -54,4 +72,5 @@ export function exportTableToCSV<T extends Record<string, any>>(
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     ColumnDef,
     getCoreRowModel,
@@ -96,6 +96,10 @@ interface JobTableProps {
     canViewTemplaterTimer?: boolean;
     canViewInstallerTimer?: boolean;
     noteStage?: string;
+
+    onLoadMore?: () => void;
+    hasMore?: boolean;
+    isLoadingMore?: boolean;
 }
 
 export const JobTable = ({
@@ -153,6 +157,11 @@ export const JobTable = ({
     canViewTemplaterTimer = false,
     canViewInstallerTimer = false,
     noteStage,
+
+    onLoadMore,
+    hasMore = false,
+    isLoadingMore = false,
+
 }: JobTableProps) => {
     const [localSelectedRows, setLocalSelectedRows] = useState<string[]>([]);
     const [localPagination, setLocalPagination] = useState<PaginationState>({
@@ -364,779 +373,1114 @@ export const JobTable = ({
         return undefined;
     }, [noteStage, path]);
 
-    const baseColumns = useMemo<ColumnDef<IJob>[]>(() => [
+    const baseColumns = useMemo<ColumnDef<IJob>[]>(() =>
+         
+    [
         // Checkbox column
-        {
-            id: 'select',
-            accessorKey: 'id',
-            accessorFn: (row) => row.id,
-            header: () => null,
-            cell: ({ row }) => {
-                const hasAssignee = (
-                    (row.original.drafter && row.original.drafter !== '-') ||
-                    (row.original.cnc_operator && row.original.cnc_operator !== '-') ||
-                    (row.original.slabsmith_operator && row.original.slabsmith_operator !== '-') ||
-                    (row.original.revisor && row.original.revisor !== '-') ||
-                    (row.original as any).final_programmer
-                );
-                if (!enableMultiSelect || hasAssignee) return null;
-                return (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <Checkbox
-                            checked={effectiveSelectedRows.includes(row.original.fab_id)}
-                            onCheckedChange={() => toggleRowSelection(row.original.fab_id)}
-                            aria-label="Select row"
-                        />
-                    </div>
-                );
+     {
+        id: 'select',
+        accessorKey: 'id',
+        accessorFn: (row) => row.id,
+        header: () => null,
+        cell: ({ row }) => {
+            const hasAssignee = (
+                (row.original.drafter && row.original.drafter !== '-') ||
+                (row.original.cnc_operator && row.original.cnc_operator !== '-') ||
+                (row.original.slabsmith_operator && row.original.slabsmith_operator !== '-') ||
+                (row.original.revisor && row.original.revisor !== '-') ||
+                (row.original as any).final_programmer
+            );
+            if (!enableMultiSelect || hasAssignee) return null;
+            return (
+                <div className="w-full h-full flex items-center justify-center">
+                    <Checkbox
+                        checked={effectiveSelectedRows.includes(row.original.fab_id)}
+                        onCheckedChange={() => toggleRowSelection(row.original.fab_id)}
+                        aria-label="Select row"
+                    />
+                </div>
+            );
+        },
+        enableSorting: false,
+        enableHiding: false,
+        size: 48,
+        meta: { format: () => '' }, // no export
+    },
+    {
+        id: 'actions',
+        header: '',
+        cell: ({ row }) => customActionsColumn
+            ? customActionsColumn(row.original)
+            : <ActionsCell row={row} onView={() => handleView(row.original)} pageRole={pageRole} canAddNote={canAddNote} noteStage={resolvedNoteStage} />,
+        enableSorting: false,
+        size: 60,
+        meta: { format: () => '' }, // no export
+    },
+    // ─── Date columns ──────────────────────────────────────────────────────────
+    {
+        id: "shop_est_completion_date",
+        accessorKey: "shop_est_completion_date",
+        header: ({ column }) => <DataGridColumnHeader title="Est Shop Date" column={column} />,
+        cell: ({ row }) => <span className="text-xs uppercase">{row.original.shop_est_completion_date}</span>,
+        size: 100,
+        enableSorting: true,
+        meta: {
+            format: (value: string) => {
+                if (!value) return '';
+                const d = parseDateForDisplay(value);
+                return d ? format(d, 'MMM dd, yyyy') : value;
             },
-            enableSorting: false,
-            enableHiding: false,
-            size: 48,
         },
-        // Actions
-        {
-            id: 'actions',
-            header: '',
-            cell: ({ row }) => customActionsColumn
-                ? customActionsColumn(row.original)
-                : <ActionsCell row={row} onView={() => handleView(row.original)} pageRole={pageRole} canAddNote={canAddNote} noteStage={resolvedNoteStage} />,
-            enableSorting: false,
-            size: 60,
+    },
+    // ─── Fab Type ──────────────────────────────────────────────────────────────
+    {
+        id: "fab_type",
+        accessorKey: "fab_type",
+        header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
+        cell: ({ row }) => <span className="text-xs uppercase">{row.original.fab_type}</span>,
+        size: 100,
+        enableSorting: true,
+        meta: {
+            format: (value: string) => value?.toUpperCase() || '',
         },
-        // Est Shop Date
-        {
-            id: "shop_est_completion_date",
-            accessorKey: "shop_est_completion_date",
-            header: ({ column }) => <DataGridColumnHeader title="Est Shop Date" column={column} />,
-            cell: ({ row }) => <span className="text-xs uppercase">{row.original.shop_est_completion_date}</span>,
-            size: 100,
-            enableSorting: true,
-        },
-        // Fab Type
-        {
-            id: "fab_type",
-            accessorKey: "fab_type",
-            header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
-            cell: ({ row }) => <span className="text-xs uppercase">{row.original.fab_type}</span>,
-            size: 100,
-            enableSorting: true,
-        },
-        // Fab ID
-        {
-            id: "fab_id",
-            accessorKey: "fab_id",
-            header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
-            cell: ({ row }) => (
-                <Link to={`/sales/${row.original.fab_id}`} className="text-xs hover:underline">
-                    {row.original.fab_id}
-                </Link>
-            ),
-            size: 80,
-            enableSorting: true,
-        },
-        // Job Name
-        {
-            id: "job_name",
-            accessorKey: "job_name",
-            header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
-            cell: ({ row }) => <span className="text-xs break-words max-w-[180px]">{row.original.job_name}</span>,
-            size: 160,
-            enableSorting: true,
-        },
-        // Job No
-        {
-            id: "job_no",
-            accessorKey: "job_no",
-            header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
-            cell: ({ row }) => {
-                const { job_id, job_no, fab_id } = row.original;
-                // Templater timer link – only if permission is granted
-                if (pageRole === 'templater' && job_id && canViewTemplaterTimer) {
-                    return (
-                        <Link to={`/jobs/${job_id}/templater/timer?fab_id=${fab_id}`} className="text-xs text-blue-600 hover:underline">
-                            {job_no}
-                        </Link>
-                    );
-                }
-                // Installer timer link – only if permission is granted
-                if (pageRole === 'installer' && job_id && canViewInstallerTimer) {
-                    return (
-                        <Link to={`/jobs/${job_id}/installer/timer?fab_id=${fab_id}`} className="text-xs text-blue-600 hover:underline">
-                            {job_no}
-                        </Link>
-                    );
-                }
-                // Fallback to job details link (always shown – you may also add a permission here if needed)
-                if (job_id) {
-                    return (
-                        <Link to={`/job/details/${job_id}`} className="text-xs text-blue-600 hover:underline">
-                            {job_no}
-                        </Link>
-                    );
-                }
-                return <span className="text-xs">{job_no}</span>;
-            },
-            size: 100,
-            enableSorting: true,
-        },
-        // Fab Info
-        {
-            id: "fab_info",
-            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
-            cell: ({ row }) => {
-                const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row.original);
+    },
+    // ─── Fab ID ──────────────────────────────────────────────────────────────
+    {
+        id: "fab_id",
+        accessorKey: "fab_id",
+        header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
+        cell: ({ row }) => (
+            <Link to={`/sales/${row.original.fab_id}`} className="text-xs hover:underline">
+                {row.original.fab_id}
+            </Link>
+        ),
+        size: 80,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Job Name ────────────────────────────────────────────────────────────
+    {
+        id: "job_name",
+        accessorKey: "job_name",
+        header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
+        cell: ({ row }) => <span className="text-xs break-words max-w-[180px]">{row.original.job_name}</span>,
+        size: 160,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Job No ──────────────────────────────────────────────────────────────
+    {
+        id: "job_no",
+        accessorKey: "job_no",
+        header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
+        cell: ({ row }) => {
+            const { job_id, job_no, fab_id } = row.original;
+            if (pageRole === 'templater' && job_id && canViewTemplaterTimer) {
                 return (
-                    <div className="flex gap-4 text-xs max-w-[400px]">
-                        {jobInfo.length > 0 && (
-                            <div className="flex-1 min-w-0">
-                                <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
-                                    {jobInfo.join(' - ')}
+                    <Link to={`/jobs/${job_id}/templater/timer?fab_id=${fab_id}`} className="text-xs text-blue-600 hover:underline">
+                        {job_no}
+                    </Link>
+                );
+            }
+            if (pageRole === 'installer' && job_id && canViewInstallerTimer) {
+                return (
+                    <Link to={`/jobs/${job_id}/installer/timer?fab_id=${fab_id}`} className="text-xs text-blue-600 hover:underline">
+                        {job_no}
+                    </Link>
+                );
+            }
+            if (job_id) {
+                return (
+                    <Link to={`/job/details/${job_id}`} className="text-xs text-blue-600 hover:underline">
+                        {job_no}
+                    </Link>
+                );
+            }
+            return <span className="text-xs">{job_no}</span>;
+        },
+        size: 100,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Fab Info ────────────────────────────────────────────────────────────
+    {
+        id: "fab_info",
+        header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
+        cell: ({ row }) => {
+            const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row.original);
+            return (
+                <div className="flex gap-4 text-xs max-w-[400px]">
+                    {jobInfo.length > 0 && (
+                        <div className="flex-1 min-w-0">
+                            <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
+                                {jobInfo.join(' - ')}
+                            </div>
+                            {stoneInfo.length > 0 && (
+                                <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
+                                    {stoneInfo.join(' - ')}
                                 </div>
-                                {stoneInfo.length > 0 && (
-                                    <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
-                                        {stoneInfo.join(' - ')}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        {materialInfo.length > 0 && (
-                            <div className="flex-1 min-w-0">
-                                {materialInfo.map((info, idx) => (
-                                    <div key={idx} className="truncate text-gray-600">{info}</div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                );
+                            )}
+                        </div>
+                    )}
+                    {materialInfo.length > 0 && (
+                        <div className="flex-1 min-w-0">
+                            {materialInfo.map((info, idx) => (
+                                <div key={idx} className="truncate text-gray-600">{info}</div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        },
+        size: 400,
+        enableSorting: false,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row);
+                return [...jobInfo, ...stoneInfo, ...materialInfo].join(' - ');
             },
-            size: 400,
-            enableSorting: false,
         },
-        // Stone Cost
-        {
-            id: "stone_cost",
-            accessorKey: "stone_cost",
-            header: ({ column }) => <DataGridColumnHeader title="Cost Of Stone" column={column} />,
-            cell: ({ row }) => {
-                const cost = row.original.stone_cost;
-                return <span className="text-xs">{cost?.toFixed(2) ?? '-'}</span>;
-            },
-            size: 120,
-            enableSorting: true,
+    },
+    // ─── Stone Cost ──────────────────────────────────────────────────────────
+    {
+        id: "stone_cost",
+        accessorKey: "stone_cost",
+        header: ({ column }) => <DataGridColumnHeader title="Cost Of Stone" column={column} />,
+        cell: ({ row }) => {
+            const cost = row.original.stone_cost;
+            return <span className="text-xs">{cost?.toFixed(2) ?? '-'}</span>;
         },
-        // Consumed
-        {
-            id: "consumed",
-            accessorKey: "consumed",
-            header: ({ column }) => <DataGridColumnHeader title="Consumed" column={column} />,
-            cell: ({ row }) => {
-                const consumed = row.original.consumed;
-                return (
-                    <span className={`text-xs font-medium ${consumed ? 'text-green-600' : 'text-gray-500'}`}>
-                        {consumed ? 'Yes' : 'No'}
-                    </span>
-                );
-            },
-            size: 100,
-            enableSorting: true,
+        size: 120,
+        enableSorting: true,
+        meta: {
+            format: (value: number) => value != null ? Number(value).toFixed(2) : '-',
         },
-        // sales person
-        {
-            id: "sales_person_name",
-            accessorKey: "sales_person_name",
-            header: ({ column }) => <DataGridColumnHeader title="Sales Person" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.sales_person_name}</span>,
-            size: 130,
-            enableSorting: true,
-        },
-
-        // sales person
-        {
-            id: "sales_person_name",
-            accessorKey: "sales_person_name",
-            header: ({ column }) => <DataGridColumnHeader title="Sales Person" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.sales_person_name}</span>,
-            size: 130,
-            enableSorting: true,
-        },
-        // Templater
-
-        {
-            id: "templater",
-            accessorKey: "templater",
-            header: ({ column }) => <DataGridColumnHeader title="TEMPLATER" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.templater}</span>,
-            size: 130,
-            enableSorting: true,
-        },
-        // Drafter (with Reassign button conditional on permission)
-        {
-            id: "drafter",
-            accessorKey: "drafter",
-            header: ({ column }) => <DataGridColumnHeader title="DRAFTER" column={column} />,
-            cell: ({ row }) => {
-                const drafter = row.original.drafter;
-                const hasDrafter = drafter && drafter !== '-';
-
-                return (
-                    <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-xs truncate flex-1">{drafter || '—'}</span>
-                        {hasDrafter && onReassignDrafterClick && canReassignDrafter && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
-                                onClick={e => {
-                                    e.stopPropagation();
-                                    setDrafterColumnVisible(true);
-                                    onReassignDrafterClick(row.original);
-                                }}
-                            >
-                                Reassign
-                            </Button>
-                        )}
-                    </div>
-                );
-            },
-            size: 220,
-            minSize: 200,
-            enableSorting: true,
-        },
-        // CNC Operator (with Reassign permission check)
-        {
-            id: "cnc_operator",
-            accessorKey: "cnc_operator",
-            header: ({ column }) => <DataGridColumnHeader title="CNC Programmer" column={column} />,
-            cell: ({ row }) => {
-                const cncOperator = row.original.cnc_operator;
-                const hasOperator = cncOperator && cncOperator !== '-';
-
-                return (
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs truncate flex-1">{cncOperator || '—'}</span>
-                        {hasOperator && onReassignCNCClick && canReassignCNC && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
-                                onClick={e => {
-                                    e.stopPropagation();
-                                    onReassignCNCClick(row.original);
-                                }}
-                            >
-                                Reassign
-                            </Button>
-                        )}
-                    </div>
-                );
-            },
-            size: 220,
-            minSize: 200,
-            enableSorting: true,
-        },
-        // SlabSmith Operator (with Reassign permission check)
-        {
-            id: "slabsmith_operator",
-            accessorKey: "slabsmith_operator",
-            header: ({ column }) => <DataGridColumnHeader title="SLABSMITH Drafter" column={column} />,
-            cell: ({ row }) => {
-                const slabsmithOperator = row.original.slabsmith_operator;
-                const hasOperator = slabsmithOperator && slabsmithOperator !== '-';
-
-                return (
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs truncate flex-1">{slabsmithOperator || '—'}</span>
-                        {hasOperator && onReassignSlabSmithClick && canReassignSlabSmith && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
-                                onClick={e => {
-                                    e.stopPropagation();
-                                    onReassignSlabSmithClick(row.original);
-                                }}
-                            >
-                                Reassign
-                            </Button>
-                        )}
-                    </div>
-                );
-            },
-            size: 220,
-            minSize: 200,
-            enableSorting: true,
-        },
-        // Final Programmer
-        {
-            id: 'final_programmer',
-            accessorKey: 'final_programmer',
-            header: ({ column }) => <DataGridColumnHeader title="FINAL PROGRAMMER" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.final_programmer || '-'}</span>,
-            size: 150,
-            enableSorting: true,
-        },
-        // Revisor (with Reassign permission check)
-        {
-            id: "revisor",
-            accessorKey: "revisor",
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revisor" column={column} />,
-            cell: ({ row }) => {
-                const revisor = row.original.revisor;
-                const hasRevisor = revisor && revisor !== '-';
-
-                return (
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs truncate flex-1">{revisor || '—'}</span>
-                        {hasRevisor && onReassignRevisorClick && canReassignRevisor && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
-                                onClick={e => {
-                                    e.stopPropagation();
-                                    onReassignRevisorClick(row.original);
-                                }}
-                            >
-                                Reassign
-                            </Button>
-                        )}
-                    </div>
-                );
-            },
-            size: 220,
-            minSize: 200,
-            enableSorting: true,
-        },
-        // Template Needed
-        {
-            id: "template_needed",
-            accessorKey: "template_needed",
-            header: ({ column }) => <DataGridColumnHeader title="Template not needed" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.template_needed}</span>,
-            size: 120,
-            enableSorting: true,
-        },
-        // Acct Name
-        {
-            id: "acct_name",
-            accessorKey: "acct_name",
-            header: ({ column }) => <DataGridColumnHeader title="ACCT NAME" column={column} />,
-            cell: ({ row }) => <span className="text-xs break-words max-w-[140px]">{row.original.acct_name}</span>,
-            size: 120,
-            enableSorting: true,
-        },
-        // No of pieces
-        {
-            id: "no_of_pieces",
-            accessorKey: "no_of_pieces",
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="No. of pieces" column={column} />,
-            cell: ({ row }) => <span className="text-xs break-words max-w-[110px]">{row.original.no_of_pieces}</span>,
-            size: 100,
-            enableSorting: true,
-        },
-        // Template Schedule
-        {
-            id: "template_schedule",
-            accessorKey: "template_schedule",
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="TEMPLATE SCHEDULE" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.template_schedule}</span>,
-            size: 120,
-            enableSorting: true,
-        },
-        // Template Received
-        {
-            id: "template_received",
-            accessorKey: "template_received",
-            header: ({ column }) => <DataGridColumnHeader title="TEMPLATE RECEIVED" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.template_received}</span>,
-            size: 120,
-            enableSorting: true,
-        },
-        // Total Sq Ft
-        {
-            id: "total_sq_ft",
-            accessorKey: "total_sq_ft",
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Total Sq ft" column={column} />,
-            cell: ({ row }) => <span className="text-xs break-words max-w-[100px]">{row.original.total_sq_ft}</span>,
-            size: 100,
-            enableSorting: true,
-        },
-        // Revised
-        {
-            id: "revised",
-            accessorKey: "revised",
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revised?" column={column} />,
-            cell: ({ row }) => <span className="text-xs break-words max-w-[100px]">{row.original.revised}</span>,
-            size: 80,
-            enableSorting: true,
-        },
-        // Revision Completed
-        {
-            id: "revision_completed",
-            accessorKey: "revision_completed",
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revision completed" column={column} />,
-            cell: ({ row }) => <span className="text-sm break-words max-w-[160px]">{row.original.revision_completed}</span>,
-            size: 130,
-            enableSorting: true,
-        },
-        // Revision Number
-        {
-            id: "revision_number",
-            accessorKey: "revision_number",
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revision #" column={column} />,
-            cell: ({ row }) => <span className="text-sm break-words max-w-[80px]">{row.original.revision_number}</span>,
-            size: 100,
-            enableSorting: true,
-        },
-        // Revision Reason
-        {
-            id: "revision_reason",
-            accessorKey: "revision_reason",
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revision reason" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm break-words max-w-[200px]" title={row.original.revision_reason}>
-                    {row.original.revision_reason}
+    },
+    // ─── Consumed (boolean) ──────────────────────────────────────────────────
+    {
+        id: "consumed",
+        accessorKey: "consumed",
+        header: ({ column }) => <DataGridColumnHeader title="Consumed" column={column} />,
+        cell: ({ row }) => {
+            const consumed = row.original.consumed;
+            return (
+                <span className={`text-xs font-medium ${consumed ? 'text-green-600' : 'text-gray-500'}`}>
+                    {consumed ? 'Yes' : 'No'}
                 </span>
-            ),
-            size: 150,
-            enableSorting: true,
+            );
         },
-        // Revision Type
-        {
-            id: "revision_type",
-            accessorKey: "revision_type",
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revision type" column={column} />,
-            cell: ({ row }) => <span className="text-sm break-words max-w-[120px]">{row.original.revision_type}</span>,
-            size: 120,
-            enableSorting: true,
+        size: 100,
+        enableSorting: true,
+        meta: {
+            format: (value: boolean) => value ? 'Yes' : 'No',
         },
-        // Revenue
-        {
-            id: "revenue",
-            accessorKey: "revenue",
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revenue" column={column} />,
-            cell: ({ row }) => <span className="text-xs break-words max-w-[160px]">{row.original.revenue}</span>,
-            size: 110,
-            enableSorting: true,
+    },
+    // ─── Sales Person ────────────────────────────────────────────────────────
+    {
+        id: "sales_person_name",
+        accessorKey: "sales_person_name",
+        header: ({ column }) => <DataGridColumnHeader title="Sales Person" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{row.original.sales_person_name}</span>,
+        size: 130,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Templater ───────────────────────────────────────────────────────────
+    {
+        id: "templater",
+        accessorKey: "templater",
+        header: ({ column }) => <DataGridColumnHeader title="TEMPLATER" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{row.original.templater}</span>,
+        size: 130,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Drafter ─────────────────────────────────────────────────────────────
+    {
+        id: "drafter",
+        accessorKey: "drafter",
+        header: ({ column }) => <DataGridColumnHeader title="DRAFTER" column={column} />,
+        cell: ({ row }) => {
+            const drafter = row.original.drafter;
+            const hasDrafter = drafter && drafter !== '-';
+            return (
+                <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-xs truncate flex-1">{drafter || '—'}</span>
+                    {hasDrafter && onReassignDrafterClick && canReassignDrafter && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
+                            onClick={e => {
+                                e.stopPropagation();
+                                setDrafterColumnVisible(true);
+                                onReassignDrafterClick(row.original);
+                            }}
+                        >
+                            Reassign
+                        </Button>
+                    )}
+                </div>
+            );
         },
-        // GP
-        {
-            id: "gp",
-            accessorKey: "gp",
-            header: ({ column }) => <DataGridColumnHeader title="GP" column={column} />,
-            cell: ({ row }) => <span className="text-sm">{row.original.gp}</span>,
-            size: 80,
-            enableSorting: true,
+        size: 220,
+        minSize: 200,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '—' },
+    },
+    // ─── CNC Operator ────────────────────────────────────────────────────────
+    {
+        id: "cnc_operator",
+        accessorKey: "cnc_operator",
+        header: ({ column }) => <DataGridColumnHeader title="CNC Programmer" column={column} />,
+        cell: ({ row }) => {
+            const cncOperator = row.original.cnc_operator;
+            const hasOperator = cncOperator && cncOperator !== '-';
+            return (
+                <div className="flex items-center gap-2">
+                    <span className="text-xs truncate flex-1">{cncOperator || '—'}</span>
+                    {hasOperator && onReassignCNCClick && canReassignCNC && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
+                            onClick={e => {
+                                e.stopPropagation();
+                                onReassignCNCClick(row.original);
+                            }}
+                        >
+                            Reassign
+                        </Button>
+                    )}
+                </div>
+            );
         },
-        // SCT Completed
-        {
-            id: "sct_completed",
-            accessorKey: "sct_completed",
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Sct Completed" column={column} />,
-            cell: ({ row }) => <span className="text-sm break-words max-w-[160px]">{row.original.sct_completed}</span>,
-            size: 120,
-            enableSorting: true,
+        size: 220,
+        minSize: 200,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '—' },
+    },
+    // ─── SlabSmith Operator ──────────────────────────────────────────────────
+    {
+        id: "slabsmith_operator",
+        accessorKey: "slabsmith_operator",
+        header: ({ column }) => <DataGridColumnHeader title="SLABSMITH Drafter" column={column} />,
+        cell: ({ row }) => {
+            const slabsmithOperator = row.original.slabsmith_operator;
+            const hasOperator = slabsmithOperator && slabsmithOperator !== '-';
+            return (
+                <div className="flex items-center gap-2">
+                    <span className="text-xs truncate flex-1">{slabsmithOperator || '—'}</span>
+                    {hasOperator && onReassignSlabSmithClick && canReassignSlabSmith && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
+                            onClick={e => {
+                                e.stopPropagation();
+                                onReassignSlabSmithClick(row.original);
+                            }}
+                        >
+                            Reassign
+                        </Button>
+                    )}
+                </div>
+            );
         },
-        // SlabSmith Status
-        {
-            id: "slabsmith_status",
-            accessorFn: (row) => {
+        size: 220,
+        minSize: 200,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '—' },
+    },
+    // ─── Final Programmer ────────────────────────────────────────────────────
+    {
+        id: 'final_programmer',
+        accessorKey: 'final_programmer',
+        header: ({ column }) => <DataGridColumnHeader title="FINAL PROGRAMMER" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{row.original.final_programmer || '-'}</span>,
+        size: 150,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '-' },
+    },
+    // ─── Revisor ─────────────────────────────────────────────────────────────
+    {
+        id: "revisor",
+        accessorKey: "revisor",
+        header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revisor" column={column} />,
+        cell: ({ row }) => {
+            const revisor = row.original.revisor;
+            const hasRevisor = revisor && revisor !== '-';
+            return (
+                <div className="flex items-center gap-2">
+                    <span className="text-xs truncate flex-1">{revisor || '—'}</span>
+                    {hasRevisor && onReassignRevisorClick && canReassignRevisor && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
+                            onClick={e => {
+                                e.stopPropagation();
+                                onReassignRevisorClick(row.original);
+                            }}
+                        >
+                            Reassign
+                        </Button>
+                    )}
+                </div>
+            );
+        },
+        size: 220,
+        minSize: 200,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '—' },
+    },
+    // ─── Template Needed ────────────────────────────────────────────────────
+    {
+        id: "template_needed",
+        accessorKey: "template_needed",
+        header: ({ column }) => <DataGridColumnHeader title="Template not needed" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{row.original.template_needed}</span>,
+        size: 120,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Acct Name ──────────────────────────────────────────────────────────
+    {
+        id: "acct_name",
+        accessorKey: "acct_name",
+        header: ({ column }) => <DataGridColumnHeader title="ACCT NAME" column={column} />,
+        cell: ({ row }) => <span className="text-xs break-words max-w-[140px]">{row.original.acct_name}</span>,
+        size: 120,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── No. of pieces ──────────────────────────────────────────────────────
+    {
+        id: "no_of_pieces",
+        accessorKey: "no_of_pieces",
+        header: ({ column }) => <DataGridColumnHeader className="uppercase" title="No. of pieces" column={column} />,
+        cell: ({ row }) => <span className="text-xs break-words max-w-[110px]">{row.original.no_of_pieces}</span>,
+        size: 100,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Template Schedule ──────────────────────────────────────────────────
+    {
+        id: "template_schedule",
+        accessorKey: "template_schedule",
+        header: ({ column }) => <DataGridColumnHeader className="uppercase" title="TEMPLATE SCHEDULE" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{row.original.template_schedule}</span>,
+        size: 120,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Template Received ──────────────────────────────────────────────────
+    {
+        id: "template_received",
+        accessorKey: "template_received",
+        header: ({ column }) => <DataGridColumnHeader title="TEMPLATE RECEIVED" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{row.original.template_received}</span>,
+        size: 120,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Total Sq Ft ────────────────────────────────────────────────────────
+    {
+        id: "total_sq_ft",
+        accessorKey: "total_sq_ft",
+        header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Total Sq ft" column={column} />,
+        cell: ({ row }) => <span className="text-xs break-words max-w-[100px]">{row.original.total_sq_ft}</span>,
+        size: 100,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Revised ────────────────────────────────────────────────────────────
+    {
+        id: "revised",
+        accessorKey: "revised",
+        header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revised?" column={column} />,
+        cell: ({ row }) => <span className="text-xs break-words max-w-[100px]">{row.original.revised}</span>,
+        size: 80,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Revision Completed ──────────────────────────────────────────────────
+    {
+        id: "revision_completed",
+        accessorKey: "revision_completed",
+        header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revision completed" column={column} />,
+        cell: ({ row }) => <span className="text-sm break-words max-w-[160px]">{row.original.revision_completed}</span>,
+        size: 130,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Revision Number ─────────────────────────────────────────────────────
+    {
+        id: "revision_number",
+        accessorKey: "revision_number",
+        header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revision #" column={column} />,
+        cell: ({ row }) => <span className="text-sm break-words max-w-[80px]">{row.original.revision_number}</span>,
+        size: 100,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Revision Reason ─────────────────────────────────────────────────────
+    {
+        id: "revision_reason",
+        accessorKey: "revision_reason",
+        header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revision reason" column={column} />,
+        cell: ({ row }) => (
+            <span className="text-sm break-words max-w-[200px]" title={row.original.revision_reason}>
+                {row.original.revision_reason}
+            </span>
+        ),
+        size: 150,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Revision Type ──────────────────────────────────────────────────────
+    {
+        id: "revision_type",
+        accessorKey: "revision_type",
+        header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revision type" column={column} />,
+        cell: ({ row }) => <span className="text-sm break-words max-w-[120px]">{row.original.revision_type}</span>,
+        size: 120,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── Revenue ────────────────────────────────────────────────────────────
+    {
+        id: "revenue",
+        accessorKey: "revenue",
+        header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revenue" column={column} />,
+        cell: ({ row }) => <span className="text-xs break-words max-w-[160px]">{row.original.revenue}</span>,
+        size: 110,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── GP ──────────────────────────────────────────────────────────────────
+    {
+        id: "gp",
+        accessorKey: "gp",
+        header: ({ column }) => <DataGridColumnHeader title="GP" column={column} />,
+        cell: ({ row }) => <span className="text-sm">{row.original.gp}</span>,
+        size: 80,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '' },
+    },
+    // ─── SCT Completed (date) ───────────────────────────────────────────────
+    {
+        id: "sct_completed",
+        accessorKey: "sct_completed",
+        header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Sct Completed" column={column} />,
+        cell: ({ row }) => <span className="text-sm break-words max-w-[160px]">{row.original.sct_completed}</span>,
+        size: 120,
+        enableSorting: true,
+        meta: {
+            format: (value: string) => {
+                if (!value) return '';
+                const d = parseDateForDisplay(value);
+                return d ? format(d, 'MMM dd, yyyy') : value;
+            },
+        },
+    },
+    // ─── SlabSmith Status ────────────────────────────────────────────────────
+    {
+        id: "slabsmith_status",
+        accessorFn: (row) => {
+            const custNeeded = (row as any).slab_smith_cust_needed ?? (row as any)._rawFabData?.slab_smith_cust_needed;
+            const agNeeded = (row as any).slab_smith_ag_needed ?? (row as any)._rawFabData?.slab_smith_ag_needed;
+            const completed = (row as any).slabsmith_completed_date ?? (row as any)._rawFabData?.slabsmith_completed_date;
+            if (custNeeded === false && agNeeded === false) return 'Not Needed';
+            const types = [];
+            if (custNeeded === true) types.push('Cust');
+            if (agNeeded === true) types.push('AG');
+            const neededType = types.join(' & ');
+            if (neededType) return completed ? `Completed (${neededType})` : `${neededType} - Not Completed`;
+            return '-';
+        },
+        header: ({ column }) => <DataGridColumnHeader className="uppercase" title="SlabSmith Status" column={column} />,
+        cell: ({ row }) => {
+            const custNeeded = (row.original as any).slab_smith_cust_needed ?? (row.original as any)._rawFabData?.slab_smith_cust_needed;
+            const agNeeded = (row.original as any).slab_smith_ag_needed ?? (row.original as any)._rawFabData?.slab_smith_ag_needed;
+            const completed = (row.original as any).slabsmith_completed_date ?? (row.original as any)._rawFabData?.slabsmith_completed_date;
+            if (custNeeded === false && agNeeded === false) {
+                return <span className="text-sm text-gray-500">Not Needed</span>;
+            }
+            const types = [];
+            if (custNeeded === true) types.push('Cust');
+            if (agNeeded === true) types.push('AG');
+            const neededType = types.join(' & ');
+            if (neededType) {
+                return completed
+                    ? <span className="text-sm text-green-600 font-medium">Completed ({neededType})</span>
+                    : <span className="text-sm text-orange-600 font-medium">{neededType} - Not Completed</span>;
+            }
+            return <span className="text-sm text-gray-500">Unknown</span>;
+        },
+        size: 180,
+        enableSorting: true,
+        meta: {
+            format: (value: any, row: IJob) => {
                 const custNeeded = (row as any).slab_smith_cust_needed ?? (row as any)._rawFabData?.slab_smith_cust_needed;
                 const agNeeded = (row as any).slab_smith_ag_needed ?? (row as any)._rawFabData?.slab_smith_ag_needed;
                 const completed = (row as any).slabsmith_completed_date ?? (row as any)._rawFabData?.slabsmith_completed_date;
-
                 if (custNeeded === false && agNeeded === false) return 'Not Needed';
-
                 const types = [];
                 if (custNeeded === true) types.push('Cust');
                 if (agNeeded === true) types.push('AG');
-
                 const neededType = types.join(' & ');
                 if (neededType) return completed ? `Completed (${neededType})` : `${neededType} - Not Completed`;
                 return '-';
             },
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="SlabSmith Status" column={column} />,
-            cell: ({ row }) => {
-                const custNeeded = (row.original as any).slab_smith_cust_needed ?? (row.original as any)._rawFabData?.slab_smith_cust_needed;
-                const agNeeded = (row.original as any).slab_smith_ag_needed ?? (row.original as any)._rawFabData?.slab_smith_ag_needed;
-                const completed = (row.original as any).slabsmith_completed_date ?? (row.original as any)._rawFabData?.slabsmith_completed_date;
-
-                if (custNeeded === false && agNeeded === false) {
-                    return <span className="text-sm text-gray-500">Not Needed</span>;
-                }
-
-                const types = [];
-                if (custNeeded === true) types.push('Cust');
-                if (agNeeded === true) types.push('AG');
-
-                const neededType = types.join(' & ');
-
-                if (neededType) {
-                    return completed
-                        ? <span className="text-sm text-green-600 font-medium">Completed ({neededType})</span>
-                        : <span className="text-sm text-orange-600 font-medium">{neededType} - Not Completed</span>;
-                }
-                return <span className="text-sm text-gray-500">Unknown</span>;
+        },
+    },
+    // ─── Draft Status ────────────────────────────────────────────────────────
+    {
+        id: "draft_completed",
+        accessorKey: "draft_completed",
+        header: ({ column }) => <DataGridColumnHeader title="DRAFT Status" column={column} />,
+        cell: ({ row }) => {
+            const status = row.original.draft_completed;
+            if (status === 'drafting') return <span className="text-sm text-green-600 font-medium">Drafting</span>;
+            if (status === 'paused') return <span className="text-sm text-red-600 font-medium">Paused</span>;
+            return <span className="text-sm text-gray-500">Not Started</span>;
+        },
+        size: 130,
+        enableSorting: true,
+        meta: {
+            format: (value: string) => {
+                if (value === 'drafting') return 'Drafting';
+                if (value === 'paused') return 'Paused';
+                return 'Not Started';
             },
-            size: 180,
-            enableSorting: true,
         },
-        // Draft Status
-        {
-            id: "draft_completed",
-            accessorKey: "draft_completed",
-            header: ({ column }) => <DataGridColumnHeader title="DRAFT Status" column={column} />,
-            cell: ({ row }) => {
-                const status = row.original.draft_completed;
-                if (status === 'drafting') return <span className="text-sm text-green-600 font-medium">Drafting</span>;
-                if (status === 'paused') return <span className="text-sm text-red-600 font-medium">Paused</span>;
-                return <span className="text-sm text-gray-500">Not Started</span>;
+    },
+    // ─── Review Completed (date) ────────────────────────────────────────────
+    {
+        id: "review_completed",
+        accessorKey: "review_completed",
+        header: ({ column }) => <DataGridColumnHeader title="REVIEW COMPLETED" column={column} />,
+        cell: ({ row }) => <span className="text-sm break-words max-w-[160px]">{row.original.review_completed}</span>,
+        size: 140,
+        enableSorting: true,
+        meta: {
+            format: (value: string) => {
+                if (!value) return '';
+                const d = parseDateForDisplay(value);
+                return d ? format(d, 'MMM dd, yyyy') : value;
             },
-            size: 130,
-            enableSorting: true,
         },
-        // Review Completed
-        {
-            id: "review_completed",
-            accessorKey: "review_completed",
-            header: ({ column }) => <DataGridColumnHeader title="REVIEW COMPLETED" column={column} />,
-            cell: ({ row }) => <span className="text-sm break-words max-w-[160px]">{row.original.review_completed}</span>,
-            size: 140,
-            enableSorting: true,
+    },
+    // ─── Notes columns ──────────────────────────────────────────────────────
+    {
+        id: 'templating_notes',
+        header: ({ column }) => <DataGridColumnHeader title="Templating Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, 'templating'),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'templating');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
         },
-        // Notes columns
-        { id: 'templating_notes', header: ({ column }) => <DataGridColumnHeader title="Templating Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'templating'), enableSorting: false, size: 180 },
-        { id: 'drafting_notes', header: ({ column }) => <DataGridColumnHeader title="Drafting Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'drafting'), enableSorting: false, size: 180 },
-        { id: 'final_programming_notes', header: ({ column }) => <DataGridColumnHeader title="Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'final_programming'), enableSorting: false, size: 180 },
-        { id: 'pre_draft_notes', header: ({ column }) => <DataGridColumnHeader title="Pre-Draft Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'pre_draft_review'), enableSorting: false, size: 180 },
-        { id: 'cutting_notes', header: ({ column }) => <DataGridColumnHeader title="Cut List Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'cut_list'), enableSorting: false, size: 180 },
-        { id: 'slabsmith_notes', header: ({ column }) => <DataGridColumnHeader title="SlabSmith Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'slab_smith_request'), enableSorting: false, size: 180 },
-        { id: 'sct_notes', header: ({ column }) => <DataGridColumnHeader title="SCT Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'sales_ct'), enableSorting: false, size: 180 },
-        { id: 'draft_revision_notes', header: ({ column }) => <DataGridColumnHeader title="Draft/Revision Notes" column={column} />, cell: ({ row }) => renderNotes(row, ['draft', 'revisions']), enableSorting: false, size: 180 },
-        { id: 'draft_notes', header: ({ column }) => <DataGridColumnHeader title="Draft Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'drafting'), enableSorting: false, size: 180 },
-        { id: 'revision_notes', header: ({ column }) => <DataGridColumnHeader title="Revision Notes" column={column} />, cell: ({ row }) => renderNotes(row, ['revision', 'revisions']), enableSorting: false, size: 180 },
-        { id: 'install_scheduling_notes', header: ({ column }) => <DataGridColumnHeader title="Install Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'install_schedulling'), enableSorting: false, size: 180 },
-        { id: 'install_completion_notes', header: ({ column }) => <DataGridColumnHeader title="Install Completion Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'install_completion'), enableSorting: false, size: 180 },
-        { id: 'shop_status_notes', header: ({ column }) => <DataGridColumnHeader title="Shop Status Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'shop_status'), enableSorting: false, size: 180 },
-        { id: 'shop_notes', header: ({ column }) => <DataGridColumnHeader title="Shop Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'shop'), enableSorting: false, size: 180 },
-        { id: 'resurfacing_notes', header: ({ column }) => <DataGridColumnHeader title=" Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'install_scheduling'), enableSorting: false, size: 180 },
-        // File
-        {
-            id: 'file',
-            accessorKey: 'file',
-            header: ({ column }) => <DataGridColumnHeader title="FILE" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.file || '-'}</span>,
-            size: 120,
-            enableSorting: true,
+    },
+    {
+        id: 'drafting_notes',
+        header: ({ column }) => <DataGridColumnHeader title="Drafting Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, 'drafting'),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'drafting');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
         },
-        // Shop Date Scheduled
-        {
-            id: 'shop_date_scheduled',
-            accessorKey: 'shop_date_scheduled',
-            header: ({ column }) => <DataGridColumnHeader title="SHOP DATE SCHEDULED" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.shop_date_scheduled || '-'}</span>,
-            size: 150,
-            enableSorting: true,
+    },
+    {
+        id: 'final_programming_notes',
+        header: ({ column }) => <DataGridColumnHeader title="Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, 'final_programming'),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'final_programming');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
         },
-        // WJ Time Minutes
-        {
-            id: 'wj_time_minutes',
-            accessorKey: 'wj_time_minutes',
-            header: ({ column }) => <DataGridColumnHeader title="WJ TIME MINUTES" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.wj_time_minutes || '-'}</span>,
-            size: 150,
-            enableSorting: true,
+    },
+    {
+        id: 'pre_draft_notes',
+        header: ({ column }) => <DataGridColumnHeader title="Pre-Draft Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, 'pre_draft_review'),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'pre_draft_review');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
         },
-        // Final Programming Completed
-        {
-            id: 'final_programming_completed',
-            accessorKey: 'final_programming_completed',
-            header: ({ column }) => <DataGridColumnHeader title="FINAL PROGRAMMING COMPLETED" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.final_programming_completed || '-'}</span>,
-            size: 150,
-            enableSorting: true,
+    },
+    {
+        id: 'cutting_notes',
+        header: ({ column }) => <DataGridColumnHeader title="Cut List Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, 'cut_list'),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'cut_list');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
         },
-        // Notes (generic)
-        {
-            id: 'notes',
-            accessorKey: 'notes',
-            accessorFn: (row) => {
-                if (typeof row.notes === 'string') return row.notes;
-                if (Array.isArray(row.notes) && row.notes.length > 0) {
-                    const firstNote = row.notes[0];
-                    return typeof firstNote === 'string' ? firstNote : firstNote?.note || '';
+    },
+    {
+        id: 'slabsmith_notes',
+        header: ({ column }) => <DataGridColumnHeader title="SlabSmith Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, 'slab_smith_request'),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'slab_smith_request');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
+        },
+    },
+    {
+        id: 'sct_notes',
+        header: ({ column }) => <DataGridColumnHeader title="SCT Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, 'sales_ct'),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'sales_ct');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
+        },
+    },
+    {
+        id: 'draft_revision_notes',
+        header: ({ column }) => <DataGridColumnHeader title="Draft/Revision Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, ['draft', 'revisions']),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'draft' || n.stage === 'revisions');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
+        },
+    },
+    {
+        id: 'draft_notes',
+        header: ({ column }) => <DataGridColumnHeader title="Draft Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, 'drafting'),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'drafting');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
+        },
+    },
+    {
+        id: 'revision_notes',
+        header: ({ column }) => <DataGridColumnHeader title="Revision Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, ['revision', 'revisions']),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'revision' || n.stage === 'revisions');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
+        },
+    },
+    {
+        id: 'install_scheduling_notes',
+        header: ({ column }) => <DataGridColumnHeader title="Install Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, 'install_schedulling'),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'install_schedulling');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
+        },
+    },
+    {
+        id: 'install_completion_notes',
+        header: ({ column }) => <DataGridColumnHeader title="Install Completion Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, 'install_completion'),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'install_completion');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
+        },
+    },
+    {
+        id: 'shop_status_notes',
+        header: ({ column }) => <DataGridColumnHeader title="Shop Status Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, 'shop_status'),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'shop_status');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
+        },
+    },
+    {
+        id: 'shop_notes',
+        header: ({ column }) => <DataGridColumnHeader title="Shop Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, 'shop'),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'shop');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
+        },
+    },
+    {
+        id: 'resurfacing_notes',
+        header: ({ column }) => <DataGridColumnHeader title="Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, 'install_scheduling'),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'install_scheduling');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
+        },
+    },
+    // ─── File ──────────────────────────────────────────────────────────────
+    {
+        id: 'file',
+        accessorKey: 'file',
+        header: ({ column }) => <DataGridColumnHeader title="FILE" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{row.original.file || '-'}</span>,
+        size: 120,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '-' },
+    },
+    // ─── Shop Date Scheduled (date) ────────────────────────────────────────
+    {
+        id: 'shop_date_scheduled',
+        accessorKey: 'shop_date_scheduled',
+        header: ({ column }) => <DataGridColumnHeader title="SHOP DATE SCHEDULED" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{row.original.shop_date_scheduled || '-'}</span>,
+        size: 150,
+        enableSorting: true,
+        meta: {
+            format: (value: string) => {
+                if (!value) return '-';
+                const d = parseDateForDisplay(value);
+                return d ? format(d, 'MMM dd, yyyy') : value;
+            },
+        },
+    },
+    // ─── WJ Time Minutes ────────────────────────────────────────────────────
+    {
+        id: 'wj_time_minutes',
+        accessorKey: 'wj_time_minutes',
+        header: ({ column }) => <DataGridColumnHeader title="WJ TIME MINUTES" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{row.original.wj_time_minutes || '-'}</span>,
+        size: 150,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '-' },
+    },
+    // ─── Final Programming Completed (date) ────────────────────────────────
+    {
+        id: 'final_programming_completed',
+        accessorKey: 'final_programming_completed',
+        header: ({ column }) => <DataGridColumnHeader title="FINAL PROGRAMMING COMPLETED" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{row.original.final_programming_completed || '-'}</span>,
+        size: 150,
+        enableSorting: true,
+        meta: {
+            format: (value: string) => {
+                if (!value) return '-';
+                const d = parseDateForDisplay(value);
+                return d ? format(d, 'MMM dd, yyyy') : value;
+            },
+        },
+    },
+    // ─── Notes (generic) ────────────────────────────────────────────────────
+    {
+        id: 'notes',
+        accessorKey: 'notes',
+        accessorFn: (row) => {
+            if (typeof row.notes === 'string') return row.notes;
+            if (Array.isArray(row.notes) && row.notes.length > 0) {
+                const firstNote = row.notes[0];
+                return typeof firstNote === 'string' ? firstNote : firstNote?.note || '';
+            }
+            return '';
+        },
+        header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
+        cell: ({ row }) => {
+            const notes = row.original.notes;
+            if (typeof notes === 'string') {
+                return <span className="text-xs">{notes}</span>;
+            }
+            if (Array.isArray(notes) && notes.length > 0) {
+                const firstNote = notes[0];
+                const noteText = typeof firstNote === 'string' ? firstNote : firstNote?.note;
+                return <span className="text-xs">{noteText || '-'}</span>;
+            }
+            return <span className="text-xs">-</span>;
+        },
+        size: 150,
+        enableSorting: true,
+        meta: {
+            format: (value: any) => {
+                if (typeof value === 'string') return value;
+                if (Array.isArray(value) && value.length > 0) {
+                    const first = value[0];
+                    return typeof first === 'string' ? first : first?.note || '';
                 }
-                return '';
+                return '-';
             },
-            header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
-            cell: ({ row }) => {
-                const notes = row.original.notes;
-                if (typeof notes === 'string') {
-                    return <span className="text-xs">{notes}</span>;
-                }
-                if (Array.isArray(notes) && notes.length > 0) {
-                    const firstNote = notes[0];
-                    const noteText = typeof firstNote === 'string' ? firstNote : firstNote?.note;
-                    return <span className="text-xs">{noteText || '-'}</span>;
-                }
-                return <span className="text-xs">-</span>;
+        },
+    },
+    // ─── Templating Action (export skipped) ──────────────────────────────
+    {
+        id: "reschedule",
+        accessorKey: "templating_completed",
+        header: ({ column }) => <DataGridColumnHeader title="Templating Action" column={column} />,
+        cell: ({ row }) => {
+            if (row.original.template_schedule === "") {
+                return canAssignTemplater
+                    ? <Link to={`/job/templating/${row.original.fab_id}`}>Assign</Link>
+                    : null;
+            }
+            if (row.original.templating_completed === false && row.original.template_schedule !== "" && !row.original.rescheduled) {
+                return canReschedule ? (
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={e => { e.stopPropagation(); onRescheduleClick?.(row.original); }}
+                    >
+                        Reschedule
+                    </Button>
+                ) : null;
+            }
+            if (row.original.templating_completed === false && row.original.rescheduled) {
+                return <span>Rescheduled</span>;
+            }
+            return null;
+        },
+        size: 100,
+        enableSorting: true,
+        meta: { format: () => '' },
+    },
+    // ─── Percent Complete ──────────────────────────────────────────────────
+    {
+        id: 'percent_complete',
+        accessorKey: 'percent_complete',
+        header: ({ column }) => <DataGridColumnHeader title="% COMPLETE" column={column} />,
+        cell: ({ row }) => {
+            const val = (row.original as any).percent_complete;
+            return <span className="text-xs">{val != null ? `${val}%` : '-'}</span>;
+        },
+        size: 140,
+        enableSorting: true,
+        meta: {
+            format: (value: number) => value != null ? `${value}%` : '-',
+        },
+    },
+    // ─── Completion Date ────────────────────────────────────────────────────
+    {
+        id: 'completion_date',
+        accessorKey: 'completion_date',
+        header: ({ column }) => <DataGridColumnHeader title="COMPLETION DATE" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{(row.original as any).completion_date || '-'}</span>,
+        size: 140,
+        enableSorting: true,
+        meta: {
+            format: (value: string) => {
+                if (!value) return '-';
+                const d = parseDateForDisplay(value);
+                return d ? format(d, 'MMM dd, yyyy') : value;
             },
-            size: 150,
-            enableSorting: true,
         },
-        // ── Templating Action (Reschedule / Assign) ───────────────────────────
-        {
-            id: "reschedule",
-            accessorKey: "templating_completed",
-            header: ({ column }) => <DataGridColumnHeader title="Templating Action" column={column} />,
-            cell: ({ row }) => {
-                // Assign link – requires canAssignTemplater permission
-                if (row.original.template_schedule === "") {
-                    return canAssignTemplater
-                        ? <Link to={`/job/templating/${row.original.fab_id}`}>Assign</Link>
-                        : null;
-                }
-
-                // Reschedule button – requires canReschedule permission
-                if (row.original.templating_completed === false && row.original.template_schedule !== "" && !row.original.rescheduled) {
-                    return canReschedule ? (
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            onClick={e => { e.stopPropagation(); onRescheduleClick?.(row.original); }}
-                        >
-                            Reschedule
-                        </Button>
-                    ) : null;
-                }
-
-                if (row.original.templating_completed === false && row.original.rescheduled) {
-                    return <span>Rescheduled</span>;
-                }
-                return null;
+    },
+    // ─── Installer ──────────────────────────────────────────────────────────
+    {
+        id: 'installer',
+        accessorKey: 'installer',
+        header: ({ column }) => <DataGridColumnHeader title="INSTALLER" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{(row.original as any).installer || '-'}</span>,
+        size: 130,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '-' },
+    },
+    // ─── Install Date ──────────────────────────────────────────────────────
+    {
+        id: 'install_date',
+        accessorKey: 'install_date',
+        header: ({ column }) => <DataGridColumnHeader title="INSTALL DATE" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{(row.original as any).install_date || '-'}</span>,
+        size: 120,
+        enableSorting: true,
+        meta: {
+            format: (value: string) => {
+                if (!value) return '-';
+                const d = parseDateForDisplay(value);
+                return d ? format(d, 'MMM dd, yyyy') : value;
             },
-            size: 100,
-            enableSorting: true,
         },
-        // % Complete
-        {
-            id: 'percent_complete',
-            accessorKey: 'percent_complete',
-            header: ({ column }) => <DataGridColumnHeader title="% COMPLETE" column={column} />,
-            cell: ({ row }) => {
-                const val = (row.original as any).percent_complete;
-                return <span className="text-xs">{val != null ? `${val}%` : '-'}</span>;
+    },
+    // ─── Install Confirmed ──────────────────────────────────────────────────
+    {
+        id: 'install_confirmed',
+        accessorKey: 'install_confirmed',
+        header: ({ column }) => <DataGridColumnHeader title="INSTALL Completed" column={column} />,
+        cell: ({ row }) => {
+            const confirmed = (row.original as any).install_confirmed;
+            if (confirmed === true || confirmed === 'Yes') return <span className="text-xs font-medium text-green-600">Yes</span>;
+            if (confirmed === false || confirmed === 'No') return <span className="text-xs font-medium text-red-500">No</span>;
+            return <span className="text-xs text-gray-400">-</span>;
+        },
+        size: 140,
+        enableSorting: true,
+        meta: {
+            format: (value: any) => {
+                if (value === true || value === 'Yes') return 'Yes';
+                if (value === false || value === 'No') return 'No';
+                return '-';
             },
-            size: 140,
-            enableSorting: true,
         },
-        // Completion Date
-        {
-            id: 'completion_date',
-            accessorKey: 'completion_date',
-            header: ({ column }) => <DataGridColumnHeader title="COMPLETION DATE" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{(row.original as any).completion_date || '-'}</span>,
-            size: 140,
-            enableSorting: true,
+    },
+    // ─── Shop Status ────────────────────────────────────────────────────────
+    {
+        id: 'shop_status',
+        accessorKey: 'shop_status',
+        header: ({ column }) => <DataGridColumnHeader title="SHOP STATUS" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{(row.original as any).shop_status || '-'}</span>,
+        size: 120,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '-' },
+    },
+    // ─── On Hold ────────────────────────────────────────────────────────────
+    {
+        id: "on_hold",
+        accessorKey: "status_id",
+        accessorFn: (row) => {
+            const fabId = row.fab_id;
+            if (optimisticUpdates[fabId] !== undefined) return optimisticUpdates[fabId] === 0;
+            return row.status_id === 0;
         },
-        // Installer
-        {
-            id: 'installer',
-            accessorKey: 'installer',
-            header: ({ column }) => <DataGridColumnHeader title="INSTALLER" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{(row.original as any).installer || '-'}</span>,
-            size: 130,
-            enableSorting: true,
-        },
-        // Install Date
-        {
-            id: 'install_date',
-            accessorKey: 'install_date',
-            header: ({ column }) => <DataGridColumnHeader title="INSTALL DATE" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{(row.original as any).install_date || '-'}</span>,
-            size: 120,
-            enableSorting: true,
-        },
-        // Install Confirmed
-        {
-            id: 'install_confirmed',
-            accessorKey: 'install_confirmed',
-            header: ({ column }) => <DataGridColumnHeader title="INSTALL Completed" column={column} />,
-            cell: ({ row }) => {
-                const confirmed = (row.original as any).install_confirmed;
-                if (confirmed === true || confirmed === 'Yes') return <span className="text-xs font-medium text-green-600">Yes</span>;
-                if (confirmed === false || confirmed === 'No') return <span className="text-xs font-medium text-red-500">No</span>;
-                return <span className="text-xs text-gray-400">-</span>;
-            },
-            size: 140,
-            enableSorting: true,
-        },
-        // Shop Status
-        {
-            id: 'shop_status',
-            accessorKey: 'shop_status',
-            header: ({ column }) => <DataGridColumnHeader title="SHOP STATUS" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{(row.original as any).shop_status || '-'}</span>,
-            size: 120,
-            enableSorting: true,
-        },
-        // On Hold
-        {
-            id: "on_hold",
-            accessorKey: "status_id",
-            accessorFn: (row) => {
-                const fabId = row.fab_id;
-                if (optimisticUpdates[fabId] !== undefined) return optimisticUpdates[fabId] === 0;
-                return row.status_id === 0;
-            },
-            header: ({ column }) => <DataGridColumnHeader title="ON HOLD" column={column} />,
-            cell: ({ row }) => {
-                const fabId = parseInt(row.original.fab_id);
-                const isLoading = loadingStates[fabId] || false;
-                const isChecked = optimisticUpdates[row.original.fab_id] !== undefined
-                    ? optimisticUpdates[row.original.fab_id] === 0
-                    : row.original.status_id === 0;
-                return (
-                    <div className="flex justify-center items-center">
-                        <Switch
-                            className={`data-[state=checked]:bg-red-600 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            checked={isChecked}
-                            disabled={isLoading}
-                            onCheckedChange={async (checked) => {
-                                if (isLoading) return;
-                                const newStatusId = checked ? 0 : 1;
-                                const fabIdStr = row.original.fab_id;
-                                setOptimisticUpdates(prev => ({ ...prev, [fabIdStr]: newStatusId }));
-                                setLoadingStates(prev => ({ ...prev, [fabId]: true }));
-                                setSuppressParentRefresh(true);
-                                try {
-                                    await toggleFabOnHold({ fab_id: fabId, on_hold: checked }).unwrap();
-                                    setTimeout(() => {
-                                        setSuppressParentRefresh(false);
-                                        setOptimisticUpdates(prev => { const s = { ...prev }; delete s[fabIdStr]; return s; });
-                                    }, 2000);
-                                } catch {
-                                    setOptimisticUpdates(prev => { const s = { ...prev }; delete s[row.original.fab_id]; return s; });
+        header: ({ column }) => <DataGridColumnHeader title="ON HOLD" column={column} />,
+        cell: ({ row }) => {
+            const fabId = parseInt(row.original.fab_id);
+            const isLoading = loadingStates[fabId] || false;
+            const isChecked = optimisticUpdates[row.original.fab_id] !== undefined
+                ? optimisticUpdates[row.original.fab_id] === 0
+                : row.original.status_id === 0;
+            return (
+                <div className="flex justify-center items-center">
+                    <Switch
+                        className={`data-[state=checked]:bg-red-600 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        checked={isChecked}
+                        disabled={isLoading}
+                        onCheckedChange={async (checked) => {
+                            if (isLoading) return;
+                            const newStatusId = checked ? 0 : 1;
+                            const fabIdStr = row.original.fab_id;
+                            setOptimisticUpdates(prev => ({ ...prev, [fabIdStr]: newStatusId }));
+                            setLoadingStates(prev => ({ ...prev, [fabId]: true }));
+                            setSuppressParentRefresh(true);
+                            try {
+                                await toggleFabOnHold({ fab_id: fabId, on_hold: checked }).unwrap();
+                                setTimeout(() => {
                                     setSuppressParentRefresh(false);
-                                } finally {
-                                    setLoadingStates(prev => { const s = { ...prev }; delete s[fabId]; return s; });
-                                }
-                            }}
-                            aria-label="Toggle on hold"
-                        />
-                        {isLoading && (
-                            <div className="ml-2">
-                                <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-                            </div>
-                        )}
-                    </div>
-                );
-            },
-            enableSorting: false,
-            size: 80,
+                                    setOptimisticUpdates(prev => { const s = { ...prev }; delete s[fabIdStr]; return s; });
+                                }, 2000);
+                            } catch {
+                                setOptimisticUpdates(prev => { const s = { ...prev }; delete s[row.original.fab_id]; return s; });
+                                setSuppressParentRefresh(false);
+                            } finally {
+                                setLoadingStates(prev => { const s = { ...prev }; delete s[fabId]; return s; });
+                            }
+                        }}
+                        aria-label="Toggle on hold"
+                    />
+                    {isLoading && (
+                        <div className="ml-2">
+                            <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                        </div>
+                    )}
+                </div>
+            );
         },
+        enableSorting: false,
+        size: 80,
+        meta: {
+            format: (value: boolean) => value ? 'On Hold' : 'Active',
+        },
+    },
     ], [
         getPath, path, dateRange, enableMultiSelect, effectiveSelectedRows,
         filteredData, loadingStates, optimisticUpdates, onRescheduleClick,
@@ -1310,6 +1654,22 @@ export const JobTable = ({
             })
         }
     });
+
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const viewport = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+        if (!viewport) return;
+        const handleScroll = () => {
+            if (!onLoadMore || !hasMore) return;
+            const { scrollTop, clientHeight, scrollHeight } = viewport;
+            if (scrollTop + clientHeight >= scrollHeight - 100) {
+                onLoadMore();
+            }
+        };
+        viewport.addEventListener('scroll', handleScroll);
+        return () => viewport.removeEventListener('scroll', handleScroll);
+    }, [onLoadMore, hasMore]);
 
     return (
         <DataGrid
@@ -1531,7 +1891,7 @@ export const JobTable = ({
                 </CardHeader>
 
                 <CardTable>
-                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
+                    <ScrollArea ref={scrollRef} className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                         <DataGridTable />
                         <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
                     </ScrollArea>

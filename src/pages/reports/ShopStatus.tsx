@@ -89,12 +89,14 @@ export function ShopStatusReport() {
             header: ({ column }) => <DataGridColumnHeader title="STAGE" column={column} />,
             size: 200,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
         {
             accessorKey: 'fab_count',
             header: ({ column }) => <DataGridColumnHeader title="FAB COUNT" column={column} />,
             size: 100,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
         {
             accessorKey: 'avg_age_days',
@@ -102,6 +104,7 @@ export function ShopStatusReport() {
             cell: ({ row }) => row.original.avg_age_days.toFixed(1),
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(1) ?? '0' },
         },
         {
             accessorKey: 'max_age_days',
@@ -109,12 +112,14 @@ export function ShopStatusReport() {
             cell: ({ row }) => row.original.max_age_days.toFixed(1),
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(1) ?? '0' },
         },
         {
             accessorKey: 'stalled_over_14_days',
             header: ({ column }) => <DataGridColumnHeader title="STALLED >14 DAYS" column={column} />,
             size: 130,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
     ], []);
 

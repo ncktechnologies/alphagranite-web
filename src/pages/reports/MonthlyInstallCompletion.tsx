@@ -50,6 +50,28 @@ export const HEADER_OVERRIDES: Record<string, string> = {
     'pieces': 'NO OF PIECES',
 };
 
+// ─── Helper: format currency ──────────────────────────────────────────────
+const formatCurrency = (value: number): string => {
+    if (value == null) return '-';
+    return `$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+};
+
+// ─── Helper: format number ─────────────────────────────────────────────────
+const formatNumber = (value: number): string => {
+    if (value == null) return '-';
+    return Number(value).toLocaleString();
+};
+
+// ─── Helper: format date ──────────────────────────────────────────────────
+const formatDateForExport = (value: any): string => {
+    if (!value) return '-';
+    try {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) return format(date, 'MMM dd, yyyy');
+    } catch {}
+    return String(value);
+};
+
 export function MonthlyInstallCompletionReport() {
     const isSuperAdmin = useIsSuperAdmin();
 
@@ -161,7 +183,7 @@ export function MonthlyInstallCompletionReport() {
         return [totalRow, ...slicedData];
     }, [totals, slicedData]);
 
-    // ─── Columns ──────────────────────────────────────────────────────────────
+    // ─── Columns with meta.format ──────────────────────────────────────────────
     const columns = useMemo<ColumnDef<any>[]>(() => {
         if (!displayRows.length) return [];
 
@@ -209,10 +231,13 @@ export function MonthlyInstallCompletionReport() {
             orderedKeys.push(specialLast);
         }
 
-        // Build data columns for all ordered keys
+        // Build data columns for all ordered keys with meta.format
         const dataCols = orderedKeys.map(key => {
             const headerTitle = HEADER_OVERRIDES[key] || key.replace(/_/g, ' ').toUpperCase();
             const isCurrency = CURRENCY_COLUMNS.has(key) || key.includes('revenue') || key === 'gp' || key === 'cost_of_stone';
+            const isDateField = key === 'install_date';
+            const isNumberField = !isCurrency && !isDateField;
+
             return {
                 accessorKey: key,
                 header: ({ column }) => <DataGridColumnHeader title={headerTitle} column={column} />,
@@ -233,7 +258,7 @@ export function MonthlyInstallCompletionReport() {
                         return null;
                     }
                     let val = row.original[key];
-                    if (key === 'install_date' && val) {
+                    if (isDateField && val) {
                         try { val = format(new Date(val), 'MMM dd, yyyy'); } catch { }
                     }
                     if (typeof val === 'number') {
@@ -243,24 +268,27 @@ export function MonthlyInstallCompletionReport() {
                         val = val.toLocaleString();
                     }
                     if (val == null) return <span className="text-sm">-</span>;
-
-                    // if (key === 'fab_id') {
-                    //     const link = getFabIdLink(Number(val));
-                    //     return renderLink(link);
-                    // }
-                    // if (key === 'job_number') {
-                    //     const link = getJobNumberLink(String(val));
-                    //     return renderLink(link);
-                    // }
-                    // if (key === 'job_name') {
-                    //     const jobId = row.original.job_id;
-                    //     if (jobId) {
-                    //         const link = getJobNameLink(String(val), jobId);
-                    //         if (link) return renderLink(link);
-                    //     }
-                    //     return <span className="text-sm">{val}</span>;
-                    // }
                     return <span className="text-sm">{val}</span>;
+                },
+                meta: {
+                    format: (value: any, row: any) => {
+                        if (row._isTotalRow) {
+                            if (key === 'install_date') return 'TOTAL';
+                            if (key === 'pieces') return String(row.pieces ?? '');
+                            if (key === 'sq_ft') return (row.sq_ft ?? 0).toFixed(2);
+                            if (key === 'revenue') return formatCurrency(row.revenue);
+                            if (key === 'cost_of_stone') return formatCurrency(row.cost_of_stone);
+                            if (key === 'gp') return formatCurrency(row.gp);
+                            if (key === 'revenue_per_sq_ft') return '—';
+                            if (typeof row[key] === 'number') return (row[key] ?? 0).toFixed(2);
+                            return '';
+                        }
+                        if (value == null) return '-';
+                        if (isDateField) return formatDateForExport(value);
+                        if (isCurrency) return formatCurrency(value);
+                        if (isNumberField) return formatNumber(value);
+                        return String(value);
+                    },
                 },
             };
         });
@@ -278,6 +306,21 @@ export function MonthlyInstallCompletionReport() {
             },
             size: 400,
             enableSorting: false,
+            meta: {
+                format: (value: any, row: any) => {
+                    if (row._isTotalRow) return '—';
+                    const parts = [
+                        row.acct_name || row.account_name,
+                        row.job_name,
+                        row.input_area,
+                        row.stone_type_name,
+                        row.stone_color_name,
+                        row.stone_thickness_value,
+                        row.edge_name,
+                    ].filter(Boolean);
+                    return parts.join(' - ') || '';
+                },
+            },
         };
 
         const actionCol: ColumnDef<any> = {
@@ -301,13 +344,18 @@ export function MonthlyInstallCompletionReport() {
             },
             size: 80,
             enableSorting: false,
+            meta: { format: () => '' }, // skip export
         };
 
-        // Final columns: action first, then data columns up to insertIdx, then fab_info, then rest
+        // Final columns: data columns up to insertIdx, then fab_info, then rest
         const finalCols = [];
         finalCols.push(...dataCols.slice(0, insertIdx));
         finalCols.push(fabInfoCol);
         finalCols.push(...dataCols.slice(insertIdx));
+        // Prepend action column if super admin
+        if (isSuperAdmin) {
+            finalCols.unshift(actionCol);
+        }
         return finalCols;
     }, [displayRows, rawRows, isSuperAdmin]);
 
@@ -357,16 +405,6 @@ export function MonthlyInstallCompletionReport() {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Install Completion - Monthly</h1>
                 <div className="flex items-center gap-2 flex-wrap">
-                    {/* <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
-                        <SelectTrigger className="w-[120px] h-[34px] border-[#e2e4ed]">
-                            <SelectValue placeholder="Period" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="monthly">Monthly</SelectItem>
-                            <SelectItem value="custom">Custom Range</SelectItem>
-                        </SelectContent>
-                    </Select> */}
-
                     {dateMode === 'monthly' ? (
                         <>
                             <Select value={String(year)} onValueChange={(v) => setYear(parseInt(v))}>
@@ -411,7 +449,6 @@ export function MonthlyInstallCompletionReport() {
                     )}
                     <BackButton />
                 </div>
-
             </div>
 
             {/* ─── Summary Widgets ────────────────────────────────────────── */}

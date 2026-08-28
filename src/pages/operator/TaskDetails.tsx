@@ -370,27 +370,27 @@ export function OperatorTaskDetails() {
     const handleDeleteFile = async (file: any) => {
         const fileId = typeof file === 'string' ? file : (file?.id || file?.file_id);
         if (!fileId) {
-            toast.error('Could not determine file ID');
+            toast.error(t('FILE.DELETE.NO_ID', 'Could not determine file ID'));
             return;
         }
         try {
-            // Assumes mutation expects { file_id: number }
             await deleteFile({ file_id: Number(fileId) }).unwrap();
-            toast.success('File deleted successfully');
+            toast.success(t('FILE.DELETE.SUCCESS', 'File deleted successfully'));
             refetchQaFiles();
             refetchTask();
             refetchRevisions();
         } catch (error: any) {
-            toast.error(error?.data?.message || 'Failed to delete file');
+            toast.error(error?.data?.message || t('FILE.DELETE.FAILED', 'Failed to delete file'));
         }
     };
+
     const handleCreateShopRevision = async () => {
         if (!currentTask?.fab_id || !operatorId) {
-            toast.error('Missing FAB or operator information.');
+            toast.error(t('SHOP_REVISION.MISSING_INFO', 'Missing FAB or operator information.'));
             return;
         }
         if (!revisionNote.trim()) {
-            toast.warning('Please enter a revision note.');
+            toast.warning(t('SHOP_REVISION.NOTE_REQUIRED', 'Please enter a revision note.'));
             return;
         }
 
@@ -402,7 +402,7 @@ export function OperatorTaskDetails() {
                         action: 'pause',
                         timestamp: new Date().toISOString(),
                         work_percentage: workPercentage,
-                        note: 'Paused automatically before creating shop revision',
+                        note: t('SHOP_REVISION.PAUSE_NOTE', 'Paused automatically before creating shop revision'),
                     },
                 }).unwrap();
                 setTimerState('paused');
@@ -417,7 +417,7 @@ export function OperatorTaskDetails() {
                 revision_completed: false,
             }).unwrap();
 
-            toast.success('Shop revision created successfully.');
+            toast.success(t('SHOP_REVISION.CREATE_SUCCESS', 'Shop revision created successfully.'));
             setRevisionNote('');
             setShowRevisionDialog(false);
             await refetchTimer();
@@ -428,7 +428,7 @@ export function OperatorTaskDetails() {
                 }
             });
         } catch (error: any) {
-            toast.error(error?.data?.message || 'Failed to create shop revision.');
+            toast.error(error?.data?.message || t('SHOP_REVISION.CREATE_FAILED', 'Failed to create shop revision.'));
         }
     };
 
@@ -436,7 +436,7 @@ export function OperatorTaskDetails() {
     const handleUploadComplete = () => {
         setShowShopUploadModal(false);
         refetchRevisions();
-        toast.success('Files uploaded to shop revision successfully');
+        toast.success(t('SHOP_REVISION.UPLOAD_SUCCESS', 'Files uploaded to shop revision successfully'));
     };
 
     // Prepare data for toolbar
@@ -585,7 +585,7 @@ export function OperatorTaskDetails() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-lg font-semibold">
-                                FAB Files
+                                {t('FAB.FILES')}
                                 {totalFileCount > 0 && (
                                     <span className="ml-2 text-sm font-normal text-gray-400">
                                         ({totalFileCount})
@@ -593,7 +593,7 @@ export function OperatorTaskDetails() {
                                 )}
                             </CardTitle>
                             <p className="text-sm text-muted-foreground">
-                                Drafting, SlabSmith, Sales CT, QA, and shop revision files
+                                {t('FAB.FILES_DESCRIPTION')}
                             </p>
                         </CardHeader>
                         <CardContent>
@@ -607,7 +607,7 @@ export function OperatorTaskDetails() {
                                     sources={fileSources}
                                     onFileClick={handleFileClick}
                                     defaultLayout="card"
-                                    emptyMessage="No files have been uploaded for this FAB yet."
+                                    emptyMessage={t('FAB.NO_FILES')}
                                     onDeleteFile={handleDeleteFile}
                                     showDeleteButton={true}
                                 />
@@ -619,13 +619,13 @@ export function OperatorTaskDetails() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Shop Revision History</CardTitle>
+                            <CardTitle>{t('SHOP_REVISION.HISTORY')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             {isRevisionsLoading ? (
-                                <p className="text-sm text-muted-foreground">Loading shop revision history...</p>
+                                <p className="text-sm text-muted-foreground">{t('SHOP_REVISION.LOADING')}</p>
                             ) : revisions.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">No shop revisions exist for this FAB.</p>
+                                <p className="text-sm text-muted-foreground">{t('SHOP_REVISION.NO_REVISIONS')}</p>
                             ) : (
                                 revisions.map((revision: any) => (
                                     <button
@@ -637,14 +637,14 @@ export function OperatorTaskDetails() {
                                         <div className="flex items-center justify-between gap-2">
                                             <p className="font-medium text-sm">Revision #{revision.id}</p>
                                             <span className={`text-xs ${revision.revision_completed ? 'text-green-700' : 'text-orange-700'}`}>
-                                                {revision.revision_completed ? 'Completed' : 'Pending'}
+                                                {revision.revision_completed ? t('SHOP_REVISION.COMPLETED') : t('SHOP_REVISION.PENDING')}
                                             </span>
                                         </div>
                                         <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                            {revision.revision_note || 'No note provided.'}
+                                            {revision.revision_note || t('SHOP_REVISION.NO_NOTE')}
                                         </p>
                                         <p className="text-xs text-gray-400 mt-1">
-                                            Requested by: {revision.requested_by_name || revision.requested_by || 'Unknown'}
+                                            {t('SHOP_REVISION.REQUESTED_BY')}: {revision.requested_by_name || revision.requested_by || t('COMMON.UNKNOWN')}
                                         </p>
                                     </button>
                                 ))
@@ -659,17 +659,15 @@ export function OperatorTaskDetails() {
                         <div className="mb-4 p-3 bg-amber-50 border-l-4 border-amber-500 rounded-md flex items-start gap-2">
                             <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                             <div className="text-sm text-amber-800">
-                                <p className="font-medium">Pending Shop Revision</p>
-                                <p className="text-amber-700">
-                                    Timer actions and creating a new revision are disabled until the current pending revision is marked as complete.
-                                </p>
+                                <p className="font-medium">{t('SHOP_REVISION.PENDING_WARNING_TITLE')}</p>
+                                <p className="text-amber-700">{t('SHOP_REVISION.PENDING_WARNING_DESC')}</p>
                             </div>
                         </div>
                     )}
 
                     <Card className="border-l shadow-sm">
                         <CardHeader className="border-b pb-4">
-                            <CardTitle className="text-lg font-semibold">Timer</CardTitle>
+                            <CardTitle className="text-lg font-semibold">{t('OPERATOR.TIMER')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-6">
                             {timerState === 'idle' && (
@@ -723,7 +721,7 @@ export function OperatorTaskDetails() {
                                     size="lg"
                                     disabled={hasPendingShopRevision}
                                 >
-                                    <CheckCircle2 className="h-5 w-5" /> Complete
+                                    <CheckCircle2 className="h-5 w-5" /> {t('OPERATOR.COMPLETE')}
                                 </Button>
                             )}
                         </CardContent>
@@ -731,53 +729,53 @@ export function OperatorTaskDetails() {
 
                     <Card className="mt-6 border-l shadow-sm">
                         <CardHeader>
-                            <CardTitle>Revision Details</CardTitle>
+                            <CardTitle>{t('SHOP_REVISION.REVISION_DETAILS')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-4">
                             {!selectedRevision ? (
-                                <p className="text-sm text-muted-foreground">Select a revision from the history list to view details.</p>
+                                <p className="text-sm text-muted-foreground">{t('SHOP_REVISION.SELECT_TO_VIEW')}</p>
                             ) : (
                                 <>
                                     <SCTTimer
                                         startTime={selectedRevision.created_at || null}
                                         endTime={selectedRevision.revision_completed ? selectedRevision.completed_at || null : null}
-                                        text="Time in Shop Revision:"
+                                        text={t('SHOP_REVISION.TIME_IN_REVISION')}
                                     />
                                     <div className="space-y-1">
-                                        <p className="text-xs text-muted-foreground">FAB ID</p>
+                                        <p className="text-xs text-muted-foreground">{t('SHOP_REVISION.FAB_ID')}</p>
                                         <p className="text-sm font-medium">{selectedRevision.fab_id || '—'}</p>
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-xs text-muted-foreground">Revision Note</p>
+                                        <p className="text-xs text-muted-foreground">{t('SHOP_REVISION.REVISION_NOTE')}</p>
                                         <p className="text-sm">{selectedRevision.revision_note || '—'}</p>
                                     </div>
                                     {selectedRevision.revision_feedback && (
                                         <div className="space-y-1">
-                                            <p className="text-xs text-muted-foreground">Revision Feedback</p>
+                                            <p className="text-xs text-muted-foreground">{t('SHOP_REVISION.REVISION_FEEDBACK')}</p>
                                             <p className="text-sm">{selectedRevision.revision_feedback}</p>
                                         </div>
                                     )}
                                     <div className="space-y-1">
-                                        <p className="text-xs text-muted-foreground">Requested By</p>
+                                        <p className="text-xs text-muted-foreground">{t('SHOP_REVISION.REQUESTED_BY')}</p>
                                         <p className="text-sm">{selectedRevision.requested_by_name || selectedRevision.requested_by || '—'}</p>
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-xs text-muted-foreground">Created At</p>
+                                        <p className="text-xs text-muted-foreground">{t('SHOP_REVISION.CREATED_AT')}</p>
                                         <p className="text-sm">{selectedRevision.created_at ? format(new Date(selectedRevision.created_at), 'MMM dd, yyyy h:mm a') : '—'}</p>
                                     </div>
                                     {selectedRevision.revision_completed && selectedRevision.completed_at && (
                                         <div className="space-y-1">
-                                            <p className="text-xs text-muted-foreground">Completed At</p>
+                                            <p className="text-xs text-muted-foreground">{t('SHOP_REVISION.COMPLETED_AT')}</p>
                                             <p className="text-sm">{format(new Date(selectedRevision.completed_at), 'MMM dd, yyyy h:mm a')}</p>
                                         </div>
                                     )}
                                     <div className="space-y-1">
-                                        <p className="text-xs text-muted-foreground">Status</p>
+                                        <p className="text-xs text-muted-foreground">{t('SHOP_REVISION.STATUS')}</p>
                                         <p className="text-sm font-medium">
                                             {selectedRevision.revision_completed ? (
-                                                <span className="text-green-700">Completed</span>
+                                                <span className="text-green-700">{t('SHOP_REVISION.COMPLETED')}</span>
                                             ) : (
-                                                <span className="text-orange-700">Pending</span>
+                                                <span className="text-orange-700">{t('SHOP_REVISION.PENDING')}</span>
                                             )}
                                         </p>
                                     </div>
@@ -790,7 +788,7 @@ export function OperatorTaskDetails() {
                                             size="sm"
                                         >
                                             <Upload className="h-4 w-4 mr-2" />
-                                            Upload Files to Revision
+                                            {t('SHOP_REVISION.UPLOAD_FILES')}
                                         </Button>
                                     )}
                                 </>
@@ -811,7 +809,7 @@ export function OperatorTaskDetails() {
                                 size="lg"
                                 disabled={hasPendingShopRevision}
                             >
-                                Create Shop Revision
+                                {t('SHOP_REVISION.CREATE')}
                             </Button>
                             <Button
                                 onClick={() => setShowUploadDialog(true)}
@@ -819,7 +817,7 @@ export function OperatorTaskDetails() {
                                 size="lg"
                                 disabled={hasPendingShopRevision}
                             >
-                                <Camera className="h-5 w-5" /> Upload Shop Files
+                                <Camera className="h-5 w-5" /> {t('SHOP_REVISION.UPLOAD_SHOP_FILES')}
                             </Button>
                         </CardContent>
                     </Card>
@@ -875,17 +873,17 @@ export function OperatorTaskDetails() {
                     key={selectedRevision.id}
                     open={showShopUploadModal}
                     onOpenChange={setShowShopUploadModal}
-                    title="Upload Files to Shop Revision"
+                    title={t('SHOP_REVISION.UPLOAD_FILES')}
                     entityId={selectedRevision.id}
                     uploadMutation={uploadToShopRevision}
                     disabled={false}
-                    stages={[{ value: 'shop revision', label: 'Shop Revision' }]}
+                    stages={[{ value: 'shop revision', label: t('SHOP_REVISION.LABEL') }]}
                     fileTypes={[
-                        { value: 'block_drawing', label: 'Block Drawing' },
-                        { value: 'layout', label: 'Layout' },
-                        { value: 'ss_layout', label: 'SS Layout' },
-                        { value: 'shop_drawing', label: 'Shop Drawing' },
-                        { value: 'photo_media', label: 'Photo Media' },
+                        { value: 'block_drawing', label: t('FILE_TYPE.BLOCK_DRAWING') },
+                        { value: 'layout', label: t('FILE_TYPE.LAYOUT') },
+                        { value: 'ss_layout', label: t('FILE_TYPE.SS_LAYOUT') },
+                        { value: 'shop_drawing', label: t('FILE_TYPE.SHOP_DRAWING') },
+                        { value: 'photo_media', label: t('FILE_TYPE.PHOTO_MEDIA') },
                     ]}
                     additionalParams={{
                         revision_id: selectedRevision.id,
@@ -899,19 +897,19 @@ export function OperatorTaskDetails() {
                 <DialogContent className="max-w-lg">
                     <DialogHeader>
                         <DialogTitle>
-                            Create Shop Revision {currentTask?.fab_id ? `for FAB-${currentTask.fab_id}` : ''}
+                            {t('SHOP_REVISION.CREATE_TITLE')} {currentTask?.fab_id ? `FAB-${currentTask.fab_id}` : ''}
                         </DialogTitle>
                     </DialogHeader>
                     {hasPendingShopRevision && (
                         <div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
-                            ⚠️ A pending revision already exists. Please complete it before creating a new one.
+                            ⚠️ {t('SHOP_REVISION.PENDING_WARNING')}
                         </div>
                     )}
                     <div className="space-y-4">
                         <Textarea
                             value={revisionNote}
                             onChange={(e) => setRevisionNote(e.target.value)}
-                            placeholder="Enter revision details for this FAB..."
+                            placeholder={t('SHOP_REVISION.NOTE_PLACEHOLDER')}
                             className="min-h-[120px] resize-none"
                             disabled={hasPendingShopRevision}
                         />
@@ -921,13 +919,13 @@ export function OperatorTaskDetails() {
                                 onClick={() => setShowRevisionDialog(false)}
                                 disabled={isCreatingRevision}
                             >
-                                Cancel
+                                {t('COMMON.CANCEL')}
                             </Button>
                             <Button
                                 onClick={handleCreateShopRevision}
                                 disabled={isCreatingRevision || !revisionNote.trim() || hasPendingShopRevision}
                             >
-                                {isCreatingRevision ? 'Creating...' : 'Create Revision'}
+                                {isCreatingRevision ? t('COMMON.CREATING') : t('SHOP_REVISION.CREATE')}
                             </Button>
                         </div>
                     </div>

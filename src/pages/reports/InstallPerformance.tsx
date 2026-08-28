@@ -93,6 +93,7 @@ export function InstallPerformance() {
             cell: ({ row }) => <span className="font-medium text-sm">{row.original.installer_name}</span>,
             size: 200,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
         {
             accessorKey: 'completed_installs',
@@ -104,6 +105,7 @@ export function InstallPerformance() {
             ),
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
         {
             accessorKey: 'sqft_installed',
@@ -111,6 +113,7 @@ export function InstallPerformance() {
             cell: ({ row }) => <span className="text-sm">{row.original.sqft_installed.toFixed(1)}</span>,
             size: 130,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(1) ?? '0' },
         },
         {
             accessorKey: 'work_hours',
@@ -118,6 +121,7 @@ export function InstallPerformance() {
             cell: ({ row }) => <span className="text-sm">{row.original.work_hours.toFixed(2)}</span>,
             size: 110,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(2) ?? '0' },
         },
         {
             accessorKey: 'pause_hours',
@@ -125,6 +129,7 @@ export function InstallPerformance() {
             cell: ({ row }) => <span className="text-sm">{row.original.pause_hours.toFixed(2)}</span>,
             size: 110,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(2) ?? '0' },
         },
         {
             accessorKey: 'sqft_per_hour',
@@ -132,6 +137,7 @@ export function InstallPerformance() {
             cell: ({ row }) => <span className="text-sm">{row.original.sqft_per_hour.toFixed(2)}</span>,
             size: 100,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(2) ?? '0' },
         },
         // {
         //     accessorKey: 'labor_cost',

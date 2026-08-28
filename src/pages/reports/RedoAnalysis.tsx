@@ -165,12 +165,14 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => <span className="text-sm font-medium">{formatStage(row.original.stage)}</span>,
             size: 250,
             enableSorting: true,
+            meta: { format: (value: string) => formatStage(value) || '' },
         },
         {
             accessorKey: 'redo_count',
             header: ({ column }) => <DataGridColumnHeader title="REDO COUNT" column={column} />,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
     ], []);
 
@@ -181,12 +183,14 @@ export function RedoAnalysisReport() {
             header: ({ column }) => <DataGridColumnHeader title="DEPARTMENT" column={column} />,
             size: 200,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
         {
             accessorKey: 'redo_count',
             header: ({ column }) => <DataGridColumnHeader title="REDO COUNT" column={column} />,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
         {
             accessorKey: 'redo_sqft',
@@ -194,6 +198,7 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => row.original.redo_sqft?.toFixed(2) ?? '0.00',
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(2) ?? '0.00' },
         },
         {
             accessorKey: 'redo_value',
@@ -201,6 +206,7 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => `$${row.original.redo_value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}`,
             size: 140,
             enableSorting: true,
+            meta: { format: (value: number) => '$' + (value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '') },
         },
         {
             accessorKey: 'redo_total_cost',
@@ -208,6 +214,7 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => `$${row.original.redo_total_cost?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0.00'}`,
             size: 140,
             enableSorting: true,
+            meta: { format: (value: number) => '$' + (value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0.00') },
         },
     ], []);
 
@@ -218,12 +225,14 @@ export function RedoAnalysisReport() {
             header: ({ column }) => <DataGridColumnHeader title="EMPLOYEE" column={column} />,
             size: 200,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
         {
             accessorKey: 'redo_count',
             header: ({ column }) => <DataGridColumnHeader title="REDO COUNT" column={column} />,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
         {
             accessorKey: 'redo_sqft',
@@ -231,6 +240,7 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => row.original.redo_sqft?.toFixed(2) ?? '0.00',
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(2) ?? '0.00' },
         },
         {
             accessorKey: 'redo_value',
@@ -238,6 +248,7 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => `$${row.original.redo_value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}`,
             size: 140,
             enableSorting: true,
+            meta: { format: (value: number) => '$' + (value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '') },
         },
         {
             accessorKey: 'redo_total_cost',
@@ -245,6 +256,7 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => `$${row.original.redo_total_cost?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}`,
             size: 140,
             enableSorting: true,
+            meta: { format: (value: number) => '$' + (value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '') },
         },
     ], []);
 
@@ -260,6 +272,7 @@ export function RedoAnalysisReport() {
             // },
             size: 100,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? '') },
         },
         {
             accessorKey: 'job_number',
@@ -271,6 +284,7 @@ export function RedoAnalysisReport() {
             // },
             size: 120,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
         // {
         //     accessorKey: 'job_name',
@@ -291,6 +305,7 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => <FabInfoCell data={row.original} />,
             size: 400,
             enableSorting: false,
+            meta: { format: (_value: any, row: RedoCostRow) => { const parts = [row.account_name, row.job_name, row.input_area, row.stone_type_name, row.stone_color_name, row.stone_thickness_value, row.edge_name].filter(Boolean); return parts.join(' - '); } },
         },
         {
             accessorKey: 'cost_per_sqft',
@@ -298,6 +313,7 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => `$${row.original.cost_per_sqft?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}`,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => '$' + (value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '') },
         },
         {
             accessorKey: 'redo_total_sqft',
@@ -305,6 +321,7 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => row.original.redo_total_sqft?.toFixed(2) ?? '0.00',
             size: 130,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(2) ?? '0.00' },
         },
         {
             accessorKey: 'redo_total_cost',
@@ -312,6 +329,7 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => `$${row.original.redo_total_cost?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}`,
             size: 140,
             enableSorting: true,
+            meta: { format: (value: number) => '$' + (value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '') },
         },
         {
             accessorKey: 'created_at',
@@ -319,6 +337,7 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => row.original.created_at ? format(new Date(row.original.created_at), 'MMM dd, yyyy') : '-',
             size: 140,
             enableSorting: true,
+            meta: { format: (value: string) => value ? format(new Date(value), 'MMM dd, yyyy') : '-' },
         },
     ], []);
 
@@ -329,12 +348,14 @@ export function RedoAnalysisReport() {
             header: ({ column }) => <DataGridColumnHeader title="ACCOUNT" column={column} />,
             size: 250,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
         {
             accessorKey: 'redo_count',
             header: ({ column }) => <DataGridColumnHeader title="REDO COUNT" column={column} />,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
     ], []);
 
@@ -350,18 +371,21 @@ export function RedoAnalysisReport() {
             // },
             size: 100,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
         {
             accessorKey: 'job_name',
             header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
             size: 250,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
         {
             accessorKey: 'redo_count',
             header: ({ column }) => <DataGridColumnHeader title="REDO COUNT" column={column} />,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
     ], []);
 
@@ -372,24 +396,28 @@ export function RedoAnalysisReport() {
             header: ({ column }) => <DataGridColumnHeader title="MONTH" column={column} />,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
         {
             accessorKey: 'total_number_of_fabs',
             header: ({ column }) => <DataGridColumnHeader title="TOTAL FABS" column={column} />,
             size: 100,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
         {
             accessorKey: 'total_number_of_ag_redo_fabs',
             header: ({ column }) => <DataGridColumnHeader title="REDO FABS" column={column} />,
             size: 100,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
         {
             accessorKey: 'change_in_number_of_redos_value',
             header: ({ column }) => <DataGridColumnHeader title="CHANGE" column={column} />,
             size: 100,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
         {
             accessorKey: 'redo_percent_value',
@@ -401,6 +429,7 @@ export function RedoAnalysisReport() {
             },
             size: 100,
             enableSorting: true,
+            meta: { format: (value: number) => value != null ? value.toFixed(2) + '%' : '0.00%' },
         },
         {
             accessorKey: 'total_square_footage',
@@ -408,6 +437,7 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => row.original.total_square_footage?.toFixed(2) ?? '0.00',
             size: 100,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(2) ?? '0.00' },
         },
         {
             accessorKey: 'total_redo_value',
@@ -415,6 +445,7 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => `$${row.original.total_redo_value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}`,
             size: 140,
             enableSorting: true,
+            meta: { format: (value: number) => '$' + (value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '') },
         },
         {
             accessorKey: 'increase_decrease_value',
@@ -422,6 +453,7 @@ export function RedoAnalysisReport() {
             cell: ({ row }) => `$${row.original.increase_decrease_value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}`,
             size: 140,
             enableSorting: true,
+            meta: { format: (value: number) => '$' + (value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '') },
         },
     ], []);
 

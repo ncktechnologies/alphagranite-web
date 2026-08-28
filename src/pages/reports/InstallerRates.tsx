@@ -55,11 +55,40 @@ export function InstallerRatesReport() {
     }, [rows]);
 
     const columns = useMemo<ColumnDef<InstallerRateRow>[]>(() => [
-        { accessorKey: 'installer_name', header: () => formatHeader('INSTALLER'), size: 180 },
-        { accessorKey: 'hourly_rate', header: () => formatHeader('HOURLY RATE'), size: 120, cell: ({ row }) => `$${row.original.hourly_rate.toFixed(2)}` },
-        { accessorKey: 'effective_from', header: () => formatHeader('EFFECTIVE FROM'), size: 130, cell: ({ row }) => format(new Date(row.original.effective_from), 'MMM dd, yyyy') },
-        { accessorKey: 'effective_to', header: () => formatHeader('EFFECTIVE TO'), size: 130, cell: ({ row }) => row.original.effective_to ? format(new Date(row.original.effective_to), 'MMM dd, yyyy') : 'Current' },
-        { accessorKey: 'is_active', header: () => formatHeader('ACTIVE'), size: 80, cell: ({ row }) => row.original.is_active ? 'Yes' : 'No' },
+        {
+            accessorKey: 'installer_name',
+            header: () => formatHeader('INSTALLER'),
+            size: 180,
+            meta: { format: (value: string) => value || '' },
+        },
+        {
+            accessorKey: 'hourly_rate',
+            header: () => formatHeader('HOURLY RATE'),
+            size: 120,
+            cell: ({ row }) => `$${row.original.hourly_rate.toFixed(2)}`,
+            meta: { format: (value: number) => value?.toFixed(2) ? '$' + value.toFixed(2) : '' },
+        },
+        {
+            accessorKey: 'effective_from',
+            header: () => formatHeader('EFFECTIVE FROM'),
+            size: 130,
+            cell: ({ row }) => format(new Date(row.original.effective_from), 'MMM dd, yyyy'),
+            meta: { format: (value: string) => value ? format(new Date(value), 'MMM dd, yyyy') : '' },
+        },
+        {
+            accessorKey: 'effective_to',
+            header: () => formatHeader('EFFECTIVE TO'),
+            size: 130,
+            cell: ({ row }) => row.original.effective_to ? format(new Date(row.original.effective_to), 'MMM dd, yyyy') : 'Current',
+            meta: { format: (value: string) => value ? format(new Date(value), 'MMM dd, yyyy') : 'Current' },
+        },
+        {
+            accessorKey: 'is_active',
+            header: () => formatHeader('ACTIVE'),
+            size: 80,
+            cell: ({ row }) => row.original.is_active ? 'Yes' : 'No',
+            meta: { format: (value: boolean) => value ? 'Yes' : 'No' },
+        },
     ], []);
 
     const table = useReactTable({

@@ -96,7 +96,7 @@ export function ServiceLevelReport() {
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
     const [stageFilter, setStageFilter] = useState<string>('all');
     const [riskFilter, setRiskFilter] = useState<string>('all');
-    const [statusFilter, setStatusFilter] = useState<string>('all'); // ✅ new
+    const [statusFilter, setStatusFilter] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
 
     const queryParams = useMemo(() => {
@@ -141,7 +141,6 @@ export function ServiceLevelReport() {
         return Array.from(risks).sort();
     }, [fabStatusRows]);
 
-    // ✅ Extract status options
     const statusOptions = useMemo(() => {
         const statuses = new Set<string>();
         fabStatusRows.forEach(row => {
@@ -156,8 +155,7 @@ export function ServiceLevelReport() {
             const matchFabType = fabTypeFilter === 'all' || row.fab_type === fabTypeFilter;
             const matchStage = stageFilter === 'all' || row.current_stage === stageFilter;
             const matchRisk = riskFilter === 'all' || row.risk_color === riskFilter;
-            const matchStatus = statusFilter === 'all' || row.status === statusFilter; // ✅
-            // Search: match fab_id or job_number (case-insensitive)
+            const matchStatus = statusFilter === 'all' || row.status === statusFilter;
             const searchTerm = searchQuery.trim().toLowerCase();
             let matchSearch = true;
             if (searchTerm) {
@@ -179,67 +177,125 @@ export function ServiceLevelReport() {
         setFabTypeFilter('all');
         setStageFilter('all');
         setRiskFilter('all');
-        setStatusFilter('all'); // ✅
+        setStatusFilter('all');
         setSearchQuery('');
     };
 
-    // ─── Stage heat map columns (target_days removed) ──────────────────────
+    // ─── Stage heat map columns (with meta.format) ──────────────────────────────────
     const stageColumns = useMemo<ColumnDef<StageHeatMapRow>[]>(() => [
-        { accessorKey: 'stage', header: ({ column }) => <DataGridColumnHeader title="STAGE" column={column} />, size: 180 },
-        { accessorKey: 'total_wip', header: ({ column }) => <DataGridColumnHeader title="TOTAL WIP" column={column} />, size: 100 },
-        { accessorKey: 'green', header: ({ column }) => <DataGridColumnHeader title="GREEN" column={column} />, size: 80 },
-        { accessorKey: 'yellow', header: ({ column }) => <DataGridColumnHeader title="YELLOW" column={column} />, size: 80 },
-        { accessorKey: 'red', header: ({ column }) => <DataGridColumnHeader title="RED" column={column} />, size: 80 },
-        { accessorKey: 'avg_days', header: ({ column }) => <DataGridColumnHeader title="AVG DAYS" column={column} />, size: 100, cell: ({ row }) => row.original.avg_days.toFixed(1) },
-        { accessorKey: 'sla_breach_percent', header: ({ column }) => <DataGridColumnHeader title="SLA BREACH %" column={column} />, size: 120, cell: ({ row }) => `${row.original.sla_breach_percent.toFixed(1)}%` },
+        {
+            accessorKey: 'stage',
+            header: ({ column }) => <DataGridColumnHeader title="STAGE" column={column} />,
+            size: 180,
+            meta: { format: (value: string) => value || '' },
+        },
+        {
+            accessorKey: 'total_wip',
+            header: ({ column }) => <DataGridColumnHeader title="TOTAL WIP" column={column} />,
+            size: 100,
+            meta: { format: (value: number) => String(value) },
+        },
+        {
+            accessorKey: 'green',
+            header: ({ column }) => <DataGridColumnHeader title="GREEN" column={column} />,
+            size: 80,
+            meta: { format: (value: number) => String(value) },
+        },
+        {
+            accessorKey: 'yellow',
+            header: ({ column }) => <DataGridColumnHeader title="YELLOW" column={column} />,
+            size: 80,
+            meta: { format: (value: number) => String(value) },
+        },
+        {
+            accessorKey: 'red',
+            header: ({ column }) => <DataGridColumnHeader title="RED" column={column} />,
+            size: 80,
+            meta: { format: (value: number) => String(value) },
+        },
+        {
+            accessorKey: 'avg_days',
+            header: ({ column }) => <DataGridColumnHeader title="AVG DAYS" column={column} />,
+            size: 100,
+            cell: ({ row }) => row.original.avg_days.toFixed(1),
+            meta: { format: (value: number) => value?.toFixed(1) ?? '' },
+        },
+        {
+            accessorKey: 'sla_breach_percent',
+            header: ({ column }) => <DataGridColumnHeader title="SLA BREACH %" column={column} />,
+            size: 120,
+            cell: ({ row }) => `${row.original.sla_breach_percent.toFixed(1)}%`,
+            meta: { format: (value: number) => `${value?.toFixed(1)}%` },
+        },
     ], []);
 
-    // ─── Fab status columns ─────────────────────────────────────────────────
+    // ─── Fab status columns (with meta.format) ──────────────────────────────────────────
     const fabColumns = useMemo<ColumnDef<FabStatusRow>[]>(() => [
         {
             accessorKey: 'fab_type',
             header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
             size: 100,
             cell: ({ row }) => <span className="uppercase text-sm">{row.original.fab_type}</span>,
+            meta: { format: (value: string) => value?.toUpperCase() || '' },
         },
         {
             accessorKey: 'fab_id',
             header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
             size: 80,
+            meta: { format: (value: number) => String(value) },
         },
         {
             accessorKey: 'job_number',
             header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
             size: 100,
+            meta: { format: (value: string) => value || '' },
         },
         {
             accessorKey: 'fab_info',
             header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
             size: 350,
             cell: ({ row }) => <FabInfoCell data={row.original} />,
+            meta: {
+                format: (value: any, row: FabStatusRow) => {
+                    const parts = [
+                        (row as any).acct_name,
+                        (row as any).job_name,
+                        (row as any).input_area,
+                        (row as any).stone_type_name,
+                        (row as any).stone_color_name,
+                        (row as any).stone_thickness_value,
+                        (row as any).edge_name,
+                    ].filter(Boolean);
+                    return parts.join(' - ') || '';
+                },
+            },
         },
         {
             accessorKey: 'current_stage',
             header: ({ column }) => <DataGridColumnHeader title="STAGE" column={column} />,
             size: 150,
             cell: ({ row }) => <span className="text-sm font-medium">{formatStage(row.original.current_stage)}</span>,
+            meta: { format: (value: string) => formatStage(value) },
         },
         {
             accessorKey: 'days_in_stage',
             header: ({ column }) => <DataGridColumnHeader title="DAYS IN STAGE" column={column} />,
             size: 120,
             cell: ({ row }) => row.original.days_in_stage,
+            meta: { format: (value: number) => String(value) },
         },
         {
             accessorKey: 'assigned_user',
             header: ({ column }) => <DataGridColumnHeader title="ASSIGNED USER" column={column} />,
             size: 150,
             cell: ({ row }) => row.original.assigned_user || '-',
+            meta: { format: (value: string) => value || '-' },
         },
         {
             accessorKey: 'status',
             header: ({ column }) => <DataGridColumnHeader title="STATUS" column={column} />,
             size: 120,
+            meta: { format: (value: string) => value || '' },
         },
         {
             accessorKey: 'risk_color',
@@ -250,13 +306,24 @@ export function ServiceLevelReport() {
                 const colorClass = color === 'red' ? 'text-red-600 font-semibold' : color === 'yellow' ? 'text-yellow-600 font-semibold' : 'text-green-600 font-semibold';
                 return <span className={colorClass}>{color.toUpperCase()}</span>;
             },
+            meta: { format: (value: string) => value?.toUpperCase() || '' },
         },
     ], []);
 
-    // ─── Backlog columns ────────────────────────────────────────────────────
+    // ─── Backlog columns (with meta.format) ────────────────────────────────────────────────────
     const backlogColumns = useMemo<ColumnDef<AgingBacklogRow>[]>(() => [
-        { accessorKey: 'bucket', header: ({ column }) => <DataGridColumnHeader title="BUCKET" column={column} />, size: 150 },
-        { accessorKey: 'count', header: ({ column }) => <DataGridColumnHeader title="COUNT" column={column} />, size: 100 },
+        {
+            accessorKey: 'bucket',
+            header: ({ column }) => <DataGridColumnHeader title="BUCKET" column={column} />,
+            size: 150,
+            meta: { format: (value: string) => value || '' },
+        },
+        {
+            accessorKey: 'count',
+            header: ({ column }) => <DataGridColumnHeader title="COUNT" column={column} />,
+            size: 100,
+            meta: { format: (value: number) => String(value) },
+        },
     ], []);
 
     // ─── Tables ─────────────────────────────────────────────────────────────
@@ -401,14 +468,12 @@ export function ServiceLevelReport() {
                     <Card className="p-4"><div className="text-sm text-[#7c8689]">Overdue (Red)</div><div className="text-2xl font-semibold text-red-600">{widgets.overdue_red}</div></Card>
                     <Card className="p-4"><div className="text-sm text-[#7c8689]">Avg Cycle Time</div><div className="text-2xl font-semibold">{widgets.avg_cycle_time_days?.toFixed(1)} days</div></Card>
                     {widgets.oldest_open_job && (
-                        // <Card className="p-4"><div className="text-sm text-[#7c8689]">Oldest Open Job</div><div className="text-lg font-semibold">Fab ID  {widgets.oldest_open_job.fab_id}</div><div className="text-xs">{formatStage(widgets.oldest_open_job.current_stage)} – {widgets.oldest_open_job.age_days} days</div></Card>
                         <Card className="p-4">
                             <div className="text-sm text-[#7c8689]">Oldest Open Job</div>
                             <div className="flex flex-col">
                                 <span className="text-xs font-medium text-[#7c8689]">Fab ID</span>
                                 <span className="text-xl font-bold">{widgets.oldest_open_job.fab_id}</span>
                             </div>
-
                             <div className="text-xs">{formatStage(widgets.oldest_open_job.current_stage)} – {widgets.oldest_open_job.age_days} days</div>
                         </Card>
                     )}
@@ -466,7 +531,7 @@ export function ServiceLevelReport() {
                                         </SelectContent>
                                     </Select>
 
-                                    {/* ✅ Status Filter */}
+                                    {/* Status Filter */}
                                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                                         <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed]">
                                             <SelectValue placeholder="Status" />

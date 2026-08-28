@@ -54,6 +54,29 @@ import JobFormSheet from './components/JobFormSheet';
 import { Link } from 'react-router';
 import { useToggleNeedToInvoiceMutation, useMarkJobInvoicedMutation, useAddJobNotesMutation } from '@/store/api/job';
 import { exportTableToCSV } from '@/lib/exportToCsv';
+import { format } from 'date-fns';
+
+// ─── Helper functions for formatting ──────────────────────────────────────
+const formatDateForExport = (value: any): string => {
+  if (!value) return '-';
+  try {
+    const date = new Date(value);
+    if (!isNaN(date.getTime())) return format(date, 'MMM dd, yyyy');
+  } catch {}
+  return String(value);
+};
+
+const formatCurrency = (value: any): string => {
+  if (value == null || value === 'N/A' || value === '') return 'N/A';
+  const num = Number(value);
+  if (isNaN(num)) return 'N/A';
+  return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+};
+
+const formatBoolean = (value: any): string => {
+  if (value === true || value === 'true' || value === 1) return 'Yes';
+  return 'No';
+};
 
 interface ExtendedJob extends Omit<Job, 'project_value'> {
   sales_person_name?: string;
@@ -142,18 +165,6 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
     setIsSheetOpen(true);
   };
 
-  // const handleDelete = async (job: ExtendedJob) => {
-  //   if (window.confirm(`Are you sure you want to delete job ${job.name}?`)) {
-  //     try {
-  //       await deleteJob(job.id).unwrap();
-  //       toast.success('Job deleted successfully');
-  //       refetch();
-  //     } catch (error) {
-  //       toast.error('Failed to delete job');
-  //     }
-  //   }
-  // };
-
   const handleCreateNew = () => {
     setSelectedJob(null);
     setSheetMode('create');
@@ -216,7 +227,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
     setPagination(prev => ({ ...prev, pageIndex: 0 }));
   }, [searchQuery, selectedStatus]);
 
-  // ─── Columns ──────────────────────────────────────────────────────────────
+  // ─── Columns with meta.format ──────────────────────────────────────────────
   const columns = useMemo<ColumnDef<ExtendedJob>[]>(
     () => {
       const baseColumns: ColumnDef<ExtendedJob>[] = [
@@ -243,37 +254,27 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
                   {canToggleInvoice && (
                     <>
                       <DropdownMenuSeparator />
-                      {/* Mark as Need to Invoice – only if not already marked */}
                       {!job.need_to_invoice && !job.invoiced_at && (
                         <DropdownMenuItem onClick={() => handleOpenNoteDialog(job)}>
                           Mark as Need to Invoice
                         </DropdownMenuItem>
                       )}
-                      {/* Unmark – only if already marked */}
                       {job.need_to_invoice && (
                         <DropdownMenuItem onClick={() => handleOpenConfirm(job, 'unmark')}>
                           Unmark Need to Invoice
                         </DropdownMenuItem>
                       )}
-                      {/* Mark as Invoiced – only if not already invoiced */}
-                      {/* {!job.invoiced_at && (
-                        <DropdownMenuItem onClick={() => handleOpenConfirm(job, 'invoice')}>
-                          Mark as Invoiced
-                        </DropdownMenuItem>
-                      )} */}
                     </>
                   )}
 
                   <DropdownMenuSeparator />
-                  {/* <Can on="Manage Jobs" action="delete">
-                    <DropdownMenuItem onClick={() => handleDelete(job)}>Delete</DropdownMenuItem>
-                  </Can> */}
                 </DropdownMenuContent>
               </DropdownMenu>
             );
           },
           enableSorting: false,
           size: 60,
+          meta: { format: () => '' }, // skip export
         },
         {
           id: 'name',
@@ -282,6 +283,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           cell: ({ row }) => <span className="text-sm text-text">{row.original.name}</span>,
           enableSorting: true,
           size: 200,
+          meta: { format: (value: string) => value || '' },
         },
         {
           id: 'job_number',
@@ -298,6 +300,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           ),
           enableSorting: true,
           size: 150,
+          meta: { format: (value: string) => value || '' },
         },
         {
           id: 'project_value',
@@ -310,6 +313,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           ),
           enableSorting: true,
           size: 150,
+          meta: { format: (value: any) => formatCurrency(value) },
         },
         {
           id: 'sq_ft',
@@ -318,6 +322,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           cell: ({ row }) => <span className="text-sm text-text">{row.original.sq_ft || 'N/A'}</span>,
           enableSorting: true,
           size: 130,
+          meta: { format: (value: any) => value || 'N/A' },
         },
         {
           id: 'created_at',
@@ -330,6 +335,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           ),
           enableSorting: true,
           size: 150,
+          meta: { format: (value: any) => formatDateForExport(value) },
         },
         {
           id: 'account_name',
@@ -338,6 +344,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           cell: ({ row }) => <span className="text-sm text-text">{row.original.account_name || 'N/A'}</span>,
           enableSorting: true,
           size: 150,
+          meta: { format: (value: string) => value || 'N/A' },
         },
         {
           id: 'sales_person_name',
@@ -346,6 +353,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           cell: ({ row }) => <span className="text-sm text-text">{row.original.sales_person_name || 'N/A'}</span>,
           enableSorting: true,
           size: 150,
+          meta: { format: (value: string) => value || 'N/A' },
         },
         {
           id: 'status',
@@ -354,6 +362,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           cell: ({ row }) => <span className="text-sm text-text">{row.original.status || 'N/A'}</span>,
           enableSorting: true,
           size: 120,
+          meta: { format: (value: string) => value || 'N/A' },
         },
         // ─── Invoice status columns ────────────────────────────────────────
         {
@@ -370,6 +379,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
             ),
           size: 130,
           enableSorting: true,
+          meta: { format: (value: any) => formatBoolean(value) },
         },
         {
           id: 'invoiced_at',
@@ -385,6 +395,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
             ),
           size: 130,
           enableSorting: true,
+          meta: { format: (value: any) => (value ? 'Invoiced' : '-') },
         },
         // ─── Accounting Notes ──────────────────────────────────────────────
         {
@@ -411,6 +422,16 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           },
           size: 150,
           enableSorting: true,
+          meta: {
+            format: (value: any) => {
+              if (typeof value === 'string') return value;
+              if (Array.isArray(value) && value.length > 0) {
+                const first = value[0];
+                return typeof first === 'string' ? first : first?.note || '';
+              }
+              return '-';
+            },
+          },
         },
       ];
       return baseColumns;

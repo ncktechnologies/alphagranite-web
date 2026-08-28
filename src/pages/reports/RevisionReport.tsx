@@ -99,6 +99,12 @@ function buildColumns<T extends Record<string, any>>(
                 size: 300,
                 enableSorting: false,
                 cell: ({ row }) => <FabInfoCell data={row.original} />,
+                meta: {
+                    format: (_value: any, row: T) => {
+                        const parts = [row.account_name, row.job_name, row.input_area, row.stone_type_name, row.stone_color_name, row.stone_thickness_value, row.edge_name].filter(Boolean);
+                        return parts.join(' - ');
+                    },
+                },
             };
         }
 
@@ -146,6 +152,18 @@ function buildColumns<T extends Record<string, any>>(
                 }
 
                 return <span className="text-sm">{val}</span>;
+            },
+            meta: {
+                format: (value: any) => {
+                    if (value == null) return '—';
+                    if (isBoolean) return value ? 'Yes' : 'No';
+                    if (isDate && typeof value === 'string') {
+                        try { return format(new Date(value), 'MMM dd, yyyy h:mm a'); } catch { return value; }
+                    }
+                    if (isFabType && typeof value === 'string') return value.toUpperCase();
+                    if (isType && typeof value === 'string') return REVISION_TYPE_MAP[value] || value;
+                    return String(value);
+                },
             },
         };
     });

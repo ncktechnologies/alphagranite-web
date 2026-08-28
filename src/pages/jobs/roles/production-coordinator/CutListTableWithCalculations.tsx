@@ -38,6 +38,35 @@ import { useToggleFabOnHoldMutation } from '@/store/api/job';
 import { NotesModal } from "@/components/common/NotesModal";
 import ActionsCell from './components/action';
 
+// ── Helper functions for formatting ──────────────────────────────────────
+const formatDateForExport = (value: any): string => {
+    if (!value) return 'Not Completed';
+    try {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) return format(date, 'MMM dd, yyyy');
+    } catch {}
+    return String(value);
+};
+
+const formatCurrency = (value: any): string => {
+    if (value == null || value === '') return '$0.00';
+    const num = Number(value);
+    if (isNaN(num)) return '$0.00';
+    return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+};
+
+const formatNumber = (value: any, decimals = 2): string => {
+    if (value == null || value === '') return '0.00';
+    const num = Number(value);
+    if (isNaN(num)) return '0.00';
+    return num.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+};
+
+const formatBoolean = (value: any): string => {
+    if (value === true || value === 'Yes' || value === 'yes') return 'Yes';
+    return 'No';
+};
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface CalculatedCutListData {
@@ -290,7 +319,7 @@ export const CutListTableWithCalculations = ({
         return { jobInfo, materialInfo, stoneInfo };
     };
 
-    // ── Columns ───────────────────────────────────────────────────────────────
+    // ── Columns with meta.format ───────────────────────────────────────────────
     const baseColumns = useMemo<ColumnDef<CalculatedCutListData>[]>(() => {
         const cols: ColumnDef<CalculatedCutListData>[] = [
             {
@@ -307,21 +336,25 @@ export const CutListTableWithCalculations = ({
                 ),
                 enableSorting: false,
                 size: 120,
+                meta: { format: () => '' }, // skip export
             },
             {
                 id: 'fab_type', accessorKey: 'fab_type',
                 header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
                 cell: ({ row }) => <span className="text-sm uppercase">{row.original.fab_type}</span>,
+                meta: { format: (value: string) => value?.toUpperCase() || '' },
             },
             {
                 id: 'fab_id', accessorKey: 'fab_id',
                 header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.fab_id}</span>,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: 'job_name', accessorKey: 'job_name',
                 header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
                 cell: ({ row }) => <span className="text-sm truncate block max-w-[200px]">{row.original.job_name}</span>,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: 'job_no', accessorKey: 'job_no',
@@ -331,6 +364,7 @@ export const CutListTableWithCalculations = ({
                         {row.original.job_no}
                     </Link>
                 ) : <span className="text-sm">{row.original.job_no}</span>,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: 'fab_info',
@@ -356,6 +390,12 @@ export const CutListTableWithCalculations = ({
                     );
                 },
                 size: 300,
+                meta: {
+                    format: (value: any, row: CalculatedCutListData) => {
+                        const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row);
+                        return [...jobInfo, ...stoneInfo, ...materialInfo].join(' - ');
+                    },
+                },
             },
             {
                 id: 'fp_completed', accessorKey: 'fp_completed',
@@ -367,79 +407,94 @@ export const CutListTableWithCalculations = ({
                             : 'Not Completed'}
                     </span>
                 ),
+                meta: { format: (value: any, row: CalculatedCutListData) => formatDateForExport(row.final_programming_completed_date) },
             },
             {
                 id: 'shop_ready', accessorKey: 'shop_ready',
                 header: ({ column }) => <DataGridColumnHeader title="SHOP READY" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.shop_ready === 'Yes' ? 'Yes' : '-'}</span>,
+                meta: { format: (value: string) => value === 'Yes' ? 'Yes' : '-' },
             },
             {
                 id: 'no_of_pcs', accessorKey: 'no_of_pcs',
                 header: ({ column }) => <DataGridColumnHeader title="NO OF PCS" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.no_of_pcs.toLocaleString()}</span>,
+                meta: { format: (value: number) => formatNumber(value, 0) },
             },
             {
                 id: 'total_sq_ft', accessorKey: 'total_sq_ft',
                 header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.total_sq_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
                 id: 'wl_ln_ft', accessorKey: 'wl_ln_ft',
-                header: ({ column }) => <DataGridColumnHeader title="WJ:LIN FT" column={column} />,
+                header: ({ column }) => <DataGridColumnHeader title="CUT WJ:LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.wl_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => formatNumber(value, 2) },
             },
-             {
+            {
                 id: 'wj_miter_lnft', accessorKey: 'wj_miter_lnft',
                 header: ({ column }) => <DataGridColumnHeader title="WJ MITER:LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.wj_miter_lnft?.toFixed(2) ?? '0.00'}</span>,
                 enableSorting: true,
+                meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
                 id: 'edging_ln_ft', accessorKey: 'edging_ln_ft',
                 header: ({ column }) => <DataGridColumnHeader title="EDGING: LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.edging_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
                 id: 'cnc_ln_ft', accessorKey: 'cnc_ln_ft',
                 header: ({ column }) => <DataGridColumnHeader title="CNC: LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.cnc_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
                 id: 'milter_ln_ft', accessorKey: 'milter_ln_ft',
                 header: ({ column }) => <DataGridColumnHeader title="MITER:LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.milter_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
                 id: 'saw_cut_lnft', accessorKey: 'saw_cut_lnft',
-                header: ({ column }) => <DataGridColumnHeader title="SAW:LIN FT" column={column} />,
+                header: ({ column }) => <DataGridColumnHeader title="CUT SAW:LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.saw_cut_lnft?.toFixed(2) ?? '0.00'}</span>,
                 enableSorting: true,
+                meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
                 id: 'saw_miter_lnft', accessorKey: 'saw_miter_lnft',
                 header: ({ column }) => <DataGridColumnHeader title="SAW MITER:LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.saw_miter_lnft?.toFixed(2) ?? '0.00'}</span>,
                 enableSorting: true,
+                meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
                 id: 'cost_of_stone', accessorKey: 'cost_of_stone',
                 header: ({ column }) => <DataGridColumnHeader title="COST OF STONE" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">${row.original.cost_of_stone.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => formatCurrency(value) },
             },
             {
                 id: 'revenue', accessorKey: 'revenue',
                 header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">${row.original.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => formatCurrency(value) },
             },
             {
                 id: 'cip', accessorKey: 'cip',
                 header: ({ column }) => <DataGridColumnHeader title="GP" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.cip}</span>,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: 'sales_person', accessorKey: 'sales_person',
                 header: ({ column }) => <DataGridColumnHeader title="SALES PERSON" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.sales_person || 'N/A'}</span>,
+                meta: { format: (value: string) => value || 'N/A' },
             },
             {
                 id: 'fab_notes', accessorKey: 'fab_notes',
@@ -461,6 +516,17 @@ export const CutListTableWithCalculations = ({
                 },
                 enableSorting: false,
                 size: 180,
+                meta: {
+                    format: (value: any, row: CalculatedCutListData) => {
+                        const fabNotes = Array.isArray(row.fab_notes)
+                            ? row.fab_notes
+                            : Array.isArray(row.notes) ? row.notes : [];
+                        const cuttingNotes = fabNotes.filter(n => n.stage === 'cut_list');
+                        if (cuttingNotes.length === 0) return 'No notes';
+                        const latest = cuttingNotes[0];
+                        return `${latest.note} (by ${latest.created_by_name || 'Unknown'})`;
+                    },
+                },
             },
         ];
 
@@ -517,6 +583,9 @@ export const CutListTableWithCalculations = ({
                 },
                 enableSorting: false,
                 size: 80,
+                meta: {
+                    format: (value: boolean) => value ? 'On Hold' : 'Active',
+                },
             });
         }
 

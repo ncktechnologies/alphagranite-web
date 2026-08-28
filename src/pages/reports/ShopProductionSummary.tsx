@@ -37,6 +37,16 @@ const getFabColor = (fabType: string | undefined): string => {
     return fabTypeColorMap[fabType.toLowerCase()] || 'transparent';
 };
 
+// ─── Helper: format date for export ─────────────────────────────────────
+const formatDateForExport = (value: any): string => {
+    if (!value) return '-';
+    try {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) return format(date, 'MMM dd, yyyy');
+    } catch {}
+    return String(value);
+};
+
 export function ShopProductionSummary() {
     // ─── Date range ───────────────────────────────────────────────────────────
     // Default to today
@@ -75,7 +85,7 @@ export function ShopProductionSummary() {
     const stageCounts = useMemo(() => data?.data?.shop_current_stage_counts ?? [], [data]);
     const fabs = useMemo(() => data?.data?.fabs ?? [], [data]);
 
-    // ─── Stage summary columns ──────────────────────────────────────────────
+    // ─── Stage summary columns with meta.format ──────────────────────────────
     const stageColumns = useMemo<ColumnDef<any>[]>(() => [
         {
             accessorKey: 'shop_current_stage',
@@ -83,12 +93,14 @@ export function ShopProductionSummary() {
             cell: ({ row }) => <span className="text-sm font-medium">{row.original.shop_current_stage?.toUpperCase() || '-'}</span>,
             size: 150,
             enableSorting: true,
+            meta: { format: (value: string) => value?.toUpperCase() || '-' },
         },
         {
             accessorKey: 'fab_count',
             header: ({ column }) => <DataGridColumnHeader title="FAB COUNT" column={column} />,
             size: 100,
             enableSorting: true,
+            meta: { format: (value: number) => String(value) },
         },
         {
             accessorKey: 'total_sqft',
@@ -99,12 +111,14 @@ export function ShopProductionSummary() {
             },
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => (Number(value) || 0).toFixed(2) },
         },
         {
             accessorKey: 'total_pieces',
             header: ({ column }) => <DataGridColumnHeader title="TOTAL No Of  PIECES" column={column} />,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => String(value) },
         },
         {
             accessorKey: 'avg_work_percentage',
@@ -115,18 +129,21 @@ export function ShopProductionSummary() {
             },
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => `${(Number(value) || 0).toFixed(2)}%` },
         },
         {
             accessorKey: 'completed_fab_count',
             header: ({ column }) => <DataGridColumnHeader title="COMPLETED" column={column} />,
             size: 100,
             enableSorting: true,
+            meta: { format: (value: number) => String(value) },
         },
         {
             accessorKey: 'in_progress_fab_count',
             header: ({ column }) => <DataGridColumnHeader title="IN PROGRESS" column={column} />,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => String(value) },
         },
     ], []);
 
@@ -143,7 +160,7 @@ export function ShopProductionSummary() {
         columnResizeMode: 'onEnd',
     });
 
-    // ─── Fab details columns ────────────────────────────────────────────────
+    // ─── Fab details columns with meta.format ────────────────────────────────
     const fabColumns = useMemo<ColumnDef<any>[]>(() => {
         if (!fabs.length) return [];
         const first = fabs[0];
@@ -159,12 +176,18 @@ export function ShopProductionSummary() {
             cell: () => null,
             size: 60,
             enableSorting: false,
+            meta: { format: () => '' },
         };
 
         const dataCols = keys
             .filter(key => !compositeFabFields.includes(key) && key !== 'plans')
             .map(key => {
+                const isDateField = key.includes('date');
+                const isNumeric = typeof first[key] === 'number';
+                const isAvgWorkPct = key === 'avg_work_percentage';
+                const isPlanCount = key === 'plan_count';
                 let headerTitle = key.replace(/_/g, ' ').toUpperCase();
+
                 return {
                     accessorKey: key,
                     header: ({ column }) => <DataGridColumnHeader title={headerTitle} column={column} />,
@@ -172,41 +195,31 @@ export function ShopProductionSummary() {
                     enableSorting: true,
                     cell: ({ row }) => {
                         let val = row.original[key];
-                        if (key.includes('date') && val) {
+                        if (isDateField && val) {
                             try { val = format(new Date(val), 'MMM dd, yyyy'); } catch { }
                         }
                         if (typeof val === 'number') val = val.toLocaleString();
                         if (val == null) return <span className="text-sm">-</span>;
-
-                        // if (key === 'fab_id') {
-                        //     const link = getFabIdLink(Number(val));
-                        //     return renderLink(link);
-                        // }
-                        // if (key === 'job_number') {
-                        //     const link = getJobNumberLink(String(val));
-                        //     return renderLink(link);
-                        // }
-                        // if (key === 'job_name') {
-                        //     const jobId = row.original.job_id;
-                        //     if (jobId) {
-                        //         const link = getJobNameLink(String(val), jobId);
-                        //         if (link) return renderLink(link);
-                        //     }
-                        //     return <span className="text-sm">{val}</span>;
-                        // }
-                        if (key === 'avg_work_percentage') {
+                        if (isAvgWorkPct) {
                             const num = Number(val) || 0;
                             return <span className="text-sm">{num.toFixed(2)}%</span>;
                         }
-                        if (key === 'plan_count') {
-                            return <span className="text-sm">{val}</span>;
-                        }
                         return <span className="text-sm">{val}</span>;
+                    },
+                    meta: {
+                        format: (value: any) => {
+                            if (value == null) return '-';
+                            if (isDateField) return formatDateForExport(value);
+                            if (isAvgWorkPct) return `${(Number(value) || 0).toFixed(2)}%`;
+                            if (isPlanCount) return String(value);
+                            if (isNumeric) return String(value);
+                            return String(value);
+                        },
                     },
                 };
             });
 
-        // Add a column for plans summary (e.g., list of plan names with percentages)
+        // Add a column for plans summary
         const plansCol: ColumnDef<any> = {
             id: 'plans',
             header: ({ column }) => <DataGridColumnHeader title="PLANS" column={column} />,
@@ -226,6 +239,13 @@ export function ShopProductionSummary() {
             },
             size: 200,
             enableSorting: false,
+            meta: {
+                format: (value: any, row: any) => {
+                    const plans = row.plans || [];
+                    if (!plans.length) return '—';
+                    return plans.map((p: any) => `${p.plan_name}: ${p.work_percentage}%`).join(' | ');
+                },
+            },
         };
 
         const fabInfoCol: ColumnDef<any> = {
@@ -234,6 +254,20 @@ export function ShopProductionSummary() {
             cell: ({ row }) => <FabInfoCell data={row.original} />,
             size: 400,
             enableSorting: false,
+            meta: {
+                format: (value: any, row: any) => {
+                    const parts = [
+                        row.acct_name || row.account_name,
+                        row.job_name,
+                        row.input_area,
+                        row.stone_type_name,
+                        row.stone_color_name,
+                        row.stone_thickness_value,
+                        row.edge_name,
+                    ].filter(Boolean);
+                    return parts.join(' - ') || '';
+                },
+            },
         };
 
         const jobNumberIndex = dataCols.findIndex(col => col.accessorKey === 'job_number');
@@ -301,37 +335,6 @@ export function ShopProductionSummary() {
                         </PopoverContent>
                     </Popover>
                     {dateRange && <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>Clear</Button>}
-
-                    {/* <Select value={statusId !== null ? String(statusId) : 'all'} onValueChange={(v) => setStatusId(v === 'all' ? null : Number(v))}>
-                        <SelectTrigger className="w-[150px] h-[34px] border-[#e2e4ed]">
-                            <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="1">Active</SelectItem>
-                            <SelectItem value="2">Inactive</SelectItem>
-                            <SelectItem value="3">Completed</SelectItem>
-                        </SelectContent>
-                    </Select> */}
-
-                    <div className="flex items-center gap-4">
-                        {/* <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="includeNonShopStages"
-                                checked={includeNonShopStages}
-                                onCheckedChange={(checked) => setIncludeNonShopStages(!!checked)}
-                            />
-                            <Label htmlFor="includeNonShopStages" className="text-sm text-[#4b545d]">Include Non-Shop Stages</Label>
-                        </div> */}
-                        {/* <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="includeFabDetails"
-                                checked={includeFabDetails}
-                                onCheckedChange={(checked) => setIncludeFabDetails(!!checked)}
-                            />
-                            <Label htmlFor="includeFabDetails" className="text-sm text-[#4b545d]">Include Fab Details</Label>
-                        </div> */}
-                    </div>
 
                     <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(fabTable, 'shop-production-summary')}>
                         Export CSV
@@ -439,8 +442,8 @@ export function ShopProductionSummary() {
                 </DataGrid>
             )}
 
-            {/* FAB Details Table */}
-            {/* <DataGrid table={fabTable} recordCount={fabs.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
+            {/* ─── FAB Details Table (uncommented and with meta.format) ────── */}
+            <DataGrid table={fabTable} recordCount={fabs.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                     <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
                         <p className="text-base font-semibold text-[#4b545d]">FAB Details – {getTitle()}</p>
@@ -507,7 +510,7 @@ export function ShopProductionSummary() {
                         <DataGridPagination />
                     </CardFooter>
                 </Card>
-            </DataGrid> */}
+            </DataGrid>
         </div>
     );
 }

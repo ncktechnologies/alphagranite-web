@@ -105,6 +105,7 @@ export function WeeklyTrendsReport() {
             },
             size: 140,
             enableSorting: true,
+            meta: { format: (value: string) => { if (!value || value === 'TOTAL') return '—'; try { return format(new Date(value), 'MMM dd, yyyy'); } catch { return value; } } },
         },
         {
             accessorKey: 'sqft_templated',
@@ -112,6 +113,7 @@ export function WeeklyTrendsReport() {
             cell: ({ row }) => row.original.sqft_templated?.toFixed(0) ?? '0',
             size: 150,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(0) ?? '0' },
         },
         {
             accessorKey: 'sqft_not_templated',
@@ -119,6 +121,7 @@ export function WeeklyTrendsReport() {
             cell: ({ row }) => row.original.sqft_not_templated?.toFixed(0) ?? '0',
             size: 150,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(0) ?? '0' },
         },
         {
             accessorKey: 'sqft_installed',
@@ -126,18 +129,21 @@ export function WeeklyTrendsReport() {
             cell: ({ row }) => row.original.sqft_installed.toFixed(0),
             size: 130,
             enableSorting: true,
+            meta: { format: (value: number) => value?.toFixed(0) ?? '0' },
         },
         {
             accessorKey: 'installs_completed',
             header: ({ column }) => <DataGridColumnHeader title="INSTALLS COMPLETED" column={column} />,
             size: 150,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
         {
             accessorKey: 'fabs_created',
             header: ({ column }) => <DataGridColumnHeader title="FABS CREATED" column={column} />,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: number) => String(value ?? 0) },
         },
 
         {
@@ -146,6 +152,7 @@ export function WeeklyTrendsReport() {
             cell: ({ row }) => `$${row.original.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
             size: 130,
             enableSorting: true,
+            meta: { format: (value: number) => '$' + (value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0.00') },
         },
         {
             accessorKey: 'gross_profit',
@@ -153,6 +160,7 @@ export function WeeklyTrendsReport() {
             cell: ({ row }) => `$${row.original.gross_profit?.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
             size: 130,
             enableSorting: true,
+            meta: { format: (value: number) => '$' + (value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0.00') },
         },
 
     ], []);

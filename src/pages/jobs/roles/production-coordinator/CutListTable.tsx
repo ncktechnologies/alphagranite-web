@@ -258,30 +258,35 @@ export const CutListTable = ({
                 enableHiding: false,
                 enableResizing: false,
                 size: 48,
+                meta: { format: () => '' }, // no export
             },
             {
                 id: "fab_type",
                 accessorKey: "fab_type",
                 header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
                 cell: ({ row }) => <span className="text-xs font-medium">{row.original.fab_type}</span>,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: "fab_id",
                 accessorKey: "fab_id",
                 header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.fab_id}</span>,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: "fab_id_0",
                 accessorKey: "fab_id_0",
                 header: ({ column }) => <DataGridColumnHeader title="SECOND FAB ID" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.fab_id_0 || 'N/A'}</span>,
+                meta: { format: (value: string) => value || 'N/A' },
             },
             {
                 id: "job_name",
                 accessorKey: "job_name",
                 header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
                 cell: ({ row }) => <span className="text-sm truncate block max-w-[200px]">{row.original.job_name}</span>,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: "job_no",
@@ -292,84 +297,98 @@ export const CutListTable = ({
                         {row.original.job_no}
                     </Link>
                 ) : <span className="text-sm">{row.original.job_no}</span>,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: "no_of_pcs",
                 accessorKey: "no_of_pcs",
                 header: ({ column }) => <DataGridColumnHeader title="NO OF PCS" column={column} />,
                 cell: ({ row }) => <span className="text-sm text-right block">{row.original.no_of_pcs.toLocaleString()}</span>,
+                meta: { format: (value: number) => value?.toLocaleString() ?? '0' },
             },
             {
                 id: "total_sq_ft",
                 accessorKey: "total_sq_ft",
                 header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm text-right block">{row.original.total_sq_ft.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0' },
             },
             {
                 id: "wl_ln_ft",
                 accessorKey: "wl_ln_ft",
                 header: ({ column }) => <DataGridColumnHeader title="WL LN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm text-right block">{row.original.wl_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0' },
             },
             {
                 id: "sl_ln_ft",
                 accessorKey: "sl_ln_ft",
                 header: ({ column }) => <DataGridColumnHeader title="SL LN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm text-right block">{row.original.sl_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0' },
             },
             {
                 id: "edging_ln_ft",
                 accessorKey: "edging_ln_ft",
                 header: ({ column }) => <DataGridColumnHeader title="EDGING LN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm text-right block">{row.original.edging_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0' },
             },
             {
                 id: "cnc_ln_ft",
                 accessorKey: "cnc_ln_ft",
                 header: ({ column }) => <DataGridColumnHeader title="CNC LN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm text-right block">{row.original.cnc_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0' },
             },
             {
                 id: "milter_ln_ft",
                 accessorKey: "milter_ln_ft",
                 header: ({ column }) => <DataGridColumnHeader title="MITER LN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm text-right block">{row.original.milter_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0' },
             },
             {
                 id: "cost_of_stone",
                 accessorKey: "cost_of_stone",
                 header: ({ column }) => <DataGridColumnHeader title="COST OF STONE" column={column} />,
                 cell: ({ row }) => <span className="text-sm text-right block">${row.original.cost_of_stone.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => '$' + value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) },
             },
             {
                 id: "revenue",
                 accessorKey: "revenue",
                 header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
                 cell: ({ row }) => <span className="text-sm text-right block">${row.original.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>,
+                meta: { format: (value: number) => '$' + value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) },
             },
             {
                 id: "fp_completed",
                 accessorKey: "fp_completed",
                 header: ({ column }) => <DataGridColumnHeader title="FP COMPLETED" column={column} />,
                 cell: ({ row }) => <span className={`text-sm font-medium ${row.original.fp_completed === 'Yes' ? 'text-green-600' : 'text-red-600'}`}>{row.original.fp_completed}</span>,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: "cip",
                 accessorKey: "cip",
                 header: ({ column }) => <DataGridColumnHeader title="CIP" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.cip}</span>,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: "install_date",
                 accessorKey: "install_date",
                 header: ({ column }) => <DataGridColumnHeader title="INSTALL DATE" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.install_date ? new Date(row.original.install_date).toLocaleDateString() : 'Not Scheduled'}</span>,
+                meta: { format: (value: string) => value ? new Date(value).toLocaleDateString() : 'Not Scheduled' },
             },
             {
                 id: "sales_person",
                 accessorKey: "sales_person",
                 header: ({ column }) => <DataGridColumnHeader title="SALES PERSON" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.sales_person || 'N/A'}</span>,
+                meta: { format: (value: string) => value || 'N/A' },
             },
         ];
 
@@ -404,6 +423,7 @@ export const CutListTable = ({
                 },
                 enableSorting: false,
                 size: 80,
+                meta: { format: (value: boolean) => value ? 'Yes' : 'No' },
             });
         }
 
@@ -436,6 +456,7 @@ export const CutListTable = ({
             },
             enableSorting: false,
             size: 60,
+            meta: { format: () => '' }, // no export
         });
 
         return baseCols;

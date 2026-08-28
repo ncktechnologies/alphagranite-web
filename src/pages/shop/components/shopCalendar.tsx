@@ -852,7 +852,8 @@ const ShopCalendarPage: React.FC = () => {
                           return (
                             <div
                               key={dk}
-                              className="flex-1 min-w-[160px] border-r border-[#ecedf0] relative"
+                              // className="flex-1 min-w-[160px] border-r border-[#ecedf0] relative"
+                              className="flex-1 min-w-[160px] border-r border-[#ecedf0] relative overflow-visible"
                               style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(true); } : undefined}
                             >
@@ -931,7 +932,7 @@ const ShopCalendarPage: React.FC = () => {
                       {displayDays.map((day) => {
                         const dk = format(day, 'yyyy-MM-dd');
                         const dayEvents = eventsByDay[dk] || [];
-                        const ROW_LANE_H = 44;
+                        const ROW_LANE_H = 70;
                         const GAP = 0;
 
                         const sorted = [...dayEvents].sort(
@@ -963,7 +964,7 @@ const ShopCalendarPage: React.FC = () => {
                             </div>
 
                             <div
-                              className="relative"
+                              className="relative overflow-visible"
                               style={{ height: rowHeight, minWidth: DISPLAY_HOURS * HOUR_WIDTH }}
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(false); } : undefined}
                             >
@@ -972,23 +973,21 @@ const ShopCalendarPage: React.FC = () => {
                                 const hour = DAY_START_HOUR + i;
                                 const position = getHorizontalPosition(hour);
                                 return (
-                                  <div key={i} className="absolute top-0 bottom-0 border-l border-[#ecedf0]" style={{ left: position }} />
+                                  <div key={i} className="absolute border-l border-[#ecedf0]" style={{ top: 0, bottom: -1, left: position }} />
                                 );
                               })}
 
                               {/* Break column */}
                               <div
-                                className="absolute left-0 z-[10] bg-orange-100 border-x-2 border-orange-300 pointer-events-none flex items-center justify-center"
+                                className="absolute z-[10] bg-orange-100 border-x-2 border-orange-300 pointer-events-none flex items-center justify-center"
                                 style={{
                                   top: 0,
-                                  bottom: 0,
+                                  bottom: -1,
                                   left: getHorizontalPosition(BREAK_START_HOUR),
                                   width: BREAK_DURATION * HOUR_WIDTH,
                                 }}
                               >
-                                <span className="text-[11px] font-semibold text-orange-600 uppercase tracking-wide [writing-mode:vertical-rl]">
-                                  Break
-                                </span>
+                                <span className="text-[11px] font-semibold text-orange-600 uppercase tracking-wide [writing-mode:vertical-rl]">Break</span>
                               </div>
 
                               {lanes.map((lane, laneIdx) =>

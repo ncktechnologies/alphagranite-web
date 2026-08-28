@@ -156,6 +156,7 @@ const Employees = () => {
             cell: ({ row }) => (
                 <span className="text-sm text-text truncate block max-w-[150px]">{row.original.hcp_employee_id || ''}</span>
             ),
+            meta: { format: (value: string) => value || '' },
            },
             {
                 id: 'name',
@@ -179,6 +180,7 @@ const Employees = () => {
                 size: 220,
                 meta: {
                     skeleton: <Skeleton className="h-5 w-[160px]" />,
+                    format: (_value: any, row: Employee) => row.name || '',
                 },
             },
             {
@@ -194,6 +196,7 @@ const Employees = () => {
                 ),
                 enableSorting: true,
                 size: 200,
+                meta: { format: (value: string) => value || '' },
             },
            
             {
@@ -207,6 +210,7 @@ const Employees = () => {
                 ),
                 enableSorting: true,
                 size: 140,
+                meta: { format: (value: string) => value || '' },
             },
             {
                 id: 'phone',
@@ -219,6 +223,7 @@ const Employees = () => {
                 ),
                 enableSorting: false,
                 size: 130,
+                meta: { format: (value: string) => value || '-' },
             },
             {
                 id: 'role',
@@ -231,6 +236,7 @@ const Employees = () => {
                 ),
                 enableSorting: true,
                 size: 120,
+                meta: { format: (value: string) => value ?? 'N/A' },
             },
             {
                 id: 'status',
@@ -241,6 +247,7 @@ const Employees = () => {
                 cell: ({ row }) => <StatusBadge status={row.original.status_name ?? 'N/A'} />,
                 enableSorting: true,
                 size: 110,
+                meta: { format: (value: string) => value ?? 'N/A' },
             },
             {
                 id: 'actions',
@@ -257,6 +264,7 @@ const Employees = () => {
                 },
                 enableSorting: false,
                 size: 60,
+                meta: { format: () => '' }, // no export
             },
         ],
         [],

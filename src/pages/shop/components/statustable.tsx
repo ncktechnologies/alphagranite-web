@@ -328,7 +328,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         limit: itemsPerPage,
         ...(searchQuery && { search: searchQuery }),
         ...(fabTypeFilter !== 'all' && { fab_type: fabTypeFilter }),
-        ...(searchType && {type:searchType}),
+        ...(searchType && { type: searchType }),
     }), [searchQuery, fabTypeFilter, currentPage, itemsPerPage]);
 
     const { data: fabsData, isLoading: isApiLoading } = useGetFabsQuery(queryParams);
@@ -567,7 +567,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         }, emptyTotals());
     }, [filteredData]);
 
-    // ------------------ Column Definitions ------------------
+    // ------------------ Column Definitions with meta.format ------------------
     const columns = useMemo<ColumnDef<ShopStatusRow>[]>(() => [
         {
             id: 'expander',
@@ -583,6 +583,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 return <div className="w-6" />;
             },
             size: 36,
+            meta: { format: () => '' },
         },
         {
             id: 'actions',
@@ -592,16 +593,13 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 return <ActionsCell fabId={row.original.data.fab_id} onAddNote={(id) => setNoteDialogFabId(id)} canAddNote={canAddNote} />;
             },
             size: 48,
+            meta: { format: () => '' },
         },
         {
             id: 'estimated_completion_date',
             accessorFn: (r) => r.type === 'fab' ? r.data.shop_est_completion_date : null,
             header: ({ column }) => <DataGridColumnHeader title="EST. COMPLETION DATE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
-                // if (row.original.type === 'fab') {
-                //     const date = row.original.data.shop_est_completion_date;
-                //     return <span className="text-sm text-[#4b545d] font-semibold">{date ? format(new Date(date), 'EEE MM/dd/yyyy') : '-'}</span>;
-                // }
                 if (row.original.type === 'plan') {
                     return <span className="text-xs text-gray-500 pl-4 font-semibold">{row.original.plan.plan_name} · {row.original.plan.workstation_name} · {row.original.plan.operator_name}</span>;
                 }
@@ -609,6 +607,14 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             },
             enableSorting: true,
             size: 230,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'plan') {
+                        return `${row.plan.plan_name} · ${row.plan.workstation_name} · ${row.plan.operator_name}`;
+                    }
+                    return '';
+                },
+            },
         },
         {
             id: 'cut_date_scheduled',
@@ -627,6 +633,17 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             },
             enableSorting: true,
             size: 160,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') {
+                        return row.data.shop_date_schedule ? format(new Date(row.data.shop_date_schedule), 'MM/dd/yyyy') : '-';
+                    }
+                    if (row.type === 'plan') {
+                        return row.plan.scheduled_start_date ? format(new Date(row.plan.scheduled_start_date), 'MM/dd/yyyy') : '-';
+                    }
+                    return '';
+                },
+            },
         },
         {
             id: 'install_date',
@@ -641,8 +658,15 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             },
             enableSorting: true,
             size: 100,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') {
+                        return row.data.install_date ? format(new Date(row.data.install_date), 'MM/dd/yyyy') : '-';
+                    }
+                    return '';
+                },
+            },
         },
-        
         {
             id: 'fab_id',
             accessorFn: (r) => r.type === 'fab' ? r.data.fab_id : null,
@@ -659,6 +683,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             },
             enableSorting: true,
             size: 80,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') return row.data.fab_id;
+                    return '';
+                },
+            },
         },
         {
             id: 'job_no',
@@ -678,6 +708,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             },
             enableSorting: true,
             size: 100,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') return row.data.job_no;
+                    return '';
+                },
+            },
         },
         {
             id: 'fab_info',
@@ -710,8 +746,27 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 return null;
             },
             size: 400,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') {
+                        const parts = [
+                            row.data.acct_name,
+                            row.data.job_name,
+                            row.data.input_area,
+                            row.data.stone_type_name,
+                            row.data.stone_color_name,
+                            row.data.stone_thickness_value,
+                            row.data.edge_name,
+                        ].filter(Boolean);
+                        return parts.join(' - ');
+                    }
+                    if (row.type === 'plan') {
+                        return `Estimated hrs: ${row.plan.estimated_hours}h`;
+                    }
+                    return '';
+                },
+            },
         },
-       
         {
             id: 'total_sq_ft',
             accessorFn: (r) => r.type === 'fab' ? r.data.total_sq_ft : null,
@@ -722,10 +777,16 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             },
             enableSorting: true,
             size: 120,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') return row.data.total_sq_ft.toFixed(1);
+                    return '';
+                },
+            },
         },
         {
             id: 'cut',
-            header: ({ column }) => <DataGridColumnHeader title="CUT" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="CUT SAW" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.cut_progress;
@@ -737,10 +798,22 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 return null;
             },
             size: 130,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') {
+                        const p = row.data.cut_progress;
+                        return `${p.total.toFixed(1)} ${p.unit} (${p.percent.toFixed(1)}%)`;
+                    }
+                    if (row.type === 'plan' && row.plan.planning_section_id === 7) {
+                        return `${row.stage_total.toFixed(1)} ${row.stage_unit} (${row.stage_percent.toFixed(1)}%)`;
+                    }
+                    return '';
+                },
+            },
         },
         {
             id: 'wj',
-            header: ({ column }) => <DataGridColumnHeader title="WJ" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="CUT WJ" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.wj_progress;
@@ -752,6 +825,18 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 return null;
             },
             size: 130,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') {
+                        const p = row.data.wj_progress;
+                        return `${p.total.toFixed(1)} ${p.unit} (${p.percent.toFixed(1)}%)`;
+                    }
+                    if (row.type === 'plan' && row.plan.planning_section_id === 8) {
+                        return `${row.stage_total.toFixed(1)} ${row.stage_unit} (${row.stage_percent.toFixed(1)}%)`;
+                    }
+                    return '';
+                },
+            },
         },
         {
             id: 'edging',
@@ -767,6 +852,18 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 return null;
             },
             size: 130,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') {
+                        const p = row.data.edging_progress;
+                        return `${p.total.toFixed(1)} ${p.unit} (${p.percent.toFixed(1)}%)`;
+                    }
+                    if (row.type === 'plan' && row.plan.planning_section_id === 9) {
+                        return `${row.stage_total.toFixed(1)} ${row.stage_unit} (${row.stage_percent.toFixed(1)}%)`;
+                    }
+                    return '';
+                },
+            },
         },
         {
             id: 'miter',
@@ -782,6 +879,18 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 return null;
             },
             size: 130,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') {
+                        const p = row.data.miter_progress;
+                        return `${p.total.toFixed(1)} ${p.unit} (${p.percent.toFixed(1)}%)`;
+                    }
+                    if (row.type === 'plan' && row.plan.planning_section_id === 2) {
+                        return `${row.stage_total.toFixed(1)} ${row.stage_unit} (${row.stage_percent.toFixed(1)}%)`;
+                    }
+                    return '';
+                },
+            },
         },
         {
             id: 'cnc',
@@ -797,6 +906,18 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 return null;
             },
             size: 130,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') {
+                        const p = row.data.cnc_progress;
+                        return `${p.total.toFixed(1)} ${p.unit} (${p.percent.toFixed(1)}%)`;
+                    }
+                    if (row.type === 'plan' && row.plan.planning_section_id === 1) {
+                        return `${row.stage_total.toFixed(1)} ${row.stage_unit} (${row.stage_percent.toFixed(1)}%)`;
+                    }
+                    return '';
+                },
+            },
         },
         {
             id: 'handwork',
@@ -812,6 +933,18 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 return null;
             },
             size: 130,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') {
+                        const p = row.data.touchup_progress;
+                        return `${p.total.toFixed(1)} ${p.unit} (${p.percent.toFixed(1)}%)`;
+                    }
+                    if (row.type === 'plan' && row.plan.planning_section_id === 6) {
+                        return `${row.stage_total.toFixed(1)} ${row.stage_unit} (${row.stage_percent.toFixed(1)}%)`;
+                    }
+                    return '';
+                },
+            },
         },
         {
             id: 'percent_complete',
@@ -824,8 +957,15 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             },
             enableSorting: true,
             size: 140,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') return `${row.data.percent_complete.toFixed(2)}%`;
+                    if (row.type === 'plan') return `${row.stage_percent.toFixed(1)}%`;
+                    return '';
+                },
+            },
         },
-         {
+        {
             id: 'fab_type',
             accessorFn: (r) => r.type === 'fab' ? r.data.fab_type : null,
             header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
@@ -835,6 +975,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             },
             enableSorting: true,
             size: 130,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') return row.data.fab_type;
+                    return '';
+                },
+            },
         },
         {
             id: 'pieces',
@@ -846,6 +992,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             },
             enableSorting: true,
             size: 130,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') return String(row.data.pieces);
+                    return '';
+                },
+            },
         },
     ], [canAddNote]);
 
@@ -1060,17 +1212,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                     </thead>
 
                                     <tbody>
-                                        {/* Overall totals */}
-                                        {/* {renderTotalsRow('ALL TOTALS', overallTotals, 'bg-[#eef0f6]')} */}
-
                                         {monthGroups.map(monthGroup => {
                                             const monthCollapsed = collapsedMonths.has(monthGroup.monthKey);
 
                                             return (
                                                 <React.Fragment key={monthGroup.monthKey}>
-                                                    {/* ── Month header row ── */}
-
-
                                                     {/* ── Month totals row ── */}
                                                     {!monthCollapsed && renderTotalsRow(
                                                         `${monthGroup.monthDisplay} `,
@@ -1083,26 +1229,6 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                                                         return (
                                                             <React.Fragment key={dayGroup.dayKey}>
-                                                                {/* ── Day header row ── */}
-                                                                {/* <tr
-                                                                    className="bg-[#F6FFE7] cursor-pointer select-none hover:bg-[#edffd4] transition-colors"
-                                                                    onClick={() => toggleDay(dayGroup.dayKey)}
-                                                                >
-                                                                    <td className="px-4 py-2" colSpan={colCount}>
-                                                                        <div className="flex items-center gap-2 pl-4">
-                                                                            {dayCollapsed
-                                                                                ? <ChevronRightIcon className="h-3.5 w-3.5 text-[#7a9705]" />
-                                                                                : <ChevronDown className="h-3.5 w-3.5 text-[#7a9705]" />}
-                                                                            <span className="text-xs font-semibold text-[#4b545d]">
-                                                                                {dayGroup.dayDisplay}
-                                                                            </span>
-                                                                            <span className="text-xs text-[#7c8689] ml-1">
-                                                                                ({dayGroup.parents.length} FAB{dayGroup.parents.length !== 1 ? 's' : ''})
-                                                                            </span>
-                                                                        </div>
-                                                                    </td>
-                                                                </tr> */}
-
                                                                 {/* ── Day totals row ── */}
                                                                 {!dayCollapsed && renderTotalsRow(
                                                                     `${dayGroup.dayDisplay} `,
@@ -1135,14 +1261,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                                                                                                 if (parentRow.original.type === 'fab') {
                                                                                                     if (stageColumnIds.has(columnId)) {
-                                                                                                        // Stage columns: gradient based on individual stage progress
                                                                                                         const percent = getStagePercent(parentRow.original.data, columnId);
                                                                                                         const bgColor = getFabColor(parentRow.original.data.fab_type);
                                                                                                         cellStyle = {
                                                                                                             background: `linear-gradient(to right, ${bgColor} 0%, ${bgColor} ${percent}%, white ${percent}%, white 100%)`,
                                                                                                         };
                                                                                                     } else {
-                                                                                                        // Non-stage columns: solid fab_type color
                                                                                                         cellStyle = {
                                                                                                             backgroundColor: rowBgColor,
                                                                                                         };
