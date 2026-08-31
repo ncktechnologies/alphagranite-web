@@ -921,7 +921,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'handwork',
-            header: ({ column }) => <DataGridColumnHeader title="handwork QA" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="HANDWORK" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.touchup_progress;

@@ -120,7 +120,7 @@ const CostOfStonePage = () => {
     return (
         <Container>
             <Toolbar>
-                <ToolbarHeading title="Cost of Stone" description="" />
+                <ToolbarHeading title="Cost of Stone" description="Enter cost of stone after SCT complete" />
                 <div className="ml-auto flex items-center gap-4">
                     {/* optional totals could go here */}
                 </div>

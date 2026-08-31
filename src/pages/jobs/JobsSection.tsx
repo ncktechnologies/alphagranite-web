@@ -62,7 +62,7 @@ const formatDateForExport = (value: any): string => {
   try {
     const date = new Date(value);
     if (!isNaN(date.getTime())) return format(date, 'MMM dd, yyyy');
-  } catch {}
+  } catch { }
   return String(value);
 };
 
@@ -276,6 +276,15 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           size: 60,
           meta: { format: () => '' }, // skip export
         },
+          {
+          id: 'account_name',
+          accessorFn: (row) => row.account_name,
+          header: ({ column }) => <DataGridColumnHeader title="ACCOUNT NAME" column={column} />,
+          cell: ({ row }) => <span className="text-sm text-text">{row.original.account_name || 'N/A'}</span>,
+          enableSorting: true,
+          size: 150,
+          meta: { format: (value: string) => value || 'N/A' },
+        },
         {
           id: 'name',
           accessorFn: (row) => row.name,
@@ -284,15 +293,6 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           enableSorting: true,
           size: 200,
           meta: { format: (value: string) => value || '' },
-        },
-            {
-          id: 'account_name',
-          accessorFn: (row) => row.account_name,
-          header: ({ column }) => <DataGridColumnHeader title="ACCOUNT NAME" column={column} />,
-          cell: ({ row }) => <span className="text-sm text-text">{row.original.account_name || 'N/A'}</span>,
-          enableSorting: true,
-          size: 150,
-          meta: { format: (value: string) => value || 'N/A' },
         },
         {
           id: 'job_number',
