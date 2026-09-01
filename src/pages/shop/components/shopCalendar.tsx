@@ -184,16 +184,33 @@ const ShopCalendarPage: React.FC = () => {
   }, [currentDate, viewMode, lockedFabId, searchFabId, searchType, filterFabType, filterWorkstation, filterOperator, filterPlanningSections]);
 
   const queryParams = buildQueryParams();
-  const { data: plansResponse, isLoading, isFetching } = useGetAllShopPlansQuery(queryParams);
+
+  // NOTE: we deliberately use `currentData` (not `data`) everywhere below.
+  // `data` holds the *previous* successful response and keeps returning it
+  // while a new request for different args is in flight — that's what was
+  // causing stale events to render during a filter change. `currentData`
+  // is undefined until the response for the *current* args resolves, so
+  // combined with the isFetching overlay below, the grid correctly shows
+  // "nothing yet" instead of "old filter's results" while fetching.
+  const {
+    currentData: plansResponse,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useGetAllShopPlansQuery(queryParams);
+
+  const flatPlans = useMemo(
+    () => plansResponse?.data?.plans ?? plansResponse?.plans ?? [],
+    [plansResponse],
+  );
 
   const planMap = useMemo(() => {
-    const flatPlans = plansResponse?.data?.plans ?? plansResponse?.plans ?? [];
     const map: Record<number, any> = {};
     flatPlans.forEach((p: any) => {
       map[p.id] = p;
     });
     return map;
-  }, [plansResponse]);
+  }, [flatPlans]);
 
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
 
@@ -217,70 +234,72 @@ const ShopCalendarPage: React.FC = () => {
   }, [currentDate, viewMode]);
 
   // ─── Group events by day ────────────────────────────────────────────────────
-  const eventsByDay = useMemo(() => {
-    const grouped: Record<string, any[]> = {};
-    const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
-    allDays.forEach((d) => { grouped[format(d, 'yyyy-MM-dd')] = []; });
+ const eventsByDay = useMemo(() => {
+  const grouped: Record<string, any[]> = {};
+  const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
+  allDays.forEach((d) => { grouped[format(d, 'yyyy-MM-dd')] = []; });
 
-    const flatPlans = plansResponse?.data?.plans ?? plansResponse?.plans ?? [];
+  // Ensure flatPlans is an array (it should be, but guard anyway)
+  const plans = Array.isArray(flatPlans) ? flatPlans : [];
 
-    flatPlans.forEach((event: any) => {
-      const startDate = new Date(event.scheduled_start_date);
-      const rawStartHour = startDate.getHours() + startDate.getMinutes() / 60;
-      const startHour = rawStartHour >= BREAK_START_HOUR && rawStartHour < BREAK_END_HOUR
-        ? BREAK_END_HOUR
-        : rawStartHour;
-      if (startHour !== rawStartHour) startDate.setHours(BREAK_END_HOUR, 0, 0, 0);
+  plans.forEach((event: any) => {
+    const startDate = new Date(event.scheduled_start_date);
+    let remainingHours = Number(event.estimated_hours) || 0;
+    let currentDate = startDate;
+    let currentHour = startDate.getHours() + startDate.getMinutes() / 60;
 
-      let remainingHours = Number(event.estimated_hours) || 0;
+    // If start time falls inside break, move to end of break
+    if (currentHour >= BREAK_START_HOUR && currentHour < BREAK_END_HOUR) {
+      currentHour = BREAK_END_HOUR;
+      currentDate.setHours(BREAK_END_HOUR, 0, 0, 0);
+    }
 
-      const pushPart = (day: Date, hour: number, hours: number) => {
-        const key = format(day, 'yyyy-MM-dd');
-        if (hours <= 0 || !(key in grouped)) return;
-        const partStart = new Date(day);
-        partStart.setHours(hour, 0, 0, 0);
+    while (remainingHours > 0) {
+      let hoursToday = 0;
+      if (currentHour < BREAK_START_HOUR) {
+        hoursToday = Math.min(remainingHours, BREAK_START_HOUR - currentHour);
+      } else if (currentHour >= BREAK_END_HOUR) {
+        hoursToday = Math.min(remainingHours, DAY_END_HOUR - currentHour);
+      } else {
+        // Should not happen – skip to break end
+        currentHour = BREAK_END_HOUR;
+        continue;
+      }
+
+      if (hoursToday > 0) {
+        const partStart = new Date(currentDate);
+        partStart.setHours(currentHour, 0, 0, 0);
+        const key = format(currentDate, 'yyyy-MM-dd');
+        // Safety: ensure the key exists before pushing
+        if (!grouped[key]) grouped[key] = [];
         grouped[key].push({
           ...event,
           _isSplitPart: true,
           _originalHours: event.estimated_hours,
-          estimated_hours: hours,
+          estimated_hours: hoursToday,
           scheduled_start_date: partStart.toISOString(),
           _planId: event.id,
         });
-      };
-
-      // Split around break
-      const beforeBreak = startHour < BREAK_START_HOUR
-        ? Math.min(remainingHours, BREAK_START_HOUR - startHour)
-        : 0;
-      if (beforeBreak > 0) {
-        pushPart(startDate, startHour, beforeBreak);
-        remainingHours -= beforeBreak;
+        remainingHours -= hoursToday;
+        currentHour += hoursToday;
       }
 
-      if (remainingHours > 0 && startHour < BREAK_END_HOUR) {
-        const afterBreakToday = Math.min(remainingHours, DAY_END_HOUR - BREAK_END_HOUR);
-        pushPart(startDate, BREAK_END_HOUR, afterBreakToday);
-        remainingHours -= afterBreakToday;
-      } else if (remainingHours > 0 && startHour >= BREAK_END_HOUR && startHour < DAY_END_HOUR) {
-        const today = Math.min(remainingHours, DAY_END_HOUR - startHour);
-        pushPart(startDate, startHour, today);
-        remainingHours -= today;
+      // If we've reached the break, skip over it
+      if (currentHour >= BREAK_START_HOUR && currentHour < BREAK_END_HOUR) {
+        currentHour = BREAK_END_HOUR;
       }
 
-      let currentDate = addDays(startDate, 1);
-      while (remainingHours > 0) {
-        const hoursOnThisDay = Math.min(remainingHours, DAY_END_HOUR - DAY_START_HOUR - BREAK_DURATION);
-        pushPart(currentDate, DAY_START_HOUR, hoursOnThisDay);
-        remainingHours -= hoursOnThisDay;
+      // If we've reached end of day or no time left, move to next day
+      if (currentHour >= DAY_END_HOUR || remainingHours <= 0) {
         currentDate = addDays(currentDate, 1);
+        currentHour = DAY_START_HOUR;
       }
-    });
+    }
+  });
 
-    return grouped;
-  }, [plansResponse, displayDays, monthWeeks, viewMode]);
-
-  const totalPlans = useMemo(
+  return grouped;
+}, [flatPlans, displayDays, monthWeeks, viewMode]);
+const totalPlans = useMemo(
     () => Object.values(eventsByDay).reduce((acc, evs) => acc + evs.length, 0),
     [eventsByDay],
   );
@@ -390,11 +409,6 @@ const ShopCalendarPage: React.FC = () => {
               <p className="text-[13px] font-semibold truncate" style={{ color: text }}>
                 {event.fab_id} {event.plan_name ? `• ${event.plan_name}` : ''} {event.operator_name ? `• ${event.operator_name}` : ''}
               </p>
-              {/* {event._isSplitPart && (
-                <p className="text-[9px] italic mt-0.5" style={{ color: text, opacity: 0.6 }}>
-                  (Continued from previous day)
-                </p>
-              )} */}
               <p className="text-[11px] truncate mt-0.5" style={{ color: text, opacity: 0.7 }}>
                 {event.fab_type || event.percent_complete != null ? `${event.work_percentage ?? 0}%` : ''}
               </p>
@@ -484,7 +498,6 @@ const ShopCalendarPage: React.FC = () => {
 
         <div className="flex items-center justify-between px-10 h-[65px]">
           <div className="flex items-center gap-[10px]">
-            {/* Search and filters - unchanged */}
             {isSearchLocked ? (
               <div className="flex items-center gap-2 h-[36px] bg-[#f0f4e8] border border-[#9cc15e] rounded-[6px] px-3">
                 <Lock className="size-3.5 text-[#7a9705]" />
@@ -724,7 +737,7 @@ const ShopCalendarPage: React.FC = () => {
               <p className="font-semibold text-[16px] leading-[24px] text-[#7c8689] whitespace-nowrap">
                 Total Scheduled Plans
                 {isSearchLocked && <span className="ml-2 text-[#7a9705]">. {lockedFabId}</span>}
-                {isFetching && !isLoading && (
+                {isFetching && (
                   <span className="ml-2 inline-flex items-center gap-1.5">
                     <svg className="animate-spin h-3.5 w-3.5 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -735,7 +748,7 @@ const ShopCalendarPage: React.FC = () => {
                 )}
               </p>
               <p className="font-semibold text-[20px] leading-[24px] text-black">
-                {isLoading ? '–' : totalPlans}
+                {isLoading || isFetching ? '–' : totalPlans}
               </p>
             </div>
           </div>
@@ -746,7 +759,7 @@ const ShopCalendarPage: React.FC = () => {
             </div>
           ) : (
             <>
-              {isFetching && !isLoading && (
+              {isFetching && (
                 <div className="relative">
                   <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-[8px]">
                     <div className="bg-white border border-[#e2e4ed] rounded-[8px] px-4 py-2 shadow-sm flex items-center gap-2">
@@ -761,7 +774,7 @@ const ShopCalendarPage: React.FC = () => {
               )}
               <TooltipProvider>
                 <div className="border border-[#ecedf0] rounded-[8px] overflow-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
-                  {/* Month view – unchanged */}
+                  {/* Month view */}
                   {viewMode === 'month' && (
                     <div className="min-w-max">
                       <div className="grid" style={{ gridTemplateColumns: 'auto repeat(7, 1fr)' }}>
@@ -802,9 +815,7 @@ const ShopCalendarPage: React.FC = () => {
                   {/* ─── Day / Week column view with sticky headers ─── */}
                   {viewMode !== 'month' && !isAxisSwapped && (
                     <div className="min-w-max">
-                      {/* Top row: day headers – sticky horizontally when scrolling vertically */}
                       <div className="flex sticky top-0 z-20 bg-white border-b border-[#e2e4ed]">
-                        {/* Left time label column – sticky left and top */}
                         <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] sticky left-0 z-30 bg-white" />
                         {displayDays.map((day) => (
                           <div
@@ -821,9 +832,7 @@ const ShopCalendarPage: React.FC = () => {
                         ))}
                       </div>
 
-                      {/* Body */}
                       <div className="relative flex pt-5" style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}>
-                        {/* Left time labels – sticky left */}
                         <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] relative sticky left-0 z-10 bg-white">
                           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                             const hour = DAY_START_HOUR + i;
@@ -852,12 +861,10 @@ const ShopCalendarPage: React.FC = () => {
                           return (
                             <div
                               key={dk}
-                              // className="flex-1 min-w-[160px] border-r border-[#ecedf0] relative"
                               className="flex-1 min-w-[160px] border-r border-[#ecedf0] relative overflow-visible"
                               style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(true); } : undefined}
                             >
-                              {/* Grid lines */}
                               {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                                 const hour = DAY_START_HOUR + i;
                                 const position = getTimePosition(hour);
@@ -866,7 +873,6 @@ const ShopCalendarPage: React.FC = () => {
                                 );
                               })}
 
-                              {/* Break indicator */}
                               <div
                                 className="absolute left-0 right-0 z-[10] bg-orange-100 border-y-2 border-orange-300 pointer-events-none flex items-center justify-center"
                                 style={{
@@ -881,20 +887,6 @@ const ShopCalendarPage: React.FC = () => {
 
                               {isToday && <div className="absolute inset-0 bg-[#7a9705]/[0.02] pointer-events-none" />}
                               {positioned.map((ev) => renderEventCard(ev))}
-                              {/* {isToday && showTimeIndicator && (
-                                <div className="absolute left-0 right-0 z-10 pointer-events-none" style={{ top: getTimePosition(currentTime.getHours() + currentTime.getMinutes() / 60) }}>
-                                  <div className="relative flex items-center">
-                                    <div
-                                      className="absolute -left-[90px] flex items-center justify-center rounded-[4px] px-1 py-0.5 z-20"
-                                      style={{ backgroundColor: '#ee1a1d' }}
-                                    >
-                                      <span className="text-[9px] font-semibold text-white whitespace-nowrap">
-                                        {formatTime(currentTime, is12HourFormat)}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              )} */}
                             </div>
                           );
                         })}
@@ -905,7 +897,6 @@ const ShopCalendarPage: React.FC = () => {
                   {/* ─── Time-row view (axis swapped) with sticky headers ─── */}
                   {viewMode !== 'month' && isAxisSwapped && (
                     <div className="min-w-max">
-                      {/* Top row: time header – sticky vertically */}
                       <div className="flex border-b border-[#e2e4ed] bg-white sticky top-0 z-10">
                         <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] sticky left-0 z-30 bg-white" />
                         <div className="relative" style={{ minWidth: DISPLAY_HOURS * HOUR_WIDTH, height: 50 }}>
@@ -928,7 +919,6 @@ const ShopCalendarPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Rows for each day */}
                       {displayDays.map((day) => {
                         const dk = format(day, 'yyyy-MM-dd');
                         const dayEvents = eventsByDay[dk] || [];
@@ -953,7 +943,6 @@ const ShopCalendarPage: React.FC = () => {
 
                         return (
                           <div key={dk} className="flex border-b border-[#e2e4ed]" style={{ minHeight: rowHeight }}>
-                            {/* Left day label – sticky left */}
                             <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] sticky left-0 z-10 bg-white flex flex-col justify-center items-center py-2 gap-0">
                               <span className="text-[10px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
                               <span
@@ -968,7 +957,6 @@ const ShopCalendarPage: React.FC = () => {
                               style={{ height: rowHeight, minWidth: DISPLAY_HOURS * HOUR_WIDTH }}
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(false); } : undefined}
                             >
-                              {/* Grid lines */}
                               {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                                 const hour = DAY_START_HOUR + i;
                                 const position = getHorizontalPosition(hour);
@@ -977,7 +965,6 @@ const ShopCalendarPage: React.FC = () => {
                                 );
                               })}
 
-                              {/* Break column */}
                               <div
                                 className="absolute z-[10] bg-orange-100 border-x-2 border-orange-300 pointer-events-none flex items-center justify-center"
                                 style={{

@@ -404,12 +404,13 @@ export function OperatorDashboard() {
     // ─── Stats ──────────────────────────────────────────────────────────────
     const totalTasksCount = Object.values(eventsByDay).reduce((acc, evs) => acc + evs.length, 0);
     const workstationCount = selectedWorkstation ? 1 : (workstationsData as any)?.data?.length || 0;
-    const activeTimerFabs = Array.isArray((tasksData as any)?.active_timer_fabs)
-        ? (tasksData as any).active_timer_fabs
-        : Array.isArray((tasksData as any)?.data?.active_timer_fabs)
-            ? (tasksData as any).data.active_timer_fabs
-            : [];
-
+    const activeTimerFabs = useMemo(() => {
+        const raw = (tasksData as any)?.running_timer_fab_ids;
+        if (Array.isArray(raw)) return raw;
+        const nested = (tasksData as any)?.data?.running_timer_fab_ids;
+        if (Array.isArray(nested)) return nested;
+        return [];
+    }, [tasksData]);
     // Hours to render (7 to 16)
     const hoursToRender: number[] = [];
     for (let h = DAY_START_HOUR; h < DAY_END_HOUR; h++) hoursToRender.push(h);
@@ -455,11 +456,11 @@ export function OperatorDashboard() {
                             )}
                             {activeTimerFabs.length > 0 && (
                                 <div className="flex max-w-[760px] flex-wrap justify-end gap-2" aria-label="Active FAB timers">
-                                    {activeTimerFabs.slice(0, 5).map((fab: any) => (
-                                        <div key={fab.fab_id ?? fab.id} className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm">
+                                    {activeTimerFabs.slice(0, 5).map((fabId: number) => (
+                                        <div key={fabId} className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm">
                                             <span className="size-2 rounded-full bg-emerald-500" aria-hidden="true" />
-                                            <span className="font-semibold text-foreground">{fab.fab_number ?? fab.fab_id ?? fab.id}</span>
-                                            {fab.elapsed_time && <span className="font-mono text-xs text-muted-foreground">{fab.elapsed_time}</span>}
+                                            <span className="font-semibold text-foreground">FAB-{fabId}</span>
+                                            {/* Optional: if we can fetch elapsed time, show it */}
                                         </div>
                                     ))}
                                 </div>
@@ -484,7 +485,7 @@ export function OperatorDashboard() {
                                 </button>
                             ))}
                         </div>
-                       
+
                     </div>
                 </div>
 

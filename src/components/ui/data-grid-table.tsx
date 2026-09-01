@@ -569,7 +569,7 @@ function DataGridTable<TData extends object>() {
 
   // For month grouping, use hierarchical view
   if (dateGrouping === 'month' && monthGroups) {
-    const columnsToCalculate = ['total_sq_ft', 'wl_ln_ft', 'sl_ln_ft', 'edging_ln_ft', 'cnc_ln_ft', 'milter_ln_ft', 'cost_of_stone', 'revenue'];
+    const columnsToCalculate = ['total_sq_ft', 'wl_ln_ft', 'sl_ln_ft', 'edging_ln_ft', 'cnc_ln_ft', 'milter_ln_ft', 'cost_of_stone', 'revenue', 'gp'];
 
     return (
       <div className="relative space-y-4">
@@ -679,7 +679,7 @@ function DataGridTable<TData extends object>() {
     <div className="relative space-y-3">
       {Object.entries(groupedRows).map(([date, rows]) => {
         // Define specific numeric columns to include in totals calculation
-        const columnsToCalculate = ['total_sq_ft', 'wl_ln_ft', 'sl_ln_ft', 'edging_ln_ft', 'cnc_ln_ft', 'milter_ln_ft', 'cost_of_stone', 'revenue'];
+        const columnsToCalculate = ['total_sq_ft', 'wl_ln_ft', 'sl_ln_ft', 'edging_ln_ft', 'cnc_ln_ft', 'milter_ln_ft', 'cost_of_stone', 'revenue', 'gp'];
         
         // Calculate totals only for specified columns
         const columnTotals: Record<string, number> = {};
