@@ -40,7 +40,7 @@ export function InstallSchedulingDetailsPage() {
         : '#';
 
     const jobInfo = fab ? [
-        { label: 'FAB ID', value: String(fab.id) },
+        { label: 'FAB ID', value:<Link to={`/sales/${fab.id}`} className="text-primary hover:underline">{String(fab.id)}</Link> },
         { label: 'FAB Type', value: <span className="uppercase">{fab.fab_type}</span> },
         { label: 'Account', value: fab.account_name },
         { label: 'Job name', value: fab.job_details?.name },
