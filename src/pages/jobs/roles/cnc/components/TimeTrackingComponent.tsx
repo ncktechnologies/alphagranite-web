@@ -26,11 +26,11 @@ interface TimeTrackingComponentProps {
   totalTime: number;
   draftStart?: Date | null;
   draftEnd?: Date | null;
-  sessionData?: any;            // server session data (contains UTC timestamps)
+  sessionData?: any;
   isFabOnHold?: boolean;
 
   onStart: (startDate: Date) => void | Promise<void>;
-  onPause: (data?: { note?: string; sqft_drafted?: string; work_percentage?: string }) => void | Promise<void>;
+  onPause: (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => void | Promise<void>;
   onResume: (data?: { note?: string; sqft_drafted?: string }) => void | Promise<void>;
   onEnd: (endDate: Date) => void;
   onOnHold?: (data?: { note?: string; sqft_drafted?: string }) => void | Promise<void>;
@@ -39,19 +39,17 @@ interface TimeTrackingComponentProps {
   hasEnded: boolean;
   pendingFilesCount?: number;
   uploadedFilesCount?: number;
+  defaultWorkPercentage?: string;   // ✨
+  defaultSqftDrafted?: string;      // ✨
 }
 
-// ---------------------------------------------------------------------
-// Helper: parse server timestamp as UTC (no timezone = assume UTC)
-// ---------------------------------------------------------------------
+// Helper: parse server timestamp as UTC
 const parseUTCDate = (dateStr: string | undefined): Date | undefined => {
   if (!dateStr) return undefined;
-  // Expected format: "YYYY-MM-DDTHH:MM:SS.ssssss" (without Z)
   const [datePart, timePart] = dateStr.split('T');
   if (!datePart || !timePart) return undefined;
   const [y, m, d] = datePart.split('-').map(Number);
   const [h, min, s] = timePart.split(':').map(Number);
-  // Ignore fractional seconds (just take the integer part)
   const seconds = Math.floor(s);
   return new Date(Date.UTC(y, m - 1, d, h, min, seconds));
 };
@@ -72,10 +70,11 @@ export const TimeTrackingComponent = ({
   onTimeUpdate,
   hasEnded,
   pendingFilesCount = 0,
-  uploadedFilesCount = 0
+  uploadedFilesCount = 0,
+  defaultWorkPercentage = '',
+  defaultSqftDrafted = '',
 }: TimeTrackingComponentProps) => {
 
-  // Internal state – always holds the correct UTC timestamps
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [pausedTime, setPausedTime] = useState<Date | null>(null);
   const [totalPausedTime, setTotalPausedTime] = useState<number>(0);
@@ -83,7 +82,6 @@ export const TimeTrackingComponent = ({
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [isStarting, setIsStarting] = useState(false);
 
-  // UI state for modals
   const [pauseNote, setPauseNote] = useState<string>('');
   const [pauseSqFt, setPauseSqFt] = useState<string>('');
   const [pauseWorkPercentage, setPauseWorkPercentage] = useState<string>('');
@@ -95,70 +93,51 @@ export const TimeTrackingComponent = ({
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [showOnHoldModal, setShowOnHoldModal] = useState(false);
 
-  // -----------------------------------------------------------------
-  // 1. Sync with server timestamps (single source of truth)
-  // -----------------------------------------------------------------
+  // ── Sync timestamps ──────────────────────────────────────────────────────
   useEffect(() => {
     if (sessionData?.data) {
       const session = sessionData.data;
-
-      // Start time – always parse as UTC
       if (session.current_session_start_time) {
         setStartTime(parseUTCDate(session.current_session_start_time) || null);
       } else if (draftStart) {
         setStartTime(draftStart);
       }
-
-      // End time (if session ended)
       if (session.status === 'ended' && session.last_action_time) {
         setEndTime(parseUTCDate(session.last_action_time) || null);
       } else if (draftEnd) {
         setEndTime(draftEnd);
       }
-
-      // Paused start time (if currently paused)
       if (session.status === 'paused' && session.current_pause_start_time) {
         setPausedTime(parseUTCDate(session.current_pause_start_time) || null);
       }
     } else if (draftStart) {
-      // Fallback to props if no sessionData
       setStartTime(draftStart);
-      if (draftEnd) {
-        setEndTime(draftEnd);
-      }
+      if (draftEnd) setEndTime(draftEnd);
     }
   }, [sessionData, draftStart, draftEnd]);
 
-  // -----------------------------------------------------------------
-  // 2. Update current time every second (for live calculation)
-  // -----------------------------------------------------------------
+  // ── Live timer ──────────────────────────────────────────────────────────
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // -----------------------------------------------------------------
-  // 3. Compute elapsed time and notify parent
-  // -----------------------------------------------------------------
   useEffect(() => {
     if (isDrafting && !isPaused && startTime && !hasEnded) {
-      // Total seconds from start until now, minus paused time
       const elapsed = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
       const adjusted = Math.max(0, elapsed - totalPausedTime);
       onTimeUpdate(adjusted);
     }
   }, [currentTime, isDrafting, isPaused, startTime, totalPausedTime, hasEnded, onTimeUpdate]);
 
-  // ---------- HANDLERS ----------
+  // ── Handlers ─────────────────────────────────────────────────────────────
+
   const handleStart = async () => {
     setIsStarting(true);
-    const now = new Date();               // local time, but stored as a Date object (UTC timestamp)
+    const now = new Date();
     setStartTime(now);
     setPausedTime(null);
     setTotalPausedTime(0);
-
     try {
       await onStart(now);
     } finally {
@@ -167,6 +146,9 @@ export const TimeTrackingComponent = ({
   };
 
   const handlePause = () => {
+    setPauseWorkPercentage(defaultWorkPercentage);
+    setPauseSqFt(defaultSqftDrafted);
+    setPauseNote('');
     setShowPauseModal(true);
   };
 
@@ -182,12 +164,13 @@ export const TimeTrackingComponent = ({
       await onPause({
         note: pauseNote,
         sqft_drafted: pauseSqFt,
-        work_percentage: pauseWorkPercentage
+        work_percentage_done: pauseWorkPercentage, // ✅ send to backend
       });
       setPauseNote('');
       setPauseSqFt('');
       setPauseWorkPercentage('');
       setShowPauseModal(false);
+      toast.success('Session paused');
     } catch (error) {
       console.error('Failed to pause:', error);
       toast.error('Failed to pause CNC session');
@@ -201,28 +184,21 @@ export const TimeTrackingComponent = ({
     setShowPauseModal(false);
   };
 
-  const handleResume = () => {
-    setShowResumeModal(true);
-  };
+  const handleResume = () => setShowResumeModal(true);
 
   const confirmResume = async () => {
     if (startTime && pausedTime) {
-      // Calculate how long we were paused and add to totalPausedTime
       const pausedDuration = Math.floor((new Date().getTime() - pausedTime.getTime()) / 1000);
       setTotalPausedTime(prev => prev + pausedDuration);
     }
     setPausedTime(null);
     try {
-      await onResume({
-        note: resumeNote,
-        sqft_drafted: resumeSqFt
-      });
+      await onResume({ note: resumeNote, sqft_drafted: resumeSqFt });
       setResumeNote('');
       setResumeSqFt('');
       setShowResumeModal(false);
     } catch (error) {
       console.error('Failed to resume:', error);
-      // toast.error('Failed to resume CNC session');
     }
   };
 
@@ -232,9 +208,7 @@ export const TimeTrackingComponent = ({
     setShowResumeModal(false);
   };
 
-  const handleOnHold = () => {
-    setShowOnHoldModal(true);
-  };
+  const handleOnHold = () => setShowOnHoldModal(true);
 
   const confirmOnHold = async () => {
     const now = new Date();
@@ -251,17 +225,13 @@ export const TimeTrackingComponent = ({
 
     try {
       if (onOnHold) {
-        await onOnHold({
-          note: onHoldNote,
-          sqft_drafted: onHoldSqFt
-        });
+        await onOnHold({ note: onHoldNote, sqft_drafted: onHoldSqFt });
       }
       setOnHoldNote('');
       setOnHoldSqFt('');
       setShowOnHoldModal(false);
     } catch (error) {
       console.error('Failed to put on hold:', error);
-      // toast.error('Failed to put CNC session on hold');
     }
   };
 
@@ -287,7 +257,8 @@ export const TimeTrackingComponent = ({
     onEnd(now);
   };
 
-  // ---------- UI FORMATTING ----------
+  // ── Format helpers ──────────────────────────────────────────────────────
+
   const formatTime = (date?: Date | null) => {
     if (!date) return '--';
     const datePart = date.toLocaleDateString('en-GB', {
@@ -303,27 +274,24 @@ export const TimeTrackingComponent = ({
     return `${datePart} | ${timePart}`;
   };
 
- const formatDuration = (seconds: number) => {
-  if (seconds < 0) seconds = 0;
-  const days = Math.floor(seconds / (24 * 3600));
-  const remainingSeconds = seconds % (24 * 3600);
-  const hours = Math.floor(remainingSeconds / 3600);
-  const minutes = Math.floor((remainingSeconds % 3600) / 60);
-  const secs = remainingSeconds % 60;
+  const formatDuration = (seconds: number) => {
+    if (seconds < 0) seconds = 0;
+    const days = Math.floor(seconds / (24 * 3600));
+    const remaining = seconds % (24 * 3600);
+    const hours = Math.floor(remaining / 3600);
+    const minutes = Math.floor((remaining % 3600) / 60);
+    const secs = remaining % 60;
+    const pad = (n: number) => n.toString().padStart(2, '0');
 
-  const pad = (n: number) => n.toString().padStart(2, '0');
+    if (days > 0) return `${days}d ${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+    return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+  };
 
-  if (days > 0) {
-    return `${days}d ${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
-  }
-  return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
-};
+  // ── Render ──────────────────────────────────────────────────────────────
 
-  // ---------- RENDER ----------
   return (
     <div className="border-none">
       <div className="flex items-center gap-6 justify-between">
-
         <div className="flex-shrink-0">
           <div className="flex items-center justify-center">
             <img src="/images/app/clock.svg" alt="" />
@@ -331,8 +299,6 @@ export const TimeTrackingComponent = ({
         </div>
 
         <div className="flex items-center gap-10 flex-1">
-
-          {/* START TIME */}
           <div>
             <span className="text-sm text-text-foreground">Start time & Date:</span>
             <p className="text-[16px] text-text font-semibold">
@@ -340,7 +306,6 @@ export const TimeTrackingComponent = ({
             </p>
           </div>
 
-          {/* PAUSE (if paused) */}
           {isPaused && pausedTime && !hasEnded && (
             <div>
               <span className="text-sm text-text-foreground">Paused time & Date:</span>
@@ -350,7 +315,6 @@ export const TimeTrackingComponent = ({
             </div>
           )}
 
-          {/* END TIME (if ended) */}
           {!isPaused && endTime && hasEnded && (
             <div>
               <span className="text-sm text-text-foreground">End time & Date:</span>
@@ -358,7 +322,6 @@ export const TimeTrackingComponent = ({
             </div>
           )}
 
-          {/* LIVE / FINAL DURATION */}
           {((isDrafting && !hasEnded) || hasEnded) && totalTime > 0 && (
             <div className="bg-[#FF8D28] px-10 py-2 rounded-[6px] text-white text-[12px]">
               <span className="text-sm font-medium text-[#EEEEEE]">Total hour spent</span>
@@ -367,14 +330,11 @@ export const TimeTrackingComponent = ({
           )}
         </div>
 
-        {/* ACTION BUTTONS */}
         <div className="flex gap-2">
-
           {isPaused && !hasEnded ? (
             <Can action="update" on="CNC">
               <Button onClick={handleResume} variant="inverse" className="bg-[#4B545D] text-white">
-                <Play className="w-4 h-4 mr-2" />
-                Resume
+                <Play className="w-4 h-4 mr-2" /> Resume
               </Button>
             </Can>
           ) : !isDrafting && !hasEnded && !isPaused ? (
@@ -388,13 +348,11 @@ export const TimeTrackingComponent = ({
             <>
               {!isPaused ? (
                 <Button onClick={handlePause} variant="inverse" className="bg-[#4B545D] text-white">
-                  <Pause className="w-4 h-4 mr-2" />
-                  Pause
+                  <Pause className="w-4 h-4 mr-2" /> Pause
                 </Button>
               ) : (
                 <Button onClick={handleResume} variant="inverse" className="bg-[#4B545D] text-white">
-                  <Play className="w-4 h-4 mr-2" />
-                  Resume
+                  <Play className="w-4 h-4 mr-2" /> Resume
                 </Button>
               )}
               {!isFabOnHold && (
@@ -403,57 +361,52 @@ export const TimeTrackingComponent = ({
                   variant="inverse"
                   className="text-[#FF8C00] border border-[#FF8C00]"
                 >
-                  <Square className="w-4 h-4 mr-2" />
-                  On Hold
+                  <Square className="w-4 h-4 mr-2" /> On Hold
                 </Button>
               )}
             </>
           ) : null}
         </div>
-
       </div>
 
-      {/* MODALS (unchanged) */}
-      <>
-        <Dialog open={showPauseModal} onOpenChange={setShowPauseModal}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Pause CNC Session</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
+      {/* ── MODALS ────────────────────────────────────────────────────────── */}
+
+      <Dialog open={showPauseModal} onOpenChange={setShowPauseModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pause CNC Session</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div>
               <label htmlFor="pause-sqft" className="block text-sm font-medium mb-2">
-                Square Feet Drafted So Far
+                Square Feet Completed So Far
               </label>
               <Input
                 id="pause-sqft"
                 value={pauseSqFt}
                 onChange={(e) => setPauseSqFt(e.target.value)}
-                placeholder="Enter square feet drafted"
+                placeholder="Enter square feet completed"
               />
+            </div>
 
-              <label htmlFor="pause-work-percentage" className="block text-sm font-medium mt-4 mb-2">
-                Work Percentage
+            <div>
+              <label htmlFor="pause-work-percentage" className="block text-sm font-medium mb-2">
+                Work Percentage *
               </label>
               <Select value={pauseWorkPercentage} onValueChange={setPauseWorkPercentage}>
                 <SelectTrigger id="pause-work-percentage">
                   <SelectValue placeholder="Select work percentage" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[200px] overflow-y-auto">
-                  <SelectItem value="0">0%</SelectItem>
-                  <SelectItem value="10">10%</SelectItem>
-                  <SelectItem value="20">20%</SelectItem>
-                  <SelectItem value="30">30%</SelectItem>
-                  <SelectItem value="40">40%</SelectItem>
-                  <SelectItem value="50">50%</SelectItem>
-                  <SelectItem value="60">60%</SelectItem>
-                  <SelectItem value="70">70%</SelectItem>
-                  <SelectItem value="80">80%</SelectItem>
-                  <SelectItem value="90">90%</SelectItem>
-                  <SelectItem value="100">100%</SelectItem>
+                  {[0,10,20,30,40,50,60,70,80,90,100].map((v) => (
+                    <SelectItem key={v} value={String(v)}>{v}%</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+            </div>
 
-              <label htmlFor="pause-note" className="block text-sm font-medium mt-4 mb-2">
+            <div>
+              <label htmlFor="pause-note" className="block text-sm font-medium mb-2">
                 Notes (Optional)
               </label>
               <Textarea
@@ -464,50 +417,45 @@ export const TimeTrackingComponent = ({
                 rows={4}
               />
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={cancelPause}>
-                Cancel
-              </Button>
-              <Button type="button" onClick={confirmPause}>
-                Confirm Pause
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={cancelPause}>Cancel</Button>
+            <Button onClick={confirmPause}>Confirm Pause</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        <Dialog open={showResumeModal} onOpenChange={setShowResumeModal}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Resume CNC Session</DialogTitle>
-            </DialogHeader>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={cancelResume}>
-                Cancel
-              </Button>
-              <Button type="button" onClick={confirmResume}>
-                Confirm Resume
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+      <Dialog open={showResumeModal} onOpenChange={setShowResumeModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Resume CNC Session</DialogTitle>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={cancelResume}>Cancel</Button>
+            <Button onClick={confirmResume}>Confirm Resume</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        <Dialog open={showOnHoldModal} onOpenChange={setShowOnHoldModal}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Put CNC Session On Hold</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
+      <Dialog open={showOnHoldModal} onOpenChange={setShowOnHoldModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Put CNC Session On Hold</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div>
               <label htmlFor="onhold-sqft" className="block text-sm font-medium mb-2">
-                Total Square Feet Drafted So Far
+                Total Square Feet Completed So Far
               </label>
               <Input
                 id="onhold-sqft"
                 value={onHoldSqFt}
                 onChange={(e) => setOnHoldSqFt(e.target.value)}
-                placeholder="Enter total square feet drafted"
+                placeholder="Enter total square feet completed"
               />
-
-              <label htmlFor="onhold-note" className="block text-sm font-medium mt-4 mb-2">
+            </div>
+            <div>
+              <label htmlFor="onhold-note" className="block text-sm font-medium mb-2">
                 Notes (Optional)
               </label>
               <Textarea
@@ -518,17 +466,13 @@ export const TimeTrackingComponent = ({
                 rows={4}
               />
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={cancelOnHold}>
-                Cancel
-              </Button>
-              <Button type="button" onClick={confirmOnHold}>
-                Confirm On Hold
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={cancelOnHold}>Cancel</Button>
+            <Button onClick={confirmOnHold}>Confirm On Hold</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

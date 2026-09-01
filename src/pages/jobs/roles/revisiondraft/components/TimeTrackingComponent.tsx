@@ -39,6 +39,8 @@ interface TimeTrackingComponentProps {
   hasEnded: boolean;
   pendingFilesCount?: number;
   uploadedFilesCount?: number;
+   defaultWorkPercentage?: string;
+  defaultSqftDrafted?: string;
 }
 
 // ---------------------------------------------------------------------
@@ -70,7 +72,9 @@ export const TimeTrackingComponent = ({
   onTimeUpdate,
   hasEnded,
   pendingFilesCount = 0,
-  uploadedFilesCount = 0
+  uploadedFilesCount = 0,
+  defaultWorkPercentage = '',
+  defaultSqftDrafted = ''
 }: TimeTrackingComponentProps) => {
 
   const [startTime, setStartTime] = useState<Date | null>(null);
@@ -156,6 +160,9 @@ export const TimeTrackingComponent = ({
   };
 
   const handlePause = () => {
+     setPauseWorkPercentage(defaultWorkPercentage);
+    setPauseSqFt(defaultSqftDrafted);
+    setPauseNote('');
     setShowPauseModal(true);
   };
 
@@ -171,7 +178,7 @@ export const TimeTrackingComponent = ({
       await onPause({
         note: pauseNote,
         sqft_drafted: pauseSqFt,
-        work_percentage: pauseWorkPercentage
+        work_percentage_done: pauseWorkPercentage
       });
       setPauseNote('');
       setPauseSqFt('');

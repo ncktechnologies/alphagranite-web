@@ -10,7 +10,8 @@ interface ExportOptions<T> {
 const defaultFormat = (value: any): string => {
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (value === null || value === undefined) return "";
-  return String(value);
+  // Convert to string and replace non‑breaking spaces with regular spaces
+  return String(value).replace(/\u00A0/g, ' ');
 };
 
 const extractHeaderTitle = (header: any, colId: string): string => {
@@ -57,12 +58,16 @@ export function exportTableToCSV<T extends Record<string, any>>(
         } else {
           formatted = defaultFormat(raw);
         }
-        return `"${String(formatted ?? "").replace(/"/g, '""')}"`;
+        // Escape double quotes and wrap in quotes
+        const escaped = String(formatted ?? "").replace(/"/g, '""');
+        return `"${escaped}"`;
       })
       .join(",");
   });
 
-  const csvContent = [headers.join(","), ...csvRows].join("\n");
+  // ─── Add UTF‑8 BOM to fix Excel encoding ──────────────────────────────
+  const BOM = "\uFEFF";
+  const csvContent = BOM + [headers.join(","), ...csvRows].join("\n");
 
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);

@@ -484,12 +484,7 @@ export function OperatorDashboard() {
                                 </button>
                             ))}
                         </div>
-                        {viewMode !== 'month' && (
-                            <div className="flex items-center gap-1 rounded-md border border-[#e2e4ed] bg-white p-1" aria-label="Calendar orientation">
-                                <button type="button" onClick={() => setIsAxisSwapped(false)} className={`rounded px-2 py-1.5 ${!isAxisSwapped ? 'bg-[#f1f4e8] text-[#5f7600]' : 'text-[#7c8689]'}`} aria-pressed={!isAxisSwapped} title="Column view"><Columns3 className="size-4" /></button>
-                                <button type="button" onClick={() => setIsAxisSwapped(true)} className={`rounded px-2 py-1.5 ${isAxisSwapped ? 'bg-[#f1f4e8] text-[#5f7600]' : 'text-[#7c8689]'}`} aria-pressed={isAxisSwapped} title="Row view"><Rows3 className="size-4" /></button>
-                            </div>
-                        )}
+                       
                     </div>
                 </div>
 

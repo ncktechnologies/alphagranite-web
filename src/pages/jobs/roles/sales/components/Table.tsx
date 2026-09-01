@@ -41,6 +41,26 @@ import { formatForDisplay } from '@/utils/date-utils';
 import { useTableState } from '@/hooks/use-table-state';
 import ActionsCell from './action';
 import { formatStage } from '@/pages/reports/OwnerReview';
+import { format } from 'date-fns';
+
+// ─── Robust date parser ──────────────────────────────────────────────────────
+const parseDateForDisplay = (s: string | undefined): Date | undefined => {
+    if (!s || typeof s !== 'string' || s.trim() === '') return undefined;
+    const dateParts = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (dateParts) {
+        const year = parseInt(dateParts[1], 10);
+        const month = parseInt(dateParts[2], 10) - 1;
+        const day = parseInt(dateParts[3], 10);
+        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+            return new Date(year, month, day);
+        }
+    }
+    try {
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) return d;
+    } catch {}
+    return undefined;
+};
 
 interface JobTableProps {
     jobs: IJob[];
@@ -73,7 +93,6 @@ interface JobTableProps {
     onAssignCNCClick?: () => void;
     onReassignCNCClick?: (job: IJob) => void;
     pageRole?: 'templater' | 'installer';
-    // Permission props
     canAddNote?: boolean;
     canToggleOnHold?: boolean;
     canExport?: boolean;
@@ -132,14 +151,12 @@ export const JobSalesTable = ({
     const [optimisticUpdates, setOptimisticUpdates] = useState<Record<string, any>>({});
     const [suppressParentRefresh, setSuppressParentRefresh] = useState(false);
 
-    // ── Drafter column visibility ────────────────────────────────────────────
     const [drafterColumnVisible, setDrafterColumnVisible] = useState(false);
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
     const navigate = useNavigate();
     const [toggleFabOnHold] = useToggleFabOnHoldMutation();
 
-    // Use backend state if available, otherwise use local state
     const pagination = tableState?.pagination ?? localPagination;
     const setPagination = tableState?.setPagination ?? setLocalPagination;
     const searchQuery = tableState?.searchQuery ?? localSearchQuery;
@@ -216,7 +233,7 @@ export const JobSalesTable = ({
                 const jobDate = new Date(job.date);
                 const today = new Date();
                 const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                return true; // Keep your existing date range logic here
+                return true;
             });
         }
 
@@ -317,6 +334,7 @@ export const JobSalesTable = ({
         }
     };
 
+    // ─── Column definitions with meta.format ──────────────────────────────────────
     const baseColumns = useMemo<ColumnDef<IJob>[]>(() => [
         // Checkbox column
         {
@@ -364,7 +382,7 @@ export const JobSalesTable = ({
             meta: { format: () => '' },
         },
 
-        // Actions column – now passes canAddNote to ActionsCell
+        // Actions column
         {
             id: 'actions',
             header: '',
@@ -381,7 +399,7 @@ export const JobSalesTable = ({
             meta: { format: () => '' },
         },
 
-        // Fab Type
+        // ─── Fab Type ──────────────────────────────────────────────────────────────
         {
             id: "fab_type",
             accessorKey: "fab_type",
@@ -392,7 +410,7 @@ export const JobSalesTable = ({
             meta: { format: (value: string) => value?.toUpperCase() || '' },
         },
 
-        // Fab ID
+        // ─── Fab ID ──────────────────────────────────────────────────────────────
         {
             id: "fab_id",
             accessorKey: "fab_id",
@@ -407,7 +425,7 @@ export const JobSalesTable = ({
             meta: { format: (value: string) => value || '' },
         },
 
-        // Job Name
+        // ─── Job Name ────────────────────────────────────────────────────────────
         {
             id: "job_name",
             accessorKey: "job_name",
@@ -418,7 +436,7 @@ export const JobSalesTable = ({
             meta: { format: (value: string) => value || '' },
         },
 
-        // Job No
+        // ─── Job No ──────────────────────────────────────────────────────────────
         {
             id: "job_no",
             accessorKey: "job_no",
@@ -453,7 +471,7 @@ export const JobSalesTable = ({
             meta: { format: (value: string) => value || '' },
         },
 
-        // Fab Info
+        // ─── Fab Info ────────────────────────────────────────────────────────────
         {
             id: "fab_info",
             header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
@@ -485,10 +503,15 @@ export const JobSalesTable = ({
             },
             size: 400,
             enableSorting: false,
-            meta: { format: (_value: any, row: IJob) => { const jobInfo = [row.acct_name || row.account_name, row.job_name].filter(Boolean); const stoneInfo = [row.stone_type_name, row.stone_color_name, row.stone_thickness_value].filter(Boolean); const materialInfo = [row.input_area, row.edge_name].filter(Boolean); return [...jobInfo, ...stoneInfo, ...materialInfo].join(' - '); } },
+            meta: {
+                format: (_value: any, row: IJob) => {
+                    const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row);
+                    return [...jobInfo, ...stoneInfo, ...materialInfo].join(' - ');
+                },
+            },
         },
 
-        // Template Needed
+        // ─── Template Needed ────────────────────────────────────────────────────
         {
             id: "template_needed",
             accessorKey: "template_needed",
@@ -499,7 +522,7 @@ export const JobSalesTable = ({
             meta: { format: (value: string) => value || '' },
         },
 
-        // Acct Name
+        // ─── Acct Name ──────────────────────────────────────────────────────────
         {
             id: "acct_name",
             accessorKey: "acct_name",
@@ -510,7 +533,7 @@ export const JobSalesTable = ({
             meta: { format: (value: string) => value || '' },
         },
 
-        // No of pieces
+        // ─── No. of pieces ──────────────────────────────────────────────────────
         {
             id: "no_of_pieces",
             accessorKey: "no_of_pieces",
@@ -521,7 +544,7 @@ export const JobSalesTable = ({
             meta: { format: (value: string) => value || '' },
         },
 
-        // Template Schedule
+        // ─── Template Schedule ──────────────────────────────────────────────────
         {
             id: "template_schedule",
             accessorKey: "template_schedule",
@@ -532,7 +555,7 @@ export const JobSalesTable = ({
             meta: { format: (value: string) => value || '' },
         },
 
-        // Template Received
+        // ─── Template Received ──────────────────────────────────────────────────
         {
             id: "template_received",
             accessorKey: "template_received",
@@ -543,7 +566,7 @@ export const JobSalesTable = ({
             meta: { format: (value: string) => value || '' },
         },
 
-        // Templater
+        // ─── Templater ───────────────────────────────────────────────────────────
         {
             id: "templater",
             accessorKey: "templater",
@@ -554,7 +577,7 @@ export const JobSalesTable = ({
             meta: { format: (value: string) => value || '' },
         },
 
-        // Drafter
+        // ─── Drafter ─────────────────────────────────────────────────────────────
         {
             id: "drafter",
             accessorKey: "drafter",
@@ -587,7 +610,7 @@ export const JobSalesTable = ({
             meta: { format: (value: string) => value || '—' },
         },
 
-        // CNC Operator
+        // ─── CNC Operator ────────────────────────────────────────────────────────
         {
             id: "cnc_operator",
             accessorKey: "cnc_operator",
@@ -619,7 +642,7 @@ export const JobSalesTable = ({
             meta: { format: (value: string) => value || '—' },
         },
 
-        // Total Sq Ft
+        // ─── Total Sq Ft ────────────────────────────────────────────────────────
         {
             id: "total_sq_ft",
             accessorKey: "total_sq_ft",
@@ -630,7 +653,7 @@ export const JobSalesTable = ({
             meta: { format: (value: string) => value || '' },
         },
 
-        // Revisor
+        // ─── Revisor ─────────────────────────────────────────────────────────────
         {
             id: "revisor",
             accessorKey: "revisor",
@@ -641,7 +664,7 @@ export const JobSalesTable = ({
             meta: { format: (value: string) => value || '—' },
         },
 
-        // Revised
+        // ─── Revised ────────────────────────────────────────────────────────────
         {
             id: "revised",
             accessorKey: "revised",
@@ -649,9 +672,10 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs break-words max-w-[100px]">{row.original.revised}</span>,
             size: 80,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
-        // Revision Completed
+        // ─── Revision Completed ──────────────────────────────────────────────────
         {
             id: "revision_completed",
             accessorKey: "revision_completed",
@@ -659,9 +683,10 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-sm break-words max-w-[160px]">{row.original.revision_completed}</span>,
             size: 130,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
-        // Revision Number
+        // ─── Revision Number ─────────────────────────────────────────────────────
         {
             id: "revision_number",
             accessorKey: "revision_number",
@@ -669,9 +694,10 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-sm break-words max-w-[80px]">{row.original.revision_number}</span>,
             size: 100,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
-        // Revision Reason
+        // ─── Revision Reason ─────────────────────────────────────────────────────
         {
             id: "revision_reason",
             accessorKey: "revision_reason",
@@ -683,9 +709,10 @@ export const JobSalesTable = ({
             ),
             size: 150,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
-        // Revision Type
+        // ─── Revision Type ──────────────────────────────────────────────────────
         {
             id: "revision_type",
             accessorKey: "revision_type",
@@ -693,9 +720,10 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-sm break-words max-w-[120px]">{row.original.revision_type}</span>,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
-        // Revenue
+        // ─── Revenue ────────────────────────────────────────────────────────────
         {
             id: "revenue",
             accessorKey: "revenue",
@@ -703,9 +731,10 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs break-words max-w-[160px]">{row.original.revenue}</span>,
             size: 110,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
-        // GP
+        // ─── GP ──────────────────────────────────────────────────────────────────
         {
             id: "gp",
             accessorKey: "gp",
@@ -713,32 +742,39 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-sm">{row.original.gp}</span>,
             size: 80,
             enableSorting: true,
+            meta: { format: (value: string) => value || '' },
         },
 
-        // SCT Completed
+        // ─── SCT Completed (date) ───────────────────────────────────────────────
         {
             id: "sct_completed",
             accessorKey: "sct_completed",
             header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Sct Completed" column={column} />,
-            cell: ({ row }) => <span className="text-sm break-words max-w-[160px]">{row.original.sct_completed}</span>,
+            cell: ({ row }) => {
+                const date = parseDateForDisplay(row.original.sct_completed);
+                return <span className="text-sm break-words max-w-[160px]">{date ? format(date, 'MMM dd, yyyy') : '-'}</span>;
+            },
             size: 120,
             enableSorting: true,
+            meta: {
+                format: (value: string) => {
+                    const d = parseDateForDisplay(value);
+                    return d ? format(d, 'MMM dd, yyyy') : '-';
+                },
+            },
         },
 
-        // SlabSmith Status
+        // ─── SlabSmith Status ────────────────────────────────────────────────────
         {
             id: "slabsmith_status",
             accessorFn: (row) => {
                 const custNeeded = (row as any).slab_smith_cust_needed ?? (row as any)._rawFabData?.slab_smith_cust_needed;
                 const agNeeded = (row as any).slab_smith_ag_needed ?? (row as any)._rawFabData?.slab_smith_ag_needed;
                 const completed = (row as any).slabsmith_completed_date ?? (row as any)._rawFabData?.slabsmith_completed_date;
-
                 if (custNeeded === false && agNeeded === false) return 'Not Needed';
-
                 const types = [];
                 if (custNeeded === true) types.push('Cust');
                 if (agNeeded === true) types.push('AG');
-
                 const neededType = types.join(' & ');
                 if (neededType) return completed ? `Completed (${neededType})` : `${neededType} - Not Completed`;
                 return 'Unknown';
@@ -748,17 +784,13 @@ export const JobSalesTable = ({
                 const custNeeded = (row.original as any).slab_smith_cust_needed ?? (row.original as any)._rawFabData?.slab_smith_cust_needed;
                 const agNeeded = (row.original as any).slab_smith_ag_needed ?? (row.original as any)._rawFabData?.slab_smith_ag_needed;
                 const completed = (row.original as any).slabsmith_completed_date ?? (row.original as any)._rawFabData?.slabsmith_completed_date;
-
                 if (custNeeded === false && agNeeded === false) {
                     return <span className="text-sm text-gray-500">Not Needed</span>;
                 }
-
                 const types = [];
                 if (custNeeded === true) types.push('Cust');
                 if (agNeeded === true) types.push('AG');
-
                 const neededType = types.join(' & ');
-
                 if (neededType) {
                     return completed
                         ? <span className="text-sm text-green-600 font-medium">Completed ({neededType})</span>
@@ -768,9 +800,23 @@ export const JobSalesTable = ({
             },
             size: 180,
             enableSorting: true,
+            meta: {
+                format: (value: any, row: IJob) => {
+                    const custNeeded = (row as any).slab_smith_cust_needed ?? (row as any)._rawFabData?.slab_smith_cust_needed;
+                    const agNeeded = (row as any).slab_smith_ag_needed ?? (row as any)._rawFabData?.slab_smith_ag_needed;
+                    const completed = (row as any).slabsmith_completed_date ?? (row as any)._rawFabData?.slabsmith_completed_date;
+                    if (custNeeded === false && agNeeded === false) return 'Not Needed';
+                    const types = [];
+                    if (custNeeded === true) types.push('Cust');
+                    if (agNeeded === true) types.push('AG');
+                    const neededType = types.join(' & ');
+                    if (neededType) return completed ? `Completed (${neededType})` : `${neededType} - Not Completed`;
+                    return 'Unknown';
+                },
+            },
         },
 
-        // Draft Status
+        // ─── Draft Status ────────────────────────────────────────────────────────
         {
             id: "draft_completed",
             accessorKey: "draft_completed",
@@ -783,32 +829,213 @@ export const JobSalesTable = ({
             },
             size: 130,
             enableSorting: true,
+            meta: {
+                format: (value: string) => {
+                    if (value === 'drafting') return 'Drafting';
+                    if (value === 'paused') return 'Paused';
+                    return 'Not Started';
+                },
+            },
         },
 
-        // Review Completed
+        // ─── Review Completed (date) ────────────────────────────────────────────
         {
             id: "review_completed",
             accessorKey: "review_completed",
             header: ({ column }) => <DataGridColumnHeader title="REVIEW COMPLETED" column={column} />,
-            cell: ({ row }) => <span className="text-sm break-words max-w-[160px]">{row.original.review_completed}</span>,
+            cell: ({ row }) => {
+                const date = parseDateForDisplay(row.original.review_completed);
+                return <span className="text-sm break-words max-w-[160px]">{date ? format(date, 'MMM dd, yyyy') : '-'}</span>;
+            },
             size: 140,
             enableSorting: true,
+            meta: {
+                format: (value: string) => {
+                    const d = parseDateForDisplay(value);
+                    return d ? format(d, 'MMM dd, yyyy') : '-';
+                },
+            },
         },
 
-        // Notes columns
-        { id: 'templating_notes', header: ({ column }) => <DataGridColumnHeader title="Templating Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'templating'), enableSorting: false, size: 180 },
-        { id: 'drafting_notes', header: ({ column }) => <DataGridColumnHeader title="Drafting Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'drafting'), enableSorting: false, size: 180 },
-        { id: 'final_programming_notes', header: ({ column }) => <DataGridColumnHeader title="Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'final_programming'), enableSorting: false, size: 180 },
-        { id: 'pre_draft_notes', header: ({ column }) => <DataGridColumnHeader title="Pre-Draft Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'pre_draft_review'), enableSorting: false, size: 180 },
-        { id: 'cutting_notes', header: ({ column }) => <DataGridColumnHeader title="Cut List Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'cut_list'), enableSorting: false, size: 180 },
-        { id: 'slabsmith_notes', header: ({ column }) => <DataGridColumnHeader title="SlabSmith Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'slab_smith_request'), enableSorting: false, size: 180 },
-        { id: 'sct_notes', header: ({ column }) => <DataGridColumnHeader title="SCT Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'sales_ct'), enableSorting: false, size: 180 },
-        { id: 'draft_revision_notes', header: ({ column }) => <DataGridColumnHeader title="Draft/Revision Notes" column={column} />, cell: ({ row }) => renderNotes(row, ['draft', 'revisions']), enableSorting: false, size: 180 },
-        { id: 'draft_notes', header: ({ column }) => <DataGridColumnHeader title="Draft Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'drafting'), enableSorting: false, size: 180 },
-        { id: 'revision_notes', header: ({ column }) => <DataGridColumnHeader title="Revision Notes" column={column} />, cell: ({ row }) => renderNotes(row, ['revision', 'revisions']), enableSorting: false, size: 180 },
-        { id: 'install_notes', header: ({ column }) => <DataGridColumnHeader title="Install Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'install_schedulling'), enableSorting: false, size: 180 },
+        // ─── Notes columns ──────────────────────────────────────────────────────
+        {
+            id: 'templating_notes',
+            header: ({ column }) => <DataGridColumnHeader title="Templating Notes" column={column} />,
+            cell: ({ row }) => renderNotes(row, 'templating'),
+            enableSorting: false,
+            size: 180,
+            meta: {
+                format: (value: any, row: IJob) => {
+                    const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                    const stageNotes = notes.filter((n: any) => n.stage === 'templating');
+                    if (stageNotes.length === 0) return 'No notes';
+                    const latest = stageNotes[0];
+                    return latest.note || 'No notes';
+                },
+            },
+        },
+        {
+            id: 'drafting_notes',
+            header: ({ column }) => <DataGridColumnHeader title="Drafting Notes" column={column} />,
+            cell: ({ row }) => renderNotes(row, 'drafting'),
+            enableSorting: false,
+            size: 180,
+            meta: {
+                format: (value: any, row: IJob) => {
+                    const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                    const stageNotes = notes.filter((n: any) => n.stage === 'drafting');
+                    if (stageNotes.length === 0) return 'No notes';
+                    const latest = stageNotes[0];
+                    return latest.note || 'No notes';
+                },
+            },
+        },
+        {
+            id: 'final_programming_notes',
+            header: ({ column }) => <DataGridColumnHeader title="Notes" column={column} />,
+            cell: ({ row }) => renderNotes(row, 'final_programming'),
+            enableSorting: false,
+            size: 180,
+            meta: {
+                format: (value: any, row: IJob) => {
+                    const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                    const stageNotes = notes.filter((n: any) => n.stage === 'final_programming');
+                    if (stageNotes.length === 0) return 'No notes';
+                    const latest = stageNotes[0];
+                    return latest.note || 'No notes';
+                },
+            },
+        },
+        {
+            id: 'pre_draft_notes',
+            header: ({ column }) => <DataGridColumnHeader title="Pre-Draft Notes" column={column} />,
+            cell: ({ row }) => renderNotes(row, 'pre_draft_review'),
+            enableSorting: false,
+            size: 180,
+            meta: {
+                format: (value: any, row: IJob) => {
+                    const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                    const stageNotes = notes.filter((n: any) => n.stage === 'pre_draft_review');
+                    if (stageNotes.length === 0) return 'No notes';
+                    const latest = stageNotes[0];
+                    return latest.note || 'No notes';
+                },
+            },
+        },
+        {
+            id: 'cutting_notes',
+            header: ({ column }) => <DataGridColumnHeader title="Cut List Notes" column={column} />,
+            cell: ({ row }) => renderNotes(row, 'cut_list'),
+            enableSorting: false,
+            size: 180,
+            meta: {
+                format: (value: any, row: IJob) => {
+                    const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                    const stageNotes = notes.filter((n: any) => n.stage === 'cut_list');
+                    if (stageNotes.length === 0) return 'No notes';
+                    const latest = stageNotes[0];
+                    return latest.note || 'No notes';
+                },
+            },
+        },
+        {
+            id: 'slabsmith_notes',
+            header: ({ column }) => <DataGridColumnHeader title="SlabSmith Notes" column={column} />,
+            cell: ({ row }) => renderNotes(row, 'slab_smith_request'),
+            enableSorting: false,
+            size: 180,
+            meta: {
+                format: (value: any, row: IJob) => {
+                    const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                    const stageNotes = notes.filter((n: any) => n.stage === 'slab_smith_request');
+                    if (stageNotes.length === 0) return 'No notes';
+                    const latest = stageNotes[0];
+                    return latest.note || 'No notes';
+                },
+            },
+        },
+        {
+            id: 'sct_notes',
+            header: ({ column }) => <DataGridColumnHeader title="SCT Notes" column={column} />,
+            cell: ({ row }) => renderNotes(row, 'sales_ct'),
+            enableSorting: false,
+            size: 180,
+            meta: {
+                format: (value: any, row: IJob) => {
+                    const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                    const stageNotes = notes.filter((n: any) => n.stage === 'sales_ct');
+                    if (stageNotes.length === 0) return 'No notes';
+                    const latest = stageNotes[0];
+                    return latest.note || 'No notes';
+                },
+            },
+        },
+        {
+            id: 'draft_revision_notes',
+            header: ({ column }) => <DataGridColumnHeader title="Draft/Revision Notes" column={column} />,
+            cell: ({ row }) => renderNotes(row, ['draft', 'revisions']),
+            enableSorting: false,
+            size: 180,
+            meta: {
+                format: (value: any, row: IJob) => {
+                    const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                    const stageNotes = notes.filter((n: any) => n.stage === 'draft' || n.stage === 'revisions');
+                    if (stageNotes.length === 0) return 'No notes';
+                    const latest = stageNotes[0];
+                    return latest.note || 'No notes';
+                },
+            },
+        },
+        {
+            id: 'draft_notes',
+            header: ({ column }) => <DataGridColumnHeader title="Draft Notes" column={column} />,
+            cell: ({ row }) => renderNotes(row, 'drafting'),
+            enableSorting: false,
+            size: 180,
+            meta: {
+                format: (value: any, row: IJob) => {
+                    const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                    const stageNotes = notes.filter((n: any) => n.stage === 'drafting');
+                    if (stageNotes.length === 0) return 'No notes';
+                    const latest = stageNotes[0];
+                    return latest.note || 'No notes';
+                },
+            },
+        },
+        {
+            id: 'revision_notes',
+            header: ({ column }) => <DataGridColumnHeader title="Revision Notes" column={column} />,
+            cell: ({ row }) => renderNotes(row, ['revision', 'revisions']),
+            enableSorting: false,
+            size: 180,
+            meta: {
+                format: (value: any, row: IJob) => {
+                    const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                    const stageNotes = notes.filter((n: any) => n.stage === 'revision' || n.stage === 'revisions');
+                    if (stageNotes.length === 0) return 'No notes';
+                    const latest = stageNotes[0];
+                    return latest.note || 'No notes';
+                },
+            },
+        },
+        {
+            id: 'install_notes',
+            header: ({ column }) => <DataGridColumnHeader title="Install Notes" column={column} />,
+            cell: ({ row }) => renderNotes(row, 'install_schedulling'),
+            enableSorting: false,
+            size: 180,
+            meta: {
+                format: (value: any, row: IJob) => {
+                    const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                    const stageNotes = notes.filter((n: any) => n.stage === 'install_schedulling');
+                    if (stageNotes.length === 0) return 'No notes';
+                    const latest = stageNotes[0];
+                    return latest.note || 'No notes';
+                },
+            },
+        },
 
-        // File
+        // ─── File ──────────────────────────────────────────────────────────────
         {
             id: 'file',
             accessorKey: 'file',
@@ -816,19 +1043,29 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs">{row.original.file || '-'}</span>,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: string) => value || '-' },
         },
 
-        // Shop Date Scheduled
+        // ─── Shop Date Scheduled (date) ────────────────────────────────────────
         {
             id: 'shop_date_scheduled',
             accessorKey: 'shop_date_scheduled',
             header: ({ column }) => <DataGridColumnHeader title="SHOP DATE SCHEDULED" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.shop_date_scheduled || '-'}</span>,
+            cell: ({ row }) => {
+                const date = parseDateForDisplay(row.original.shop_date_scheduled);
+                return <span className="text-xs">{date ? format(date, 'MMM dd, yyyy') : '-'}</span>;
+            },
             size: 150,
             enableSorting: true,
+            meta: {
+                format: (value: string) => {
+                    const d = parseDateForDisplay(value);
+                    return d ? format(d, 'MMM dd, yyyy') : '-';
+                },
+            },
         },
 
-        // WJ Time Minutes
+        // ─── WJ Time Minutes ────────────────────────────────────────────────────
         {
             id: 'wj_time_minutes',
             accessorKey: 'wj_time_minutes',
@@ -836,19 +1073,29 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs">{row.original.wj_time_minutes || '-'}</span>,
             size: 150,
             enableSorting: true,
+            meta: { format: (value: string) => value || '-' },
         },
 
-        // Final Programming Completed
+        // ─── Final Programming Completed (date) ────────────────────────────────
         {
             id: 'final_programming_completed',
             accessorKey: 'final_programming_completed',
             header: ({ column }) => <DataGridColumnHeader title="FINAL PROGRAMMING COMPLETED" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.final_programming_completed || '-'}</span>,
+            cell: ({ row }) => {
+                const date = parseDateForDisplay(row.original.final_programming_completed);
+                return <span className="text-xs">{date ? format(date, 'MMM dd, yyyy') : '-'}</span>;
+            },
             size: 150,
             enableSorting: true,
+            meta: {
+                format: (value: string) => {
+                    const d = parseDateForDisplay(value);
+                    return d ? format(d, 'MMM dd, yyyy') : '-';
+                },
+            },
         },
 
-        // Final Programmer
+        // ─── Final Programmer ────────────────────────────────────────────────────
         {
             id: 'final_programmer',
             accessorKey: 'final_programmer',
@@ -856,9 +1103,10 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs">{row.original.final_programmer || '-'}</span>,
             size: 150,
             enableSorting: true,
+            meta: { format: (value: string) => value || '-' },
         },
 
-        // Notes (generic)
+        // ─── Notes (generic) ────────────────────────────────────────────────────
         {
             id: 'notes',
             accessorKey: 'notes',
@@ -871,7 +1119,19 @@ export const JobSalesTable = ({
             ),
             size: 150,
             enableSorting: true,
+            meta: {
+                format: (value: any) => {
+                    if (typeof value === 'string') return value;
+                    if (Array.isArray(value) && value.length > 0) {
+                        const first = value[0];
+                        return typeof first === 'string' ? first : first?.note || '';
+                    }
+                    return '-';
+                },
+            },
         },
+
+        // ─── Current Stage ──────────────────────────────────────────────────────
         {
             id: 'current_stage',
             accessorKey: 'current_stage',
@@ -884,8 +1144,17 @@ export const JobSalesTable = ({
             },
             size: 150,
             enableSorting: true,
+            meta: {
+                format: (value: any, row: IJob) => {
+                    const stage = row.current_stage || '-';
+                    const shopStage = row.shop_current_stage;
+                    const text = shopStage ? `${stage} (${shopStage})` : stage;
+                    return formatStage(text);
+                },
+            },
         },
-        // Templating Action
+
+        // ─── Templating Action ──────────────────────────────────────────────────
         {
             id: "reschedule",
             accessorKey: "templating_completed",
@@ -913,9 +1182,10 @@ export const JobSalesTable = ({
             },
             size: 100,
             enableSorting: true,
+            meta: { format: () => '' },
         },
 
-        // % Complete
+        // ─── Percent Complete ──────────────────────────────────────────────────
         {
             id: 'percent_complete',
             accessorKey: 'percent_complete',
@@ -926,19 +1196,31 @@ export const JobSalesTable = ({
             },
             size: 100,
             enableSorting: true,
+            meta: {
+                format: (value: number) => value != null ? `${value}%` : '-',
+            },
         },
 
-        // Completion Date
+        // ─── Completion Date ────────────────────────────────────────────────────
         {
             id: 'completion_date',
             accessorKey: 'completion_date',
             header: ({ column }) => <DataGridColumnHeader title="COMPLETION DATE" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{(row.original as any).completion_date || '-'}</span>,
+            cell: ({ row }) => {
+                const date = parseDateForDisplay((row.original as any).completion_date);
+                return <span className="text-xs">{date ? format(date, 'MMM dd, yyyy') : '-'}</span>;
+            },
             size: 140,
             enableSorting: true,
+            meta: {
+                format: (value: string) => {
+                    const d = parseDateForDisplay(value);
+                    return d ? format(d, 'MMM dd, yyyy') : '-';
+                },
+            },
         },
 
-        // Installer
+        // ─── Installer ──────────────────────────────────────────────────────────
         {
             id: 'installer',
             accessorKey: 'installer',
@@ -946,19 +1228,29 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs">{(row.original as any).installer || '-'}</span>,
             size: 130,
             enableSorting: true,
+            meta: { format: (value: string) => value || '-' },
         },
 
-        // Install Date
+        // ─── Install Date ──────────────────────────────────────────────────────
         {
             id: 'install_date',
             accessorKey: 'install_date',
             header: ({ column }) => <DataGridColumnHeader title="INSTALL DATE" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{(row.original as any).install_date || '-'}</span>,
+            cell: ({ row }) => {
+                const date = parseDateForDisplay((row.original as any).install_date);
+                return <span className="text-xs">{date ? format(date, 'MMM dd, yyyy') : '-'}</span>;
+            },
             size: 120,
             enableSorting: true,
+            meta: {
+                format: (value: string) => {
+                    const d = parseDateForDisplay(value);
+                    return d ? format(d, 'MMM dd, yyyy') : '-';
+                },
+            },
         },
 
-        // Install Confirmed
+        // ─── Install Confirmed ──────────────────────────────────────────────────
         {
             id: 'install_confirmed',
             accessorKey: 'install_confirmed',
@@ -971,9 +1263,16 @@ export const JobSalesTable = ({
             },
             size: 140,
             enableSorting: true,
+            meta: {
+                format: (value: any) => {
+                    if (value === true || value === 'Yes') return 'Yes';
+                    if (value === false || value === 'No') return 'No';
+                    return '-';
+                },
+            },
         },
 
-        // Shop Status
+        // ─── Shop Status ────────────────────────────────────────────────────────
         {
             id: 'shop_status',
             accessorKey: 'shop_status',
@@ -981,9 +1280,10 @@ export const JobSalesTable = ({
             cell: ({ row }) => <span className="text-xs">{(row.original as any).shop_status || '-'}</span>,
             size: 120,
             enableSorting: true,
+            meta: { format: (value: string) => value || '-' },
         },
 
-        // ── On Hold ───────────────────────────────────────────────────────────
+        // ─── On Hold ────────────────────────────────────────────────────────────
         {
             id: "on_hold",
             accessorKey: "status_id",
@@ -1037,8 +1337,10 @@ export const JobSalesTable = ({
             },
             enableSorting: false,
             size: 80,
+            meta: {
+                format: (value: boolean) => value ? 'On Hold' : 'Active',
+            },
         },
-
     ], [
         getPath, path, dateRange, enableMultiSelect, effectiveSelectedRows,
         filteredData, loadingStates, optimisticUpdates, onRescheduleClick,
@@ -1046,28 +1348,17 @@ export const JobSalesTable = ({
         onReassignCNCClick, setSelectedRows
     ]);
 
-    // ── Column filtering ─────────────────────────────────────────────────────
+    // ── Filter columns ──────────────────────────────────────────────────────
     const columns = useMemo(() => {
         return baseColumns.filter(column => {
-            // Always include actions
             if (column.id === 'actions') return true;
-
-            // Checkbox: only include when multi-select is on
             if (column.id === 'select') return enableMultiSelect;
-
-            // Drafter column: hide when every row has a drafter AND user hasn't toggled
             if (column.id === 'drafter') {
                 if (visibleColumns?.length) return visibleColumns.includes('drafter') && showDrafterColumn;
                 return showDrafterColumn;
             }
-
-            // On Hold column: only include if user has permission
             if (column.id === 'on_hold') return canToggleOnHold;
-
-            // visibleColumns whitelist
             if (visibleColumns?.length && column.id) return visibleColumns.includes(column.id);
-
-            // Show column only if at least one row has a value for it
             const accessor = (column as any).accessorKey;
             if (accessor && accessor !== 'id') {
                 return filteredData.some(
@@ -1115,7 +1406,6 @@ export const JobSalesTable = ({
                 columnsResizable: true,
                 cellBorder: true,
                 headerSticky: true,
-
             }}
             onRowClick={onRowClick ? (row) => handleRowClickInternal(row) : undefined}
         >
@@ -1171,9 +1461,6 @@ export const JobSalesTable = ({
                                     ))}
                                 </SelectContent>
                             </Select>
-
-                            {/* Date filter (commented out in original – keeping as is) */}
-                            {/* ... */}
 
                             {/* Schedule filter */}
                             {showScheduleFilter && (
@@ -1257,7 +1544,7 @@ export const JobSalesTable = ({
                             </Button>
                         )}
 
-                        {/* Export CSV – now controlled by canExport */}
+                        {/* Export CSV – controlled by canExport */}
                         {canExport && (
                             <Button variant="outline" onClick={() => exportTableToCSV(table, "FabId")}>
                                 Export CSV

@@ -39,6 +39,8 @@ interface TimeTrackingComponentProps {
   hasEnded: boolean;
   pendingFilesCount?: number;
   uploadedFilesCount?: number;
+  defaultWorkPercentage?: string;
+  defaultSqftDrafted?: string;
 }
 
 // ---------------------------------------------------------------------
@@ -72,7 +74,9 @@ export const TimeTrackingComponent = ({
   onTimeUpdate,
   hasEnded,
   pendingFilesCount = 0,
-  uploadedFilesCount = 0
+  uploadedFilesCount = 0,
+  defaultWorkPercentage = '',
+  defaultSqftDrafted = '',
 }: TimeTrackingComponentProps) => {
 
   // Internal state – always holds the correct UTC timestamps
@@ -167,6 +171,9 @@ export const TimeTrackingComponent = ({
   };
 
   const handlePause = () => {
+    setPauseWorkPercentage(defaultWorkPercentage);
+    setPauseSqFt(defaultSqftDrafted);
+    setPauseNote('');
     setShowPauseModal(true);
   };
 
@@ -182,9 +189,9 @@ export const TimeTrackingComponent = ({
       await onPause({
         note: pauseNote,
         sqft_drafted: pauseSqFt,
-        work_percentage: pauseWorkPercentage
-      });
-      setPauseNote('');
+        work_percentage_done: pauseWorkPercentage  // ✅ send numeric string
+      })
+       setPauseNote('');
       setPauseSqFt('');
       setPauseWorkPercentage('');
       setShowPauseModal(false);
@@ -303,21 +310,21 @@ export const TimeTrackingComponent = ({
     return `${datePart} | ${timePart}`;
   };
 
- const formatDuration = (seconds: number) => {
-  if (seconds < 0) seconds = 0;
-  const days = Math.floor(seconds / (24 * 3600));
-  const remainingSeconds = seconds % (24 * 3600);
-  const hours = Math.floor(remainingSeconds / 3600);
-  const minutes = Math.floor((remainingSeconds % 3600) / 60);
-  const secs = remainingSeconds % 60;
+  const formatDuration = (seconds: number) => {
+    if (seconds < 0) seconds = 0;
+    const days = Math.floor(seconds / (24 * 3600));
+    const remainingSeconds = seconds % (24 * 3600);
+    const hours = Math.floor(remainingSeconds / 3600);
+    const minutes = Math.floor((remainingSeconds % 3600) / 60);
+    const secs = remainingSeconds % 60;
 
-  const pad = (n: number) => n.toString().padStart(2, '0');
+    const pad = (n: number) => n.toString().padStart(2, '0');
 
-  if (days > 0) {
-    return `${days}d ${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
-  }
-  return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
-};
+    if (days > 0) {
+      return `${days}d ${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+    }
+    return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+  };
 
   // ---------- RENDER ----------
   return (

@@ -400,7 +400,7 @@ export interface FabListParams {
     draft_completed_end?: string | null;
     sct_completed_start?: string | null;
     sct_completed_end?: string | null;
-    user_level?: string; 
+    user_level?: string;
 }
 
 export interface TemplatingSchedule {
@@ -1978,6 +1978,13 @@ export const jobApi = createApi({
                 }),
                 providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
             }),
+            getSlabSmithSessionHistory: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/slabsmith/${fab_id}/session-history`,
+                    method: "get"
+                }),
+                providesTags: ["Fab"],
+            }),
 
             // Update the endpoint for getting stages with statistics
             getStages: build.query<StageStats[], void>({
@@ -2203,7 +2210,13 @@ export const jobApi = createApi({
                 }),
                 providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
             }),
-
+            getFinalProgrammingSessionHistory: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/final-programming/${fab_id}/session-history`,
+                    method: "get"
+                }),
+                providesTags: ["Fab"],
+            }),
             // Add files to final programming
             addFilesToFinalProgramming: build.mutation<any, { fp_id: number; files: File[]; stage_name?: string; file_design?: string }>({
                 query: ({ fp_id, files, stage_name, file_design }) => {
@@ -2556,7 +2569,7 @@ export const {
     useGetFabsCostOfStoneQuery,
     useCreateFabMutation,
     useUpdateFabMutation,
-    useUpdateFabCostOfStoneMutation, 
+    useUpdateFabCostOfStoneMutation,
     useDeleteFabMutation,
     useGetFabTypesQuery,
     useGetAccountsQuery,
@@ -2612,6 +2625,7 @@ export const {
     useMarkSlabSmithCompletedMutation,
     useManageSlabSmithSessionMutation, // Export new hook
     useGetSlabSmithSessionStatusQuery, // Export new hook
+    useGetSlabSmithSessionHistoryQuery,
     // Cut List Schedule hook
     useUpdateCutListScheduleMutation,
     useUpdateCutListMutation,
@@ -2620,6 +2634,7 @@ export const {
     useScheduleShopDateMutation,
     useCompleteFinalProgrammingMutation,
     useGetFinalProgrammingSessionStatusQuery,
+    useGetFinalProgrammingSessionHistoryQuery,
     useAddFilesToFinalProgrammingMutation,
     useDeleteFileFromFinalProgrammingMutation,
     useUpdateFinalProgrammingMutation,

@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom'; // ← added useNavigate import
+import { useNavigate, useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useSelector } from 'react-redux';
@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   useGetFabByIdQuery,
   useGetFinalProgrammingSessionStatusQuery,
+  useGetFinalProgrammingSessionHistoryQuery, // ✨ new
   useManageFinalProgrammingSessionMutation,
   useToggleFabOnHoldMutation,
   useCreateFabNoteMutation,
@@ -35,6 +36,7 @@ import { getFileStage } from '@/utils/file-labeling';
 import { FileViewer } from '../drafters/components';
 import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
 import { stageConfig } from '@/utils/note-utils';
+import { FinalProgrammingSessionHistory } from './components/FinalProgrammingSessionHistory'; // ✨ new
 
 // Helper functions
 const formatBytes = (bytes: number, decimals = 2) => {
@@ -57,15 +59,16 @@ const getFabStatusInfo = (statusId: number | undefined) => {
 export function FinalProgrammingDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const fabId = id ? Number(id) : 0;
-  const navigate = useNavigate(); // now defined
+  const navigate = useNavigate();
 
   const currentUser = useSelector((s: any) => s.user.user);
   const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
   const isSuperAdmin = currentUser?.is_super_admin || false;
 
-  // API hooks
+  // ── API hooks ──────────────────────────────────────────────────────────────
   const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, { skip: !fabId });
   const { data: fpSessionData, isLoading: isFPLoading, refetch: refetchFPSession } = useGetFinalProgrammingSessionStatusQuery(fabId, { skip: !fabId });
+  const { data: sessionHistoryData, isLoading: isHistoryLoading, refetch: refetchHistory } = useGetFinalProgrammingSessionHistoryQuery(fabId, { skip: !fabId }); // ✨
 
   const [manageFinalProgrammingSession] = useManageFinalProgrammingSessionMutation();
   const [toggleFabOnHold] = useToggleFabOnHoldMutation();
@@ -74,7 +77,7 @@ export function FinalProgrammingDetailsPage() {
   const [completeFinalProgramming] = useCompleteFinalProgrammingMutation();
   const [deleteFileFromDraft] = useDeleteFileFromDraftingMutation();
 
-  // Timer state
+  // ── Timer state ────────────────────────────────────────────────────────────
   const [isDrafting, setIsDrafting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [hasEnded, setHasEnded] = useState(false);
@@ -82,7 +85,18 @@ export function FinalProgrammingDetailsPage() {
   const [draftStart, setDraftStart] = useState<Date | null>(null);
   const [draftEnd, setDraftEnd] = useState<Date | null>(null);
 
-  // File state
+  // ── Default values for pause modal ────────────────────────────────────────
+  const defaultPauseWorkPercentage = useMemo(() => {
+    if (!fpSessionData?.data) return '';
+    return String(fpSessionData.data.work_percentage_done ?? '');
+  }, [fpSessionData]);
+
+  const defaultPauseSqftDrafted = useMemo(() => {
+    if (!fpSessionData?.data) return '';
+    return fpSessionData.data.cumulative_sqft_drafted ?? '';
+  }, [fpSessionData]);
+
+  // ── File state ─────────────────────────────────────────────────────────────
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploadedFileMetas, setUploadedFileMetas] = useState<UploadedFileMeta[]>([]);
   const [fileDesign, setFileDesign] = useState<string>('');
@@ -91,7 +105,7 @@ export function FinalProgrammingDetailsPage() {
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
-  // Sync session data
+  // ── Sync session data ─────────────────────────────────────────────────────
   useEffect(() => {
     if (fpSessionData?.data) {
       const session = fpSessionData.data;
@@ -108,10 +122,9 @@ export function FinalProgrammingDetailsPage() {
     }
   }, [fpSessionData]);
 
-  // Helper: should show upload section (mirror draft details)
+  // ── Helper functions ──────────────────────────────────────────────────────
   const shouldShowUploadSection = (isDrafting && !isPaused) || (fabData?.draft_data?.files?.length > 0);
 
-  // Helper: enhance file for viewer
   const enhanceFileForViewer = (file: any) => ({
     ...file,
     id: file.id,
@@ -137,17 +150,15 @@ export function FinalProgrammingDetailsPage() {
     setViewMode('file');
   };
 
-  // Time tracking handlers
+  // ── Time tracking handlers ──────────────────────────────────────────────
+
   const handleStart = useCallback(async (startTime: Date) => {
-    // Read the latest fabData directly
     const hasDraftingAssignment = fabData?.draft_data?.id;
-    // console.log('Attempting to start session with drafting assignment:', hasDraftingAssignment);
     if (!hasDraftingAssignment) {
       toast.error('Cannot start final programming session - no drafter found');
       return;
     }
 
-    // Authorization check: must be drafter_id or super admin
     const assignedDrafterId = fabData?.draft_data?.drafter_id;
     if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
       toast.error('You are not authorized to start this final programming session. Only the assigned drafter or super admin can perform this action.');
@@ -167,12 +178,10 @@ export function FinalProgrammingDetailsPage() {
       setDraftStart(startTime);
     } catch (error) {
       console.error('Failed to start session:', error);
-      // toast.error('Failed to start session');
     }
   }, [fabData, fabId, currentEmployeeId, isSuperAdmin, manageFinalProgrammingSession, refetchFPSession]);
 
-  const handlePause = useCallback(async (data?: { note?: string; sqft_completed?: string }) => {
-    // Authorization check: must be drafter_id or super admin
+  const handlePause = useCallback(async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     const assignedDrafterId = fabData?.draft_data?.drafter_id;
     if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
       toast.error('You are not authorized to pause this final programming session. Only the assigned drafter or super admin can perform this action.');
@@ -184,7 +193,13 @@ export function FinalProgrammingDetailsPage() {
     try {
       await manageFinalProgrammingSession({
         fab_id: fabId,
-        data: { action: 'pause', note: noteText, sqft_completed: data?.sqft_completed, timestamp: new Date().toISOString() }
+        data: {
+          action: 'pause',
+          note: noteText,
+          sqft_completed: data?.sqft_drafted,
+          work_percentage_done: data?.work_percentage_done, // ✅ new field
+          timestamp: new Date().toISOString()
+        }
       }).unwrap();
       setIsPaused(true);
       await refetchFPSession();
@@ -195,8 +210,7 @@ export function FinalProgrammingDetailsPage() {
     }
   }, [fabData, fabId, currentEmployeeId, isSuperAdmin, manageFinalProgrammingSession, refetchFPSession]);
 
-  const handleResume = useCallback(async (data?: { note?: string; sqft_completed?: string }) => {
-    // Authorization check: must be drafter_id or super admin
+  const handleResume = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
     const assignedDrafterId = fabData?.draft_data?.drafter_id;
     if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
       toast.error('You are not authorized to resume this final programming session. Only the assigned drafter or super admin can perform this action.');
@@ -208,19 +222,22 @@ export function FinalProgrammingDetailsPage() {
     try {
       await manageFinalProgrammingSession({
         fab_id: fabId,
-        data: { action: 'resume', note: noteText, sqft_completed: data?.sqft_completed, timestamp: new Date().toISOString() }
+        data: {
+          action: 'resume',
+          note: noteText,
+          sqft_completed: data?.sqft_drafted,
+          timestamp: new Date().toISOString()
+        }
       }).unwrap();
       setIsPaused(false);
       await refetchFPSession();
       toast.success('Session resumed');
     } catch (error) {
       console.error('Failed to resume:', error);
-      // toast.error('Failed to resume');
     }
   }, [fabData, fabId, currentEmployeeId, isSuperAdmin, manageFinalProgrammingSession, refetchFPSession]);
 
   const handleEnd = useCallback(async (endDate: Date) => {
-    // Authorization check: must be drafter_id or super admin
     const assignedDrafterId = fabData?.draft_data?.drafter_id;
     if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
       toast.error('You are not authorized to end this final programming session. Only the assigned drafter or super admin can perform this action.');
@@ -243,7 +260,7 @@ export function FinalProgrammingDetailsPage() {
     }
   }, [fabData, fabId, currentEmployeeId, isSuperAdmin, manageFinalProgrammingSession, refetchFPSession]);
 
-  const handleOnHold = useCallback(async (data?: { note?: string; sqft_completed?: string }) => {
+  const handleOnHold = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
     const noteText = data?.note?.trim();
 
     try {
@@ -253,7 +270,12 @@ export function FinalProgrammingDetailsPage() {
       }
       await manageFinalProgrammingSession({
         fab_id: fabId,
-        data: { action: 'pause', note: data?.note ? `[On Hold] ${data.note}` : '[On Hold]', sqft_completed: data?.sqft_completed, timestamp: new Date().toISOString() }
+        data: {
+          action: 'pause',
+          note: data?.note ? `[On Hold] ${data.note}` : '[On Hold]',
+          sqft_completed: data?.sqft_drafted,
+          timestamp: new Date().toISOString()
+        }
       }).unwrap();
       setIsPaused(true);
       await refetchFPSession();
@@ -261,11 +283,10 @@ export function FinalProgrammingDetailsPage() {
       toast.success('Job placed on hold');
     } catch (error) {
       console.error('Failed to place on hold:', error);
-      // toast.error('Failed to place on hold');
     }
   }, [fabId, toggleFabOnHold, createFabNote, manageFinalProgrammingSession, refetchFPSession, refetchFab]);
 
-  // File deletion
+  // ── File deletion ─────────────────────────────────────────────────────────
   const handleDeleteFile = async (fileId: number) => {
     if (!fabData?.draft_data?.id) {
       toast.error('Drafting entry not found');
@@ -281,7 +302,7 @@ export function FinalProgrammingDetailsPage() {
     }
   };
 
-  // Compute files for final programming
+  // ── Compute final programming files ──────────────────────────────────────
   const finalProgrammingFiles = useMemo(() => {
     if (!fabData?.draft_data?.files) return [];
     return fabData.draft_data.files.filter((file: any) => {
@@ -297,8 +318,8 @@ export function FinalProgrammingDetailsPage() {
     setShowSubmissionModal(true);
   };
 
-  // Loading skeleton (mirror draft details)
-  if (isFabLoading || isFPLoading) {
+  // ── Loading skeleton ──────────────────────────────────────────────────────
+  if (isFabLoading || isFPLoading || isHistoryLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
@@ -318,7 +339,7 @@ export function FinalProgrammingDetailsPage() {
     );
   }
 
-  // Sidebar sections
+  // ── Sidebar sections ──────────────────────────────────────────────────────
   const sidebarSections = [
     {
       title: 'Job Details',
@@ -347,21 +368,17 @@ export function FinalProgrammingDetailsPage() {
         },
         { label: "Drafter Assigned", value: fabData?.draft_data?.drafter_name || 'Unassigned' },
         { label: "Sales Person", value: fabData?.sales_person_name || '—' },
-        // { label: "SlabSmith Needed", value: fabData?.slab_smith_ag_needed || fabData?.slab_smith_cust_needed ? 'Yes' : 'No' },
         {
           label: 'SlabSmith Needed',
           value: (() => {
-            const custNeeded = fabData.slab_smith_cust_needed;
-            const agNeeded = fabData.slab_smith_ag_needed;
-
+            const custNeeded = fabData?.slab_smith_cust_needed;
+            const agNeeded = fabData?.slab_smith_ag_needed;
             if (custNeeded === false && agNeeded === false) return 'Not Needed';
-
             const types = [];
             if (custNeeded === true) types.push('Cust');
             if (agNeeded === true) types.push('AG');
-
             return types.join(' & ') || 'Unknown';
-          })()
+          })(),
         },
       ],
     },
@@ -384,7 +401,6 @@ export function FinalProgrammingDetailsPage() {
       type: 'notes',
       notes: Array.isArray(fabData?.fab_notes)
         ? fabData.fab_notes.map((note) => {
-
           const stage = note?.stage || 'general';
           const config = stageConfig[stage] || stageConfig.general;
           return {
@@ -418,10 +434,7 @@ export function FinalProgrammingDetailsPage() {
               <ToolbarHeading
                 title={
                   <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
-                    <a href={jobNameLink} className="hover:underline"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
+                    <a href={jobNameLink} className="hover:underline" target="_blank" rel="noreferrer">
                       {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
                     </a>
                     <span className="mx-1 text-gray-400">·</span>
@@ -450,7 +463,6 @@ export function FinalProgrammingDetailsPage() {
 
       {/* Main two‑column layout */}
       <div className="flex flex-col lg:flex-row flex-1 min-h-0">
-        {/* Sticky sidebar */}
         <aside
           className={[
             'w-full bg-white border-b',
@@ -465,10 +477,8 @@ export function FinalProgrammingDetailsPage() {
           <GraySidebar sections={sidebarSections as any} jobId={fabData?.job_id} />
         </aside>
 
-        {/* Main content */}
         <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
           {viewMode === 'file' && activeFile ? (
-            // File viewer
             <div className="bg-white rounded-xl border overflow-hidden">
               <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
                 <div>
@@ -497,7 +507,6 @@ export function FinalProgrammingDetailsPage() {
               />
             </div>
           ) : (
-            // Activity mode
             <>
               <Card>
                 <CardHeader className="py-3 px-4 sm:px-5 block">
@@ -522,8 +531,9 @@ export function FinalProgrammingDetailsPage() {
                       hasEnded={hasEnded}
                       sessionData={fpSessionData}
                       isFabOnHold={fabData?.status_id === 0}
+                      defaultWorkPercentage={defaultPauseWorkPercentage}
+                      defaultSqftDrafted={defaultPauseSqftDrafted}
                     />
-
                     <Separator />
                   </Can>
 
@@ -578,6 +588,9 @@ export function FinalProgrammingDetailsPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* ── Session History ──────────────────────────────────────── */}
+              <FinalProgrammingSessionHistory fabId={fabId} />
             </>
           )}
         </main>

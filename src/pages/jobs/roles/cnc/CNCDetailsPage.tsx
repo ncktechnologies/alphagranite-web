@@ -1,4 +1,4 @@
-// CNCDetailsPage.tsx - Following exact DrafterDetailsPage pattern
+// CNCDetailsPage.tsx - Full updated with prefill & history
 import { useCallback, useState, useEffect, useRef, useMemo } from 'react';
 import { Container } from '@/components/common/container';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
@@ -12,6 +12,7 @@ import {
     useGetCNCByFabIdQuery,
     useManageCNCSessionMutation,
     useGetCurrentCNCSessionQuery,
+    useGetCNCSessionHistoryQuery, // ✨ added
     useToggleFabOnHoldMutation,
     useCreateFabNoteMutation,
     useDeleteFileFromCNCDraftingMutation,
@@ -21,7 +22,6 @@ import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { Documents } from '@/pages/shop/components/files';
 import { FileViewer } from './components/FileViewer';
 import { SubmissionModal } from './components/SubmissionModal';
-import { SessionHistory } from './components/SessionHistory';
 import { useSelector } from 'react-redux';
 import { X, Plus } from 'lucide-react';
 import { Can } from '@/components/permission';
@@ -41,6 +41,7 @@ import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UniversalUploadModal } from '@/components/universal-upload';
 import { stageConfig } from '@/utils/note-utils';
+import { SessionHistory } from './components';
 
 // Helper function to format timestamp without 'Z'
 const formatTimestamp = (date: Date) => {
@@ -88,6 +89,12 @@ export function CNCDetailsPage() {
         refetchOnMountOrArgChange: true,
     });
 
+    // ✨ Get session history
+    const { data: sessionHistoryData, isLoading: isHistoryLoading, refetch: refetchHistory } = useGetCNCSessionHistoryQuery(fabId, {
+        skip: !fabId,
+        refetchOnMountOrArgChange: true,
+    });
+
     const [manageCNCSession] = useManageCNCSessionMutation();
     const [toggleFabOnHold] = useToggleFabOnHoldMutation();
     const [createFabNote] = useCreateFabNoteMutation();
@@ -111,6 +118,17 @@ export function CNCDetailsPage() {
     const [showSubmissionModal, setShowSubmissionModal] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [fileDesign, setFileDesign] = useState<string>('');
+
+    // ── Default values for pause modal ────────────────────────────────────────
+    const defaultPauseWorkPercentage = useMemo(() => {
+        if (!sessionData?.data) return '';
+        return String(sessionData.data.work_percentage_done ?? '');
+    }, [sessionData]);
+
+    const defaultPauseSqftDrafted = useMemo(() => {
+        if (!sessionData?.data) return '';
+        return sessionData.data.cumulative_sqft_drafted ?? '';
+    }, [sessionData]);
 
     // Initialize session state from server data
     useEffect(() => {
@@ -218,12 +236,10 @@ export function CNCDetailsPage() {
             }).unwrap();
 
             setSessionStatus('drafting');
-            // setCNCStart(startDate);
             toast.success('CNC session started successfully');
             refetchSession();
         } catch (error) {
             console.error('Failed to start session:', error);
-            // toast.error('Failed to start CNC session');
         }
     };
 
@@ -242,7 +258,6 @@ export function CNCDetailsPage() {
         sqftDrafted?: string,
         workPercentage?: string
     ) => {
-        // Authorization check: must be CNC drafter_id or super admin
         const assignedDrafterId = cncData?.drafter_id || fabData?.cnc_data?.drafter_id;
         if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
             toast.error(`You are not authorized to ${action === 'pause' ? 'pause' : action === 'end' ? 'end' : 'update'} this CNC session. Only the assigned CNC programmer or super admin can perform this action.`);
@@ -269,14 +284,12 @@ export function CNCDetailsPage() {
             toast.success(`Session ${actionPastTense[action]} successfully`);
         } catch (error) {
             console.error(`Failed to ${action} session:`, error);
-            // toast.error(`Failed to ${action} session`);
             throw error;
         }
     };
 
 
     const handlePause = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
-        // Authorization check: must be CNC drafter_id or super admin
         const assignedDrafterId = cncData?.drafter_id || fabData?.cnc_data?.drafter_id;
         if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
             toast.error('You are not authorized to pause this CNC session. Only the assigned CNC programmer or super admin can perform this action.');
@@ -289,7 +302,6 @@ export function CNCDetailsPage() {
     };
 
     const handleResume = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
-        // Authorization check: must be CNC drafter_id or super admin
         const assignedDrafterId = cncData?.drafter_id || fabData?.cnc_data?.drafter_id;
         if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
             toast.error('You are not authorized to resume this CNC session. Only the assigned CNC programmer or super admin can perform this action.');
@@ -309,18 +321,15 @@ export function CNCDetailsPage() {
                 }
             }).unwrap();
 
-            // Update local state to reflect resumed session - timer will start automatically
             setSessionStatus('drafting');
             toast.success('CNC session resumed successfully');
             await refetchSession();
         } catch (error) {
             console.error('Failed to resume session:', error);
-            // toast.error('Failed to resume CNC session');
         }
     };
 
     const handleEnd = async (endDate: Date, data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
-        // Authorization check: must be CNC drafter_id or super admin
         const assignedDrafterId = cncData?.drafter_id || fabData?.cnc_data?.drafter_id;
         if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
             toast.error('You are not authorized to end this CNC session. Only the assigned CNC programmer or super admin can perform this action.');
@@ -347,7 +356,6 @@ export function CNCDetailsPage() {
             await refetchSession();
         } catch (error) {
             console.error('Failed to handle on hold:', error);
-            // toast.error('Failed to update hold status');
         }
     };
 
@@ -371,12 +379,11 @@ export function CNCDetailsPage() {
 
     const handleDeleteFile = async (fileId: string) => {
         if (!window.confirm('Are you sure you want to delete this file?')) return;
-        const draftingId = draftingData?.id || fabData?.draft_data?.id;
+        const draftingId = cncData?.id || fabData?.cnc_data?.id;
         if (!draftingId) return;
         try {
-            await deleteDraftingFile({ drafting_id: draftingId, file_id: fileId }).unwrap();
+            await deleteCNCFile({ cnc_id: draftingId, file_id: fileId }).unwrap();
             await refetchFab();
-            //   await refetchDrafting();
             toast.success('File deleted successfully');
         } catch (error) {
             console.error('Failed to delete file:', error);
@@ -386,14 +393,14 @@ export function CNCDetailsPage() {
 
     const refetchAllFiles = useCallback(async () => {
         try {
-            await Promise.all([refetchFab(), refetchSession()]);
+            await Promise.all([refetchFab(), refetchSession(), refetchHistory()]);
         } catch (error) {
             console.error('Failed to refetch files:', error);
         }
-    }, [refetchFab, refetchSession]);
+    }, [refetchFab, refetchSession, refetchHistory]);
 
     const shouldShowUploadSection = (isDrafting || isPaused) || allFilesForDisplay.length > 0;
-    const canOpenSubmit = isDrafting && totalTime > 0 && fabData?.cnc_data?.files.length > 0;
+    const canOpenSubmit = isDrafting && totalTime > 0 && fabData?.cnc_data?.files?.length > 0;
 
     const handleOpenSubmissionModal = async () => {
         setShowSubmissionModal(true);
@@ -407,10 +414,9 @@ export function CNCDetailsPage() {
             setDraftStart(null);
             setDraftEnd(null);
             setSessionStatus('idle');
-            navigate('/job/draft');
+            navigate('/job/cnc');
         } catch (err) {
             console.error(err);
-            // toast.error('Failed to finalize submission flow');
         }
     };
 
@@ -419,7 +425,6 @@ export function CNCDetailsPage() {
         ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fabData.job_details.job_number}`
         : '#';
 
-    // CNC-specific: use cncData instead of draftingData
     const cncId = fabData?.cnc_data?.id;
 
     const sidebarSections = fabData ? [
@@ -454,7 +459,6 @@ export function CNCDetailsPage() {
                 },
                 { label: 'Drafter Assigned', value: fabData.cnc_data?.drafter_name || 'Unassigned' },
                 { label: 'Sales Person', value: fabData.sales_person_name || '—' },
-                // { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed || fabData.slab_smith_cust_needed ? 'Yes' : 'No' },
                 {
                     label: 'SlabSmith Needed',
                     value: (() => {
@@ -519,21 +523,17 @@ export function CNCDetailsPage() {
     }));
 
     // ── Loading skeleton ──────────────────────────────────────────────────────
-    if (isFabLoading || isCNCLoading || isSessionLoading) {
+    if (isFabLoading || isCNCLoading || isSessionLoading || isHistoryLoading) {
         return (
             <div className="flex flex-col min-h-screen">
-                {/* sticky toolbar skeleton */}
                 <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
                     <Skeleton className="h-8 w-72 mb-1" />
                     <Skeleton className="h-4 w-48" />
                 </div>
-
                 <div className="flex flex-col lg:flex-row flex-1 min-h-0">
-                    {/* sidebar skeleton */}
                     <div className="w-full lg:w-[220px] xl:w-[260px] shrink-0 border-r">
                         <Skeleton className="h-full min-h-[300px] w-full" />
                     </div>
-                    {/* content skeleton */}
                     <div className="flex-1 p-4 sm:p-6 space-y-4">
                         <Skeleton className="h-24 w-full rounded-xl" />
                         <Skeleton className="h-96 w-full rounded-xl" />
@@ -548,7 +548,6 @@ export function CNCDetailsPage() {
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">
 
-            {/* ── Sticky toolbar ──────────────────────────────────────────────────── */}
             <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
                 <div className="px-3 sm:px-4 lg:px-6">
                     <Toolbar className="py-2 sm:py-3">
@@ -573,33 +572,28 @@ export function CNCDetailsPage() {
                                         </a>
                                     </div>
                                 }
-                                description="Drafting Details"
+                                description="CNC Details"
                             />
                             <div className="flex items-center gap-2 flex-shrink-0">
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
                                     {statusInfo.text}
                                 </span>
                                 <BackButton />
-
                             </div>
                         </div>
                     </Toolbar>
                 </div>
             </div>
 
-
             <div className="flex flex-col lg:flex-row flex-1 min-h-0">
 
-                {/* ── Gray sidebar ──────────────────────────────────────────────────── */}
                 <aside
                     className={[
-                        // Mobile: full width, normal flow
                         'w-full bg-white border-b',
-                        // Desktop: fixed width, sticky, scrollable internally
                         'lg:w-[220px] xl:w-[260px] lg:shrink-0',
-                        'lg:sticky lg:top-[50px]',               // ← adjust to toolbar height
+                        'lg:sticky lg:top-[50px]',
                         'lg:self-start',
-                        'lg:max-h-[calc(100vh-50px)]',           // ← same value
+                        'lg:max-h-[calc(100vh-50px)]',
                         'lg:overflow-y-auto',
                         'lg:border-b-0 lg:border-r',
                     ].join(' ')}
@@ -610,11 +604,9 @@ export function CNCDetailsPage() {
                     />
                 </aside>
 
-                {/* ── Main content ──────────────────────────────────────────────────── */}
                 <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
 
                     {viewMode === 'file' && activeFile ? (
-                        // ── File viewer ─────────────────────────────────────────────────
                         <div className="bg-white rounded-xl border overflow-hidden">
                             <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
                                 <div>
@@ -638,7 +630,6 @@ export function CNCDetailsPage() {
                         </div>
                     ) : (
                         <>
-                            {/* ── Session status card ────────────────────────────────────── */}
                             <Card>
                                 <CardHeader className="py-3 px-4 sm:px-5">
                                     <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -647,21 +638,8 @@ export function CNCDetailsPage() {
                                             <p className="text-xs text-gray-500 mt-0.5">Update your CNC activity here</p>
                                         </div>
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
-                                                idle: 'bg-gray-100 text-gray-800',
-                                                drafting: 'bg-green-100 text-green-800',
-                                                paused: 'bg-yellow-100 text-yellow-800',
-                                                on_hold: 'bg-orange-100 text-orange-800',
-                                                ended: 'bg-blue-100 text-blue-800',
-                                            }[sessionStatus] || 'bg-gray-100 text-gray-800'
-                                                }`}>
-                                                {{
-                                                    idle: 'Ready to Start',
-                                                    drafting: 'CNC Active',
-                                                    paused: 'Paused',
-                                                    on_hold: 'On Hold',
-                                                    ended: 'Completed',
-                                                }[sessionStatus] || 'Unknown'}
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{ idle: 'bg-gray-100 text-gray-800', drafting: 'bg-green-100 text-green-800', paused: 'bg-yellow-100 text-yellow-800', on_hold: 'bg-orange-100 text-orange-800', ended: 'bg-blue-100 text-blue-800' }[sessionStatus] || 'bg-gray-100 text-gray-800'}`}>
+                                                {{ idle: 'Ready to Start', drafting: 'CNC Active', paused: 'Paused', on_hold: 'On Hold', ended: 'Completed' }[sessionStatus] || 'Unknown'}
                                             </span>
                                             {fabData?.status_id === 0 && (
                                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
@@ -673,10 +651,9 @@ export function CNCDetailsPage() {
                                 </CardHeader>
                             </Card>
 
-                            {/* ── Time tracking + files ──────────────────────────────────── */}
                             <Card>
                                 <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
-                                    <Can action="create" on="CNC Programming">
+                                    <Can action="create" on="CNC">
                                         <TimeTrackingComponent
                                             isDrafting={isDrafting}
                                             isPaused={isPaused}
@@ -693,12 +670,12 @@ export function CNCDetailsPage() {
                                             onTimeUpdate={setTotalTime}
                                             hasEnded={hasEnded}
                                             uploadedFilesCount={allFilesForDisplay.length}
+                                            defaultWorkPercentage={defaultPauseWorkPercentage}
+                                            defaultSqftDrafted={defaultPauseSqftDrafted}
                                         />
-
                                         <Separator />
                                     </Can>
 
-                                    {/* File upload section */}
                                     <div>
                                         {shouldShowUploadSection ? (
                                             <div className="space-y-3">
@@ -735,11 +712,10 @@ export function CNCDetailsPage() {
                                         )}
                                     </div>
 
-                                    {/* Submit button */}
                                     {viewMode === 'activity' && (
                                         <div className="flex justify-end gap-2 pt-2">
-                                            <BackButton fallbackUrl="/job/draft" label="Cancel" />
-                                            <Can action="create" on="CNC Programming">
+                                            <BackButton fallbackUrl="/job/cnc" label="Cancel" />
+                                            <Can action="create" on="CNC">
                                                 <Button
                                                     onClick={handleOpenSubmissionModal}
                                                     className="bg-green-600 hover:bg-green-700"
@@ -759,7 +735,6 @@ export function CNCDetailsPage() {
                 </main>
             </div>
 
-            {/* ── Modals ────────────────────────────────────────────────────────────── */}
             {showSubmissionModal && (
                 <SubmissionModal
                     open={showSubmissionModal}
@@ -789,7 +764,6 @@ export function CNCDetailsPage() {
                     { value: 'shop_drawing', label: 'Shop Drawing' },
                     { value: 'photo_media', label: 'Photo/Media' },
                     { value: 'CNC EST', label: 'CNC EST' },
-
                 ]}
                 additionalParams={{
                     cnc_id: cncId,

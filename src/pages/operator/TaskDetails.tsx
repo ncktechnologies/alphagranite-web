@@ -8,7 +8,8 @@ import { format } from 'date-fns';
 import { Camera, CheckCircle2, Play, Pause, Square, AlertTriangle, Upload } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
-
+import { useDispatch } from 'react-redux';                     // ← ADDED
+import { operatorApi } from '@/store/api/operator';
 import { OperatorTimerComponent } from './components/TimerComponent';
 import { SubmitWorkModal, type SubmitWorkData } from './components/SubmitWorkModal';
 import { OperatorTimerHistory } from './OperatorTimerHistory';
@@ -53,6 +54,7 @@ export function OperatorTaskDetails() {
     const { t, translateStage, translateFileType, translateFileLabel } = useTranslation();
     const { jobId } = useParams<{ jobId: string }>();
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const [searchParams] = useSearchParams();
 
     const taskId = Number(searchParams.get('task_id')) || 0;
@@ -286,6 +288,7 @@ export function OperatorTaskDetails() {
             setTimerState('running');
             setServerSynced(false);
             await refetchTimer();
+            dispatch(operatorApi.util.invalidateTags(['Task']));
             toast.success(t('OPERATOR.TIMER.START_SUCCESS', 'Timer started successfully'));
         } catch (error: any) {
             console.error('Failed to start timer:', error);
@@ -313,6 +316,7 @@ export function OperatorTaskDetails() {
             setServerSynced(false);
             await refetchTimer();
             refetchTask();
+            dispatch(operatorApi.util.invalidateTags(['Task']));
             setShowWorkPercentageModal(false);
             toast.success(t('OPERATOR.TIMER.PAUSED', 'Timer paused'));
         } catch (error: any) {
@@ -334,6 +338,7 @@ export function OperatorTaskDetails() {
             setTimerState('running');
             setServerSynced(false);
             await refetchTimer();
+            dispatch(operatorApi.util.invalidateTags(['Task']));
             toast.success(t('OPERATOR.TIMER.RESUME_SUCCESS', 'Timer resumed'));
         } catch (error: any) {
             console.error('Failed to resume timer:', error);
@@ -354,6 +359,7 @@ export function OperatorTaskDetails() {
             setTimerState('stopped');
             setServerSynced(false);
             await refetchTimer();
+            dispatch(operatorApi.util.invalidateTags(['Task']));
             const redirectDate = scheduledStartDate ? scheduledStartDate.slice(0, 10) : format(new Date(), 'yyyy-MM-dd');
             const redirectUrl = `/operator/dashboard?view=day&date=${redirectDate}`;
             setTimeout(() => navigate(redirectUrl), 2000);
@@ -406,6 +412,7 @@ export function OperatorTaskDetails() {
                     },
                 }).unwrap();
                 setTimerState('paused');
+                dispatch(operatorApi.util.invalidateTags(['Task']));
                 setServerSynced(false);
             }
 

@@ -1,4 +1,6 @@
-// SlabSmithDetailsPage.tsx - REFACTORED TO MATCH DRAFT DETAILS LAYOUT
+// SlabSmithDetailsPage.tsx – FULL UPDATED VERSION with Session History
+// Includes pause pre‑fill, work percentage, and session history
+
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { Container } from '@/components/common/container';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
@@ -16,6 +18,7 @@ import {
   useDeleteFileFromSlabSmithMutation,
   useManageSlabSmithSessionMutation,
   useGetSlabSmithSessionStatusQuery,
+  useGetSlabSmithSessionHistoryQuery, // ✨ new hook
   useToggleFabOnHoldMutation,
   useCreateFabNoteMutation,
 } from '@/store/api/job';
@@ -33,6 +36,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { UniversalUploadModal } from '@/components/universal-upload';
 import { FileViewer } from '../drafters/components';
 import { stageConfig } from '@/utils/note-utils';
+import { SlabSmithSessionHistory } from './components/SessionHistory';
 
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return '0 Bytes';
@@ -60,13 +64,14 @@ export function SlabSmithDetailsPage() {
   const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
   const isSuperAdmin = currentUser?.is_super_admin || false;
 
-  // Queries
+  // ── Queries ────────────────────────────────────────────────────────────────
   const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, { skip: !fabId });
   const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, { skip: !fabId });
   const { data: slabSmithData, isLoading: isSlabSmithLoading, refetch: refetchSlabSmith } = useGetSlabSmithByFabIdQuery(fabId, { skip: !fabId });
   const { data: ssSessionData, isLoading: isSSLoading, refetch: refetchSSSession } = useGetSlabSmithSessionStatusQuery(fabId, { skip: !fabId });
+  const { data: sessionHistoryData, isLoading: isHistoryLoading, refetch: refetchHistory } = useGetSlabSmithSessionHistoryQuery(fabId, { skip: !fabId }); // ✨
 
-  // Mutations
+  // ── Mutations ──────────────────────────────────────────────────────────────
   const [createSlabSmith] = useCreateSlabSmithMutation();
   const [addFilesToSlabSmith] = useAddFilesToSlabSmithMutation();
   const [deleteFileFromSlabSmith] = useDeleteFileFromSlabSmithMutation();
@@ -74,7 +79,7 @@ export function SlabSmithDetailsPage() {
   const [toggleFabOnHold] = useToggleFabOnHoldMutation();
   const [createFabNote] = useCreateFabNoteMutation();
 
-  // Timer state
+  // ── Timer state ────────────────────────────────────────────────────────────
   const [isDrafting, setIsDrafting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [hasEnded, setHasEnded] = useState(false);
@@ -82,14 +87,25 @@ export function SlabSmithDetailsPage() {
   const [draftStart, setDraftStart] = useState<Date | null>(null);
   const [draftEnd, setDraftEnd] = useState<Date | null>(null);
 
-  // File state
+  // ── File state ─────────────────────────────────────────────────────────────
   const [activeFile, setActiveFile] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [fileDesign, setFileDesign] = useState<string>('');
 
-  // Sync session data
+  // ── Default values for pause modal (from session) ────────────────────────
+  const defaultPauseWorkPercentage = useMemo(() => {
+    if (!ssSessionData?.data) return '';
+    return String(ssSessionData.data.work_percentage_done ?? '');
+  }, [ssSessionData]);
+
+  const defaultPauseSqftDrafted = useMemo(() => {
+    if (!ssSessionData?.data) return '';
+    return ssSessionData.data.cumulative_sqft_drafted ?? '';
+  }, [ssSessionData]);
+
+  // ── Sync session data ─────────────────────────────────────────────────────
   useEffect(() => {
     if (ssSessionData?.data) {
       const session = ssSessionData.data;
@@ -106,7 +122,7 @@ export function SlabSmithDetailsPage() {
     }
   }, [ssSessionData]);
 
-  // Helper: enhance file for viewer
+  // ── Helper: enhance file for viewer ──────────────────────────────────────
   const enhanceFileForViewer = (file: any) => ({
     ...file,
     id: file.id,
@@ -132,10 +148,10 @@ export function SlabSmithDetailsPage() {
     setViewMode('file');
   };
 
-  // Time tracking handlers
+  // ── Time tracking handlers ────────────────────────────────────────────────
+
   const handleStart = useCallback(async (startDate: Date) => {
     if (fabId) {
-      // Authorization check: must be drafter_id (slab_smith) or super admin
       const assignedSlabSmithId = slabSmithData?.drafter_id || (fabData as any)?.slabsmith_data?.drafter_id;
       if (!isSuperAdmin && currentEmployeeId !== assignedSlabSmithId) {
         toast.error('You are not authorized to start this SlabSmith session. Only the assigned SlabSmith or super admin can perform this action.');
@@ -170,7 +186,6 @@ export function SlabSmithDetailsPage() {
         toast.success('Slabsmith session started');
       } catch (error) {
         console.error('Failed to start session:', error);
-        // toast.error('Failed to start session');
         return;
       }
     }
@@ -181,8 +196,7 @@ export function SlabSmithDetailsPage() {
     setDraftStart(startDate);
   }, [fabId, currentEmployeeId, isSuperAdmin, manageSlabSmithSession, refetchSSSession, slabSmithData?.id, slabSmithData?.drafter_id, (fabData as any)?.slabsmith_data?.drafter_id, createSlabSmith, refetchSlabSmith, fabData?.total_sqft]);
 
-  const handlePause = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
-    // Authorization check: must be drafter_id (slab_smith) or super admin
+  const handlePause = useCallback(async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     const assignedSlabSmithId = slabSmithData?.drafter_id || (fabData as any)?.slabsmith_data?.drafter_id;
     if (!isSuperAdmin && currentEmployeeId !== assignedSlabSmithId) {
       toast.error('You are not authorized to pause this SlabSmith session. Only the assigned SlabSmith or super admin can perform this action.');
@@ -198,6 +212,7 @@ export function SlabSmithDetailsPage() {
           action: 'pause',
           note: noteText,
           sqft_completed: Number(data?.sqft_drafted),
+          work_percentage_done: data?.work_percentage_done,
           timestamp: new Date().toISOString(),
         },
       }).unwrap();
@@ -211,7 +226,6 @@ export function SlabSmithDetailsPage() {
   }, [fabId, currentEmployeeId, isSuperAdmin, manageSlabSmithSession, refetchSSSession, slabSmithData?.drafter_id, (fabData as any)?.slabsmith_data?.drafter_id]);
 
   const handleResume = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
-    // Authorization check: must be drafter_id (slab_smith) or super admin
     const assignedSlabSmithId = slabSmithData?.drafter_id || (fabData as any)?.slabsmith_data?.drafter_id;
     if (!isSuperAdmin && currentEmployeeId !== assignedSlabSmithId) {
       toast.error('You are not authorized to resume this SlabSmith session. Only the assigned SlabSmith or super admin can perform this action.');
@@ -235,12 +249,10 @@ export function SlabSmithDetailsPage() {
       toast.success('Session resumed');
     } catch (error) {
       console.error('Failed to resume:', error);
-      // toast.error('Failed to resume');
     }
   }, [fabId, currentEmployeeId, isSuperAdmin, manageSlabSmithSession, refetchSSSession, slabSmithData?.drafter_id, (fabData as any)?.slabsmith_data?.drafter_id]);
 
   const handleOnHold = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
-    // Authorization check: must be drafter_id (slab_smith) or super admin
     const assignedSlabSmithId = slabSmithData?.drafter_id || (fabData as any)?.slabsmith_data?.drafter_id;
     if (!isSuperAdmin && currentEmployeeId !== assignedSlabSmithId) {
       toast.error('You are not authorized to place this SlabSmith job on hold. Only the assigned SlabSmith or super admin can perform this action.');
@@ -272,12 +284,10 @@ export function SlabSmithDetailsPage() {
       toast.success('Job placed on hold');
     } catch (error) {
       console.error('Failed to hold:', error);
-      // toast.error('Failed to place on hold');
     }
   }, [fabId, currentEmployeeId, isSuperAdmin, toggleFabOnHold, createFabNote, manageSlabSmithSession, refetchSSSession, slabSmithData?.drafter_id, (fabData as any)?.slabsmith_data?.drafter_id]);
 
   const handleEnd = useCallback(async (endDate: Date) => {
-    // Authorization check: must be drafter_id (slab_smith) or super admin
     const assignedSlabSmithId = slabSmithData?.drafter_id || (fabData as any)?.slabsmith_data?.drafter_id;
     if (!isSuperAdmin && currentEmployeeId !== assignedSlabSmithId) {
       toast.error('You are not authorized to end this SlabSmith session. Only the assigned SlabSmith or super admin can perform this action.');
@@ -300,9 +310,10 @@ export function SlabSmithDetailsPage() {
       toast.success('Session ended');
     } catch (error) {
       console.error('Failed to end:', error);
-      // toast.error('Failed to end session');
     }
   }, [fabId, currentEmployeeId, isSuperAdmin, manageSlabSmithSession, refetchSSSession, slabSmithData?.drafter_id, (fabData as any)?.slabsmith_data?.drafter_id]);
+
+  // ── File management ────────────────────────────────────────────────────────
 
   const handleDeleteFile = async (fileId: number) => {
     if (!slabSmithData?.id) {
@@ -315,17 +326,16 @@ export function SlabSmithDetailsPage() {
       refetchFab();
     } catch (error) {
       console.error('Failed to delete file:', error);
-      // toast.error('Failed to delete file');
     }
   };
 
   const refetchAllFiles = useCallback(async () => {
     try {
-      await Promise.all([refetchFab(), refetchDrafting(), refetchSlabSmith(), refetchSSSession()]);
+      await Promise.all([refetchFab(), refetchDrafting(), refetchSlabSmith(), refetchSSSession(), refetchHistory()]);
     } catch (error) {
       console.error('Failed to refetch files:', error);
     }
-  }, [refetchFab, refetchDrafting, refetchSlabSmith, refetchSSSession]);
+  }, [refetchFab, refetchDrafting, refetchSlabSmith, refetchSSSession, refetchHistory]);
 
   const shouldShowUploadSection = (isDrafting && !isPaused) || ((fabData as any)?.slabsmith_data?.files?.length > 0);
   const canOpenSubmit = (fabData as any)?.slabsmith_data?.files?.length > 0 && !isPaused && isDrafting;
@@ -345,7 +355,8 @@ export function SlabSmithDetailsPage() {
     }
   };
 
-  // Prepare sidebar sections
+  // ── Sidebar sections ──────────────────────────────────────────────────────
+
   const sidebarSections = useMemo(() => {
     if (!fabData) return [];
 
@@ -381,7 +392,6 @@ export function SlabSmithDetailsPage() {
           },
           { label: "Drafter Assigned", value: (fabData as any)?.slabsmith_data?.drafter_name || 'Unassigned' },
           { label: "Sales Person", value: fabData.sales_person_name || '—' },
-          // { label: "SlabSmith Needed", value: fabData.slab_smith_ag_needed || fabData.slab_smith_cust_needed ? 'Yes' : 'No' },
           {
             label: 'SlabSmith Needed',
             value: (() => {
@@ -395,7 +405,7 @@ export function SlabSmithDetailsPage() {
               if (agNeeded === true) types.push('AG');
 
               return types.join(' & ') || 'Unknown';
-            })()
+            })(),
           },
         ],
       },
@@ -403,7 +413,6 @@ export function SlabSmithDetailsPage() {
         title: 'FAB Notes',
         type: 'notes',
         notes: getAllFabNotes(fabData.fab_notes || []).map((note: any) => {
-
           const stage = note.stage || 'general';
           const config = stageConfig[stage] || stageConfig.general;
           return {
@@ -421,15 +430,15 @@ export function SlabSmithDetailsPage() {
     ];
   }, [fabData]);
 
-  // Prepare links
+  // ── Links and status ──────────────────────────────────────────────────────
   const jobNameLink = fabData?.job_details?.id ? `/job/details/${fabData.job_details.id}` : '#';
   const jobNumberLink = fabData?.job_details?.job_number
     ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fabData.job_details.job_number}`
     : '#';
   const statusInfo = getFabStatusInfo(fabData?.status_id);
 
-  // Loading skeleton
-  if (isFabLoading || isDraftingLoading || isSlabSmithLoading || isSSLoading) {
+  // ── Loading skeleton ──────────────────────────────────────────────────────
+  if (isFabLoading || isDraftingLoading || isSlabSmithLoading || isSSLoading || isHistoryLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
@@ -449,6 +458,8 @@ export function SlabSmithDetailsPage() {
     );
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Sticky toolbar */}
@@ -459,10 +470,7 @@ export function SlabSmithDetailsPage() {
               <ToolbarHeading
                 title={
                   <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
-                    <a href={jobNameLink} className="hover:underline"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
+                    <a href={jobNameLink} className="hover:underline" target="_blank" rel="noreferrer">
                       {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
                     </a>
                     <span className="mx-1 text-gray-400">·</span>
@@ -509,7 +517,7 @@ export function SlabSmithDetailsPage() {
         {/* Main content */}
         <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
           {viewMode === 'file' && activeFile ? (
-            // File viewer
+            // ── File viewer ─────────────────────────────────────────────────
             <div className="bg-white rounded-xl border overflow-hidden">
               <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
                 <div>
@@ -538,7 +546,7 @@ export function SlabSmithDetailsPage() {
               />
             </div>
           ) : (
-            // Activity mode
+            // ── Activity mode ──────────────────────────────────────────────
             <>
               <Card>
                 <CardHeader className="py-3 px-4 sm:px-5">
@@ -550,7 +558,6 @@ export function SlabSmithDetailsPage() {
               <Card>
                 <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
                   <Can action="create" on="SlabSmith Request">
-
                     <TimeTrackingComponent
                       isDrafting={isDrafting}
                       isPaused={isPaused}
@@ -564,11 +571,13 @@ export function SlabSmithDetailsPage() {
                       hasEnded={hasEnded}
                       sessionData={ssSessionData}
                       isFabOnHold={fabData?.status_id === 0}
+                      defaultWorkPercentage={defaultPauseWorkPercentage}
+                      defaultSqftDrafted={defaultPauseSqftDrafted}
                     />
                   </Can>
                   <Separator />
 
-                  {/* File section */}
+                  {/* ── File section ──────────────────────────────────────── */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold text-sm">Uploaded files</h3>
@@ -601,7 +610,7 @@ export function SlabSmithDetailsPage() {
                     )}
                   </div>
 
-                  {/* Submit button */}
+                  {/* ── Submit button ─────────────────────────────────────── */}
                   <div className="flex justify-end gap-2 pt-2">
                     <BackButton fallbackUrl="/job/slab-smith" label="Cancel" />
                     <Can action="create" on="SlabSmith Request">
@@ -616,12 +625,16 @@ export function SlabSmithDetailsPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* ── Session History ──────────────────────────────────────── */}
+              <SlabSmithSessionHistory fabId={fabId} />
             </>
           )}
         </main>
       </div>
 
-      {/* Modals */}
+      {/* ── Modals ────────────────────────────────────────────────────────────── */}
+
       <UniversalUploadModal
         open={showUploadModal}
         onOpenChange={setShowUploadModal}

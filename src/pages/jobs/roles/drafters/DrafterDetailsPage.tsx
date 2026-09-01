@@ -285,6 +285,15 @@ export function DrafterDetailsPage() {
       await createOrStartSession('start', startDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
     } catch (error) { }
   };
+  const defaultPauseWorkPercentage = useMemo(() => {
+    if (!sessionData?.data) return '';
+    return String(sessionData.data.work_percentage_done ?? '');
+  }, [sessionData]);
+
+  const defaultPauseSqftDrafted = useMemo(() => {
+    if (!sessionData?.data) return '';
+    return sessionData.data.cumulative_sqft_drafted ?? '';
+  }, [sessionData]);
 
   const handlePause = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     // Authorization check: must be drafter_id or super admin
@@ -683,6 +692,8 @@ export function DrafterDetailsPage() {
                       onTimeUpdate={setTotalTime}
                       hasEnded={hasEnded}
                       uploadedFilesCount={allFilesForDisplay.length}
+                      defaultWorkPercentage={defaultPauseWorkPercentage}
+                      defaultSqftDrafted={defaultPauseSqftDrafted}
                     />
 
                     <Separator />
