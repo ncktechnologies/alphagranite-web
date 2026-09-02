@@ -1397,8 +1397,8 @@ export const JobSalesTable = ({
             table={table}
             recordCount={useBackendPagination ? totalRecords : filteredData.length}
             isLoading={isLoading}
-            groupByDate
-            dateKey="date"
+            // groupByDate
+            // dateKey="date"
             tableLayout={{
                 columnsPinnable: true,
                 columnsMovable: true,

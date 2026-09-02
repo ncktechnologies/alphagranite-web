@@ -861,9 +861,167 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 },
             },
         },
-        // ... (rest of columns remain unchanged – they already use safeFormatDate or parseISO where needed)
-        // I'm truncating for brevity, but the full file will include all columns.
-        // For completeness, I'll provide the full file in the final answer.
+        {
+            id: 'edging',
+            header: ({ column }) => <DataGridColumnHeader title="EDGING" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.edging_progress;
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span></div>;
+                }
+                if (row.original.type === 'plan' && row.original.plan.planning_section_id === 9) {
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                }
+                return null;
+            },
+            size: 130,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') {
+                        const p = row.data.edging_progress;
+                        return `${p.total.toFixed(1)} ${p.unit} (${p.percent.toFixed(1)}%)`;
+                    }
+                    if (row.type === 'plan' && row.plan.planning_section_id === 9) {
+                        return `${row.stage_total.toFixed(1)} ${row.stage_unit} (${row.stage_percent.toFixed(1)}%)`;
+                    }
+                    return '';
+                },
+            },
+        },
+        {
+            id: 'miter',
+            header: ({ column }) => <DataGridColumnHeader title="MITER" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.miter_progress;
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span></div>;
+                }
+                if (row.original.type === 'plan' && row.original.plan.planning_section_id === 2) {
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                }
+                return null;
+            },
+            size: 130,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') {
+                        const p = row.data.miter_progress;
+                        return `${p.total.toFixed(1)} ${p.unit} (${p.percent.toFixed(1)}%)`;
+                    }
+                    if (row.type === 'plan' && row.plan.planning_section_id === 2) {
+                        return `${row.stage_total.toFixed(1)} ${row.stage_unit} (${row.stage_percent.toFixed(1)}%)`;
+                    }
+                    return '';
+                },
+            },
+        },
+        {
+            id: 'cnc',
+            header: ({ column }) => <DataGridColumnHeader title="CNC" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.cnc_progress;
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span></div>;
+                }
+                if (row.original.type === 'plan' && row.original.plan.planning_section_id === 1) {
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                }
+                return null;
+            },
+            size: 130,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') {
+                        const p = row.data.cnc_progress;
+                        return `${p.total.toFixed(1)} ${p.unit} (${p.percent.toFixed(1)}%)`;
+                    }
+                    if (row.type === 'plan' && row.plan.planning_section_id === 1) {
+                        return `${row.stage_total.toFixed(1)} ${row.stage_unit} (${row.stage_percent.toFixed(1)}%)`;
+                    }
+                    return '';
+                },
+            },
+        },
+        {
+            id: 'handwork',
+            header: ({ column }) => <DataGridColumnHeader title="HANDWORK" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.touchup_progress;
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span></div>;
+                }
+                if (row.original.type === 'plan' && row.original.plan.planning_section_id === 6) {
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                }
+                return null;
+            },
+            size: 130,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') {
+                        const p = row.data.touchup_progress;
+                        return `${p.total.toFixed(1)} ${p.unit} (${p.percent.toFixed(1)}%)`;
+                    }
+                    if (row.type === 'plan' && row.plan.planning_section_id === 6) {
+                        return `${row.stage_total.toFixed(1)} ${row.stage_unit} (${row.stage_percent.toFixed(1)}%)`;
+                    }
+                    return '';
+                },
+            },
+        },
+        {
+            id: 'percent_complete',
+            accessorFn: (r) => r.type === 'fab' ? r.data.percent_complete : null,
+            header: ({ column }) => <DataGridColumnHeader title="% COMPLETE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d]">{row.original.data.percent_complete.toFixed(2)}%</span>;
+                if (row.original.type === 'plan') return <span className="text-xs text-gray-500">{row.original.stage_percent.toFixed(1)}%</span>;
+                return null;
+            },
+            enableSorting: true,
+            size: 140,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') return `${row.data.percent_complete.toFixed(2)}%`;
+                    if (row.type === 'plan') return `${row.stage_percent.toFixed(1)}%`;
+                    return '';
+                },
+            },
+        },
+        {
+            id: 'fab_type',
+            accessorFn: (r) => r.type === 'fab' ? r.data.fab_type : null,
+            header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d] whitespace-nowrap">{row.original.data.fab_type}</span>;
+                return null;
+            },
+            enableSorting: true,
+            size: 130,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') return row.data.fab_type;
+                    return '';
+                },
+            },
+        },
+        {
+            id: 'pieces',
+            accessorFn: (r) => r.type === 'fab' ? r.data.pieces : null,
+            header: ({ column }) => <DataGridColumnHeader title="NO. OF PIECES" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d]">{row.original.data.pieces}</span>;
+                return null;
+            },
+            enableSorting: true,
+            size: 130,
+            meta: {
+                format: (value, row) => {
+                    if (row.type === 'fab') return String(row.data.pieces);
+                    return '';
+                },
+            },
+        },
     ], [canAddNote]);
 
     // ------------------ Table Instance ------------------

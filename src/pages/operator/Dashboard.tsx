@@ -629,10 +629,17 @@ export function OperatorDashboard() {
                                             const isCurrentMonth = day.getMonth() === getMonth(currentDate);
                                             const isToday = isSameDay(day, new Date());
 
+                                            const goToDay = (e?: React.MouseEvent) => {
+                                                e?.stopPropagation();
+                                                setCurrentDate(day);
+                                                setViewMode('day');
+                                            };
+
                                             return (
                                                 <div
                                                     key={dayIdx}
-                                                    className={`min-h-[120px] bg-white p-2 ${!isCurrentMonth ? 'bg-[#f9fafb]' : ''}`}
+                                                    className={`min-h-[120px] bg-white p-2 cursor-pointer hover:bg-gray-50 transition-colors ${!isCurrentMonth ? 'bg-[#f9fafb]' : ''}`}
+                                                    onClick={goToDay}
                                                 >
                                                     <div className={`text-[13px] mb-2 ${isToday ? 'text-[#7a9705] font-bold' : isCurrentMonth ? 'text-[#4b545d]' : 'text-[#9ca3af]'}`}>
                                                         {format(day, 'd')}
@@ -641,31 +648,60 @@ export function OperatorDashboard() {
                                                         {events.slice(0, 3).map((event: any) => {
                                                             const { bg, border, text } = getColorForFabType(event.fab_type);
                                                             const cardBorderColor = event.has_pending_shop_revision ? '#ff0000' : border;
+
+                                                            const startTime = event.scheduled_start_date
+                                                                ? format(new Date(event.scheduled_start_date), 'h:mma')
+                                                                : null;
+                                                            const tooltipHours = event._originalHours ?? event.estimated_hours;
+                                                            const endTime = event.scheduled_start_date && tooltipHours
+                                                                ? format(new Date(new Date(event.scheduled_start_date).getTime() + Number(tooltipHours) * 3_600_000), 'h:mma')
+                                                                : null;
+
                                                             return (
-                                                                <div
-                                                                    key={event.task_id || event.id}
-                                                                    className="text-[11px] px-2 py-1 rounded cursor-pointer truncate"
-                                                                    style={{ backgroundColor: bg, borderColor: cardBorderColor, color: text, borderWidth: event.has_pending_shop_revision ? 2 : 1 }}
-                                                                    onClick={() => handleEventClick(event)}
-                                                                    title={`${event.fab_number || event.fab_id || 'FAB'} . ${event.planning_section_name || event.plan_name || 'Plan'} · ${event.estimated_hours ?? 'N/A'}h · ${event.work_percentage ?? 0}% complete`}
-                                                                >
-                                                                    <div className="font-medium truncate">{event.fab_number || event.fab_id}</div>
-                                                                    {event.plan_name && <div className="text-[9px] opacity-70 truncate">{event.plan_name}</div>}
-                                                                    {event.work_percentage > 0 && (
-                                                                        <div className="flex items-center gap-1 mt-0.5">
-                                                                            <div className="flex-1 bg-white/50 rounded-full h-1">
-                                                                                <div className="h-1 rounded-full" style={{ width: `${event.work_percentage}%`, backgroundColor: text }} />
-                                                                            </div>
-                                                                            <span className="text-[8px] font-medium">{event.work_percentage}%</span>
+                                                                <Tooltip key={event.task_id || event.id} delayDuration={300}>
+                                                                    <TooltipTrigger asChild>
+                                                                        <div
+                                                                            className="text-[11px] px-2 py-1 rounded cursor-pointer truncate"
+                                                                            style={{ backgroundColor: bg, borderColor: cardBorderColor, color: text, borderWidth: event.has_pending_shop_revision ? 2 : 1 }}
+                                                                            onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
+                                                                        >
+                                                                            <div className="font-medium truncate">{event.fab_number || event.fab_id}</div>
+                                                                            {event.plan_name && <div className="text-[9px] opacity-70 truncate">{event.plan_name}</div>}
+                                                                            {event.work_percentage > 0 && (
+                                                                                <div className="flex items-center gap-1 mt-0.5">
+                                                                                    <div className="flex-1 bg-white/50 rounded-full h-1">
+                                                                                        <div className="h-1 rounded-full" style={{ width: `${event.work_percentage}%`, backgroundColor: text }} />
+                                                                                    </div>
+                                                                                    <span className="text-[8px] font-medium">{event.work_percentage}%</span>
+                                                                                </div>
+                                                                            )}
                                                                         </div>
-                                                                    )}
-                                                                </div>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent side="right" sideOffset={6} className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700 pointer-events-none">
+                                                                        <div className="space-y-1">
+                                                                            <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
+                                                                            <p><span className="font-semibold">Workstation:</span> {event.workstation_name || 'N/A'}</p>
+                                                                            <p><span className="font-semibold">Est. Hours:</span> {tooltipHours ?? 'N/A'}</p>
+                                                                            <p><span className="font-semibold">Time:</span> {startTime ? `${startTime}${endTime ? ` – ${endTime}` : ''}` : 'N/A'}</p>
+                                                                            <p><span className="font-semibold">% Complete:</span> {event.work_percentage ?? 0}%</p>
+                                                                            <p><span className="font-semibold">Job:</span> {`${event.job_name}-${event.job_number}` || 'N/A'}</p>
+                                                                            <p><span className="font-semibold">Job No:</span> {event.job_number || 'N/A'}</p>
+                                                                            <p><span className="font-semibold">Account Name:</span> {event.account_name || 'N/A'}</p>
+                                                                            <p><span className="font-semibold">Plan:</span> {event.planning_section_name || event.plan_name || 'N/A'}</p>
+                                                                            {event.notes && <p><span className="font-semibold">Notes:</span> {event.notes}</p>}
+                                                                        </div>
+                                                                    </TooltipContent>
+                                                                </Tooltip>
                                                             );
                                                         })}
                                                         {events.length > 3 && (
-                                                            <div className="text-[10px] text-[#7c8689] pl-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={goToDay}
+                                                                className="text-[10px] text-[#7a9705] font-semibold pl-2 hover:underline"
+                                                            >
                                                                 +{events.length - 3} more
-                                                            </div>
+                                                            </button>
                                                         )}
                                                     </div>
                                                 </div>

@@ -471,6 +471,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
                 columnsMovable: true,
                 columnsVisibility: true,
                 cellBorder: true,
+                headerSticky:true
             }}
         >
             <Card>
