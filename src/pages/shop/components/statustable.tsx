@@ -351,6 +351,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         current_stage: 'shop',
         skip: (currentPage - 1) * itemsPerPage,
         limit: itemsPerPage,
+        plan_view: 'all',
         ...(searchQuery && { search: searchQuery }),
         ...(fabTypeFilter !== 'all' && { fab_type: fabTypeFilter }),
         ...(searchType && { type: searchType }),

@@ -401,6 +401,7 @@ export interface FabListParams {
     sct_completed_start?: string | null;
     sct_completed_end?: string | null;
     user_level?: string;
+    plan_view?: string; // Add plan_view filter for shop status
 }
 
 export interface TemplatingSchedule {
@@ -962,6 +963,7 @@ export const jobApi = createApi({
                             ...(queryParams.next_stage && { next_stage: queryParams.next_stage }),
                             // Search filter
                             ...(queryParams.search && { search: queryParams.search }),
+                            ...(queryParams.plan_view && { plan_view: queryParams.plan_view }),
                             // Search type filter (fab_id, job_number, job_name)
 
                             // Schedule date filters
