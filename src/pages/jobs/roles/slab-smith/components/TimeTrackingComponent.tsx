@@ -1,4 +1,4 @@
-// TimeTrackingComponent.tsx (SlabSmith version – full updated file)
+// TimeTrackingComponent.tsx (SlabSmith version – fixed resume)
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, Square } from 'lucide-react';
@@ -31,17 +31,17 @@ interface TimeTrackingComponentProps {
   isFabOnHold?: boolean;
 
   onStart: (startDate: Date) => void | Promise<void>;
-  onPause: (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => void | Promise<void>;
-  onResume: (data?: { note?: string; sqft_drafted?: string }) => void | Promise<void>;
+  onPause: (data?: { note?: string; sqft_drafted?: number | null; work_percentage_done?: string }) => void | Promise<void>;
+  onResume: (data?: { note?: string; sqft_drafted?: number | null }) => void | Promise<void>;
   onEnd: (endDate: Date) => void;
-  onOnHold?: (data?: { note?: string; sqft_drafted?: string }) => void | Promise<void>;
+  onOnHold?: (data?: { note?: string; sqft_drafted?: number | null }) => void | Promise<void>;
 
   onTimeUpdate: (time: number) => void;
   hasEnded: boolean;
   pendingFilesCount?: number;
   uploadedFilesCount?: number;
-  defaultWorkPercentage?: string;   // ✨ new
-  defaultSqftDrafted?: string;      // ✨ new
+  defaultWorkPercentage?: string;
+  defaultSqftDrafted?: string;
 }
 
 const parseUTCDate = (dateStr: string | undefined): Date | undefined => {
@@ -82,12 +82,10 @@ export const TimeTrackingComponent = ({
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [isStarting, setIsStarting] = useState(false);
 
-  // Pause/Resume/OnHold notes state
+  // Modal state
   const [pauseNote, setPauseNote] = useState<string>('');
   const [pauseSqFt, setPauseSqFt] = useState<string>('');
   const [pauseWorkPercentage, setPauseWorkPercentage] = useState<string>('');
-  const [resumeNote, setResumeNote] = useState<string>('');
-  const [resumeSqFt, setResumeSqFt] = useState<string>('');
   const [onHoldNote, setOnHoldNote] = useState<string>('');
   const [onHoldSqFt, setOnHoldSqFt] = useState<string>('');
   const [showPauseModal, setShowPauseModal] = useState(false);
@@ -98,7 +96,6 @@ export const TimeTrackingComponent = ({
   useEffect(() => {
     if (sessionData?.data) {
       const session = sessionData.data;
-
       if (session.start_time) {
         setStartTime(parseUTCDate(session.start_time) || null);
       } else if (session.current_session_start_time) {
@@ -126,9 +123,7 @@ export const TimeTrackingComponent = ({
       }
     } else if (draftStart) {
       setStartTime(draftStart);
-      if (draftEnd) {
-        setEndTime(draftEnd);
-      }
+      if (draftEnd) setEndTime(draftEnd);
     }
   }, [sessionData, draftStart, draftEnd]);
 
@@ -146,6 +141,16 @@ export const TimeTrackingComponent = ({
     }
   }, [currentTime, isDrafting, isPaused, startTime, totalPausedTime, hasEnded, onTimeUpdate]);
 
+  // ── Helper: parse sqft input (handles string or number) ────────────────
+  const parseSqft = (value: string | number | undefined | null): number | null => {
+    if (value === undefined || value === null) return null;
+    if (typeof value === 'number') return isNaN(value) ? null : value;
+    const trimmed = value.trim();
+    if (trimmed === '') return null;
+    const num = Number(trimmed);
+    return isNaN(num) ? null : num;
+  };
+
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleStart = async () => {
@@ -154,7 +159,6 @@ export const TimeTrackingComponent = ({
     setStartTime(now);
     setPausedTime(null);
     setTotalPausedTime(0);
-
     try {
       await onStart(now);
     } finally {
@@ -163,7 +167,6 @@ export const TimeTrackingComponent = ({
   };
 
   const handlePause = () => {
-    // Pre‑fill with defaults from session
     setPauseWorkPercentage(defaultWorkPercentage);
     setPauseSqFt(defaultSqftDrafted);
     setPauseNote('');
@@ -171,7 +174,6 @@ export const TimeTrackingComponent = ({
   };
 
   const confirmPause = async () => {
-    // ✨ work percentage is required
     if (!pauseWorkPercentage) {
       toast.error('Please select a work percentage before pausing');
       return;
@@ -182,13 +184,14 @@ export const TimeTrackingComponent = ({
     try {
       await onPause({
         note: pauseNote,
-        sqft_drafted: pauseSqFt,
-        work_percentage_done: pauseWorkPercentage,   // ✅ send to backend
+        sqft_drafted: parseSqft(pauseSqFt),
+        work_percentage_done: pauseWorkPercentage,
       });
       setPauseNote('');
       setPauseSqFt('');
       setPauseWorkPercentage('');
       setShowPauseModal(false);
+      toast.success('Session paused');
     } catch (error) {
       console.error('Failed to pause:', error);
       toast.error('Failed to pause');
@@ -202,7 +205,9 @@ export const TimeTrackingComponent = ({
     setShowPauseModal(false);
   };
 
-  const handleResume = () => setShowResumeModal(true);
+  const handleResume = () => {
+    setShowResumeModal(true);
+  };
 
   const confirmResume = async () => {
     if (startTime && pausedTime) {
@@ -211,22 +216,27 @@ export const TimeTrackingComponent = ({
     }
     setPausedTime(null);
     try {
-      await onResume({ note: resumeNote, sqft_drafted: resumeSqFt });
-      setResumeNote('');
-      setResumeSqFt('');
+      // Send the current sqft from the session
+      await onResume({
+        sqft_drafted: parseSqft(defaultSqftDrafted), // ✅ send number or null
+      });
       setShowResumeModal(false);
+      toast.success('Session resumed');
     } catch (error) {
       console.error('Failed to resume:', error);
+      toast.error('Failed to resume session');
     }
   };
 
   const cancelResume = () => {
-    setResumeNote('');
-    setResumeSqFt('');
     setShowResumeModal(false);
   };
 
-  const handleOnHold = () => setShowOnHoldModal(true);
+  const handleOnHold = () => {
+    setOnHoldSqFt(defaultSqftDrafted);
+    setOnHoldNote('');
+    setShowOnHoldModal(true);
+  };
 
   const confirmOnHold = async () => {
     const now = new Date();
@@ -243,13 +253,18 @@ export const TimeTrackingComponent = ({
 
     try {
       if (onOnHold) {
-        await onOnHold({ note: onHoldNote, sqft_drafted: onHoldSqFt });
+        await onOnHold({
+          note: onHoldNote,
+          sqft_drafted: parseSqft(onHoldSqFt),
+        });
       }
       setOnHoldNote('');
       setOnHoldSqFt('');
       setShowOnHoldModal(false);
+      toast.success('Session placed on hold');
     } catch (error) {
       console.error('Failed to put on hold:', error);
+      toast.error('Failed to put session on hold');
     }
   };
 
@@ -317,7 +332,6 @@ export const TimeTrackingComponent = ({
         </div>
 
         <div className="flex items-center gap-10 flex-1">
-          {/* START TIME */}
           <div>
             <span className="text-sm text-text-foreground">Start time & Date:</span>
             <p className="text-[16px] text-text font-semibold">
@@ -325,7 +339,6 @@ export const TimeTrackingComponent = ({
             </p>
           </div>
 
-          {/* PAUSED TIME */}
           {isPaused && pausedTime && !hasEnded && (
             <div>
               <span className="text-sm text-text-foreground">Paused time & Date:</span>
@@ -335,7 +348,6 @@ export const TimeTrackingComponent = ({
             </div>
           )}
 
-          {/* END TIME */}
           {!isPaused && endTime && hasEnded && (
             <div>
               <span className="text-sm text-text-foreground">End time & Date:</span>
@@ -343,7 +355,6 @@ export const TimeTrackingComponent = ({
             </div>
           )}
 
-          {/* TOTAL DURATION */}
           {((isDrafting && !hasEnded) || hasEnded) && totalTime > 0 && (
             <div className="bg-[#FF8D28] px-10 py-2 rounded-[6px] text-white text-[12px]">
               <span className="text-sm font-medium text-[#EEEEEE]">Total hour spent</span>
@@ -352,7 +363,6 @@ export const TimeTrackingComponent = ({
           )}
         </div>
 
-        {/* ACTION BUTTONS */}
         <div className="flex gap-2">
           {isPaused && !hasEnded ? (
             <Button onClick={handleResume} variant="inverse" className="bg-[#4B545D] text-white">
@@ -409,7 +419,6 @@ export const TimeTrackingComponent = ({
               />
             </div>
 
-            {/* ✨ Work Percentage dropdown – same as Drafting */}
             <div>
               <label htmlFor="pause-work-percentage" className="block text-sm font-medium mb-2">
                 Work Percentage *
@@ -446,12 +455,17 @@ export const TimeTrackingComponent = ({
         </DialogContent>
       </Dialog>
 
-      {/* RESUME MODAL */}
+      {/* RESUME MODAL – confirmation only */}
       <Dialog open={showResumeModal} onOpenChange={setShowResumeModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Resume SlabSmith Session</DialogTitle>
           </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to resume this session?
+            </p>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={cancelResume}>Cancel</Button>
             <Button onClick={confirmResume}>Confirm Resume</Button>

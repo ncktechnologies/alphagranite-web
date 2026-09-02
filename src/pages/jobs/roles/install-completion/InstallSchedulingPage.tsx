@@ -82,7 +82,7 @@ const transformFabToJob = (fab: Fab): IJob => {
             ? formatDate((fab as any).install_details?.scheduled_install_date)
             : undefined,
         install_confirmed: (fab as any).install_details?.is_completed ?? undefined,
-        shop_status: (fab as any).shop_status || undefined,
+        shop_status: (fab as any).shop_current_stage || undefined,
     };
 };
 
@@ -231,7 +231,8 @@ export function InstallCompletionPage() {
                     'gp',
                     'est_completion_date',
                     'percent_complete',
-                    'install_notes',
+                    'install_scheduling_notes',
+                    'install_completion_notes',
                     'installer',
                     'install_date',
                     'install_confirmed',

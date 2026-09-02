@@ -224,8 +224,8 @@ export function ServiceLevelReport() {
             accessorKey: 'sla_breach_percent',
             header: ({ column }) => <DataGridColumnHeader title="SLA BREACH %" column={column} />,
             size: 120,
-            cell: ({ row }) => `${row.original.sla_breach_percent.toFixed(1)}%`,
-            meta: { format: (value: number) => `${value?.toFixed(1)}%` },
+            cell: ({ row }) => `${row.original.sla_breach_percent.toFixed(2)}%`,
+            meta: { format: (value: number) => `${value?.toFixed(2)}%` },
         },
     ], []);
 
@@ -454,7 +454,7 @@ export function ServiceLevelReport() {
             {summary && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     <Card className="p-4"><div className="text-sm">Completed</div><div className="text-xl font-semibold">{summary.total_completed}</div></Card>
-                    <Card className="p-4"><div className="text-sm">On-Time %</div><div className="text-xl font-semibold">{summary.on_time_percent?.toFixed(1)}%</div></Card>
+                    <Card className="p-4"><div className="text-sm">On-Time %</div><div className="text-xl font-semibold">{summary.on_time_percent?.toFixed(2)}%</div></Card>
                     <Card className="p-4"><div className="text-sm">Open Backlog</div><div className="text-xl font-semibold">{summary.open_backlog_count}</div></Card>
                     <Card className="p-4"><div className="text-sm">SLA Breach Count</div><div className="text-xl font-semibold text-red-600">{summary.sla_breach_count}</div></Card>
                 </div>

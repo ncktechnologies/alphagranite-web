@@ -91,7 +91,7 @@ export interface CalculatedCutListData {
     cost_of_stone: number;
     revenue: number;
     fp_completed: string;
-    cip: string;
+    gp: number;
     install_date: string;
     sales_person?: string;
     shop_date_schedule: string;
@@ -143,7 +143,7 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         cost_of_stone: fabWithExtraFields.cost_of_stone || 0,
         revenue: fabWithExtraFields.revenue || 0,
         fp_completed: fabWithExtraFields.final_programming_complete ? 'Yes' : 'No',
-        cip: '',
+        gp: fabWithExtraFields.gp || 0,
         install_date: fabWithExtraFields.installation_date || '',
         shop_date_schedule: fabWithExtraFields.shop_date_schedule || '',
         sales_person: fabWithExtraFields.sales_person_name || '',
@@ -485,10 +485,10 @@ export const CutListTableWithCalculations = ({
                 meta: { format: (value: number) => formatCurrency(value) },
             },
             {
-                id: 'cip', accessorKey: 'cip',
+                id: 'gp', accessorKey: 'gp',
                 header: ({ column }) => <DataGridColumnHeader title="GP" column={column} />,
-                cell: ({ row }) => <span className="text-sm">{row.original.cip}</span>,
-                meta: { format: (value: string) => value || '' },
+                cell: ({ row }) => <span className="text-sm">{row.original.gp}</span>,
+                meta: { format: (value: number) => value || 0 },
             },
             {
                 id: 'sales_person', accessorKey: 'sales_person',

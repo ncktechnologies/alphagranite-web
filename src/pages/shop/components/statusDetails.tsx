@@ -165,7 +165,7 @@ const MiniProgress: React.FC<{ percent: number }> = ({ percent }) => {
             <div className="flex-1 bg-[#e2e4ed] rounded-full h-[6px] overflow-hidden">
                 <div className="h-full rounded-full transition-all" style={{ width: `${p}%`, backgroundColor: color }} />
             </div>
-            <span className="text-xs text-muted-foreground w-10 text-right shrink-0">{p.toFixed(1)}%</span>
+            <span className="text-xs text-muted-foreground w-10 text-right shrink-0">{p.toFixed(2)}%</span>
         </div>
     );
 };
@@ -1029,10 +1029,10 @@ const FabDetailsPage = () => {
         { label: 'Stone Thickness', value: fab.stone_thickness_value || 'N/A' },
         { label: 'Edge', value: fab.edge_name || 'N/A' },
         { label: 'No. of Pieces', value: String(fab.no_of_pieces || 0) },
-        { label: 'Total Sq Ft', value: fab.total_sqft ? `${Number(fab.total_sqft).toFixed(1)} SF` : 'N/A' },
+        { label: 'Total Sq Ft', value: fab.total_sqft ? `${Number(fab.total_sqft).toFixed(2)} SF` : 'N/A' },
         { label: 'Sales Person', value: fab.sales_person_name || 'N/A' },
         { label: 'Current Stage', value: fab.shop_current_stage ? `${(fab.current_stage || 'N/A').toUpperCase()} (${fab.shop_current_stage.toUpperCase()})` : (fab.current_stage || 'N/A').toUpperCase() },
-        { label: '% Complete', value: `${(fab.percent_complete || 0).toFixed(1)}%` },
+        { label: '% Complete', value: `${(fab.percentage_completion || 0).toFixed(2)}%` },
     ];
 
     return (

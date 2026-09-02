@@ -115,6 +115,7 @@ const CutListPage = () => {
                 cnc_linft: rawData.reduce((sum: number, fab: any) => sum + (fab.cnc_linft || 0), 0),
                 miter_linft: rawData.reduce((sum: number, fab: any) => sum + (fab.miter_linft || 0), 0),
                 no_of_pieces: rawData.reduce((sum: number, fab: any) => sum + (fab.no_of_pieces || 0), 0),
+                gp: rawData.reduce((sum: number, fab: any) => sum + (fab.gp || 0), 0),
             };
         }
         return { fabs: rawData, stageTotals, totalRevenue: revenueTotal };
@@ -144,6 +145,7 @@ const CutListPage = () => {
                 <div className="pl-5 text-[#4B5675] text-[14px]">TCNC: LIN FT: {stageTotals?.cnc_linft || 0}</div>
                 <div className="pl-5 text-[#4B5675] text-[14px]">Miter: LIN FT: {stageTotals?.miter_linft || 0}</div>
                 <div className="pl-5 text-[#4B5675] text-[14px]">No. of Pieces: {stageTotals?.no_of_pieces || 0}</div>
+                <div className="pl-5 text-[#4B5675] text-[14px]">GP: {stageTotals?.gp || 0}</div>
                 <div className="pl-5 text-[#4B5675] text-[14px]">Revenue: ${totalRevenue.toLocaleString()}</div>
             </div>
 

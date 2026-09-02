@@ -601,7 +601,7 @@ function DataGridTable<TData extends object>() {
                             {isFirst ? (
                               <span className="text-[14px] font-semibold text-text whitespace-nowrap">{month}</span>
                             ) : showTotal ? (
-                              <span className="text-[12px] font-medium text-text">{monthTotals[colId]?.toFixed(1)}</span>
+                              <span className="text-[12px] font-medium text-text">{monthTotals[colId]?.toFixed(2)}</span>
                             ) : null}
                           </th>
                         );
@@ -646,7 +646,7 @@ function DataGridTable<TData extends object>() {
                                         })()}
                                       </span>
                                     ) : showTotal ? (
-                                      <span className="text-[11px] font-medium text-text">{dateTotals[colId]?.toFixed(1)}</span>
+                                      <span className="text-[11px] font-medium text-text">{dateTotals[colId]?.toFixed(2)}</span>
                                     ) : null}
                                   </th>
                                 );
@@ -729,7 +729,7 @@ function DataGridTable<TData extends object>() {
                             </span>
                           ) : shouldShowTotal ? (
                             <span className="text-[13px] leading-[13px] font-medium text-text">
-                              {columnTotals[columnId]?.toFixed(1)}
+                              {columnTotals[columnId]?.toFixed(2)}
                             </span>
                           ) : null}
                         </th>

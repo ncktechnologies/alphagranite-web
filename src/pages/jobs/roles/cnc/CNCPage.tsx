@@ -27,7 +27,7 @@ export const transformFabToJob = (fab: Fab): IJob => {
         no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : '-',
         total_sq_ft: String(fab.total_sqft || '-'),
         revenue: fab.revenue || '-',
-        gp: '-',
+        gp: fab.gp || '-',
         draft_completed: fab.drafting_session?.status || 'Not started',
         cnc_operator: fab.cnc_data?.drafter_name || '-',
         template_received: '',

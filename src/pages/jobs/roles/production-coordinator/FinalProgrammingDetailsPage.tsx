@@ -93,7 +93,7 @@ export function FinalProgrammingDetailsPage() {
 
   const defaultPauseSqftDrafted = useMemo(() => {
     if (!fpSessionData?.data) return '';
-    return fpSessionData.data.cumulative_sqft_drafted ?? '';
+    return fpSessionData.data.sqft_completed ?? '';
   }, [fpSessionData]);
 
   // ── File state ─────────────────────────────────────────────────────────────

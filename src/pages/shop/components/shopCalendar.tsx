@@ -70,21 +70,14 @@ const FAB_TYPE_COLORS: Record<string, { bg: string; border: string; text: string
   'fast track': { bg: '#f59794', border: '#b35e5b', text: '#1e293b' },
   'ag redo': { bg: '#f5cc94', border: '#b58f4f', text: '#1e293b' },
 };
-const DEFAULT_COLOR = { bg: '#e8f5e9', border: '#81c784', text: '#2e7d32' };
+const DEFAULT_COLOR = { bg: '#ffffff', border: '#000000', text: '#1e293b' };
 
 function getFabTypeColor(fabType: string) {
   return FAB_TYPE_COLORS[fabType?.toLowerCase()] ?? DEFAULT_COLOR;
 }
 
 const COLOR_CYCLE = [
-  { bg: '#d5e7ff', border: '#70a5f8', text: '#2563eb' },
-  { bg: '#caf2d7', border: '#5fd28c', text: '#16a34a' },
-  { bg: '#ffebcf', border: '#ffb84d', text: '#b45309' },
-  { bg: '#ffe0e3', border: '#ed7172', text: '#dc2626' },
-  { bg: '#c4edea', border: '#4db6ac', text: '#0f766e' },
-  { bg: '#f3e8ff', border: '#c084fc', text: '#7c3aed' },
-  { bg: '#fef9c3', border: '#fde047', text: '#854d0e' },
-  { bg: '#f1f2f4', border: '#8f929c', text: '#4b5563' },
+  { bg: '#ffffff', border: '#000000', text: '#1e293b' },
 ];
 
 function getColorForFab(fabId: string | number, fabType: string) {

@@ -360,8 +360,8 @@ export function OperatorTaskDetails() {
             setServerSynced(false);
             await refetchTimer();
             dispatch(operatorApi.util.invalidateTags(['Task']));
-            const redirectDate = scheduledStartDate ? scheduledStartDate.slice(0, 10) : format(new Date(), 'yyyy-MM-dd');
-            const redirectUrl = `/operator/dashboard?view=day&date=${redirectDate}`;
+            const redirectDate = format(new Date(), 'yyyy-MM-dd');
+            const redirectUrl = `/operator/dashboard?view=week&date=${redirectDate}`;
             setTimeout(() => navigate(redirectUrl), 2000);
         } catch (error: any) {
             console.error('Failed to submit work:', error);
@@ -549,7 +549,7 @@ export function OperatorTaskDetails() {
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
                                     {statusInfo.text}
                                 </span>
-                                <BackButton fallbackUrl={`/operator/dashboard?view=day&date=${scheduledStartDate ? scheduledStartDate.slice(0,10) : format(new Date(), 'yyyy-MM-dd')}`} />
+                                <BackButton fallbackUrl={`/operator/dashboard?view=week&date=${scheduledStartDate ? scheduledStartDate.slice(0,10) : format(new Date(), 'yyyy-MM-dd')}`} />
                             </div>
                         </div>
                     </Toolbar>

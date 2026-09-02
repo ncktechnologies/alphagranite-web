@@ -670,5 +670,16 @@
 
   "FILE.DELETE.NO_ID": "No se pudo determinar el ID del archivo",
   "FILE.DELETE.SUCCESS": "Archivo eliminado exitosamente",
-  "FILE.DELETE.FAILED": "Error al eliminar el archivo"
+  "FILE.DELETE.FAILED": "Error al eliminar el archivo",
+    "CALENDAR.BREAK": "Descanso",
+  "CALENDAR.LOADING": "Cargando eventos del calendario…",
+  "TOOLTIP.FAB_ID": "ID FAB",
+  "TOOLTIP.WORKSTATION": "Estación de Trabajo",
+  "TOOLTIP.EST_HOURS": "Horas Est.",
+  "TOOLTIP.PERCENT_COMPLETE": "% Completado",
+  "TOOLTIP.JOB": "Trabajo",
+  "TOOLTIP.JOB_NO": "Nº Trabajo",
+  "TOOLTIP.ACCOUNT_NAME": "Nombre de Cuenta",
+  "TOOLTIP.PLAN": "Plan",
+  "TOOLTIP.NOTES": "Notas"
 }

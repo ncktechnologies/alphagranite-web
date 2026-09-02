@@ -110,10 +110,10 @@ export function InstallPerformance() {
         {
             accessorKey: 'sqft_installed',
             header: ({ column }) => <DataGridColumnHeader title="SQFT INSTALLED" column={column} />,
-            cell: ({ row }) => <span className="text-sm">{row.original.sqft_installed.toFixed(1)}</span>,
+            cell: ({ row }) => <span className="text-sm">{row.original.sqft_installed.toFixed(2)}</span>,
             size: 130,
             enableSorting: true,
-            meta: { format: (value: number) => value?.toFixed(1) ?? '0' },
+            meta: { format: (value: number) => value?.toFixed(2) ?? '0' },
         },
         {
             accessorKey: 'work_hours',
@@ -243,7 +243,7 @@ export function InstallPerformance() {
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     {[
-                        { label: 'Total SQFT Installed', value: summary.total_sqft_installed.toFixed(1) },
+                        { label: 'Total SQFT Installed', value: summary.total_sqft_installed.toFixed(2) },
                         { label: 'Installer Count', value: summary.installer_count },
                         { label: 'Total Work Hours', value: summary.total_work_hours.toFixed(2) },
                         { label: 'Total Labor Cost', value: `$${summary.total_labor_cost?.toLocaleString(undefined, { minimumFractionDigits: 2 })}` },

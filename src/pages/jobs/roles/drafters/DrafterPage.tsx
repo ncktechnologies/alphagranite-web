@@ -202,7 +202,7 @@ const DrafterPage = () => {
                     'fab_info',
                     'total_sq_ft',
                     'revenue',
-                    'gp',
+                    // 'gp',
                     'drafting_notes',
                     'draft_completed',
                     'drafter',

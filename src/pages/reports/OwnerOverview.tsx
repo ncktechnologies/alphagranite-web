@@ -52,7 +52,7 @@ export function OwnerOverview() {
             { label: 'Active Fabs', value: k.active_fabs ?? '-' },
             { label: 'Pending Installs', value: k.pending_installs ?? '-' },
             { label: 'Completed Installs', value: k.completed_installs ?? '-' },
-            { label: 'Completion Rate', value: k.completion_rate_percent != null ? `${k.completion_rate_percent.toFixed(1)}%` : '-' },
+            { label: 'Completion Rate', value: k.completion_rate_percent != null ? `${k.completion_rate_percent.toFixed(2)}%` : '-' },
             { label: 'Total Revenue', value: k.total_revenue != null ? `$${k.total_revenue.toLocaleString()}` : '-' },
             { label: 'Gross Profit', value: k.gross_profit != null ? `$${k.gross_profit.toLocaleString()}` : '-' },
             { label: 'Gross Margin', value: k.gross_margin_percent != null ? `${k.gross_margin_percent.toFixed(2)}%` : '-' },

@@ -230,7 +230,7 @@ export function InstallSchedulingPage() {
                     'est_completion_date',
                     // 'completion_date',\
                     'percent_complete',
-                    'install_notes',
+                    'install_scheduling_notes',
                     'shop_status',
                     'shop_est_completion_date'
                 ]}
@@ -238,6 +238,7 @@ export function InstallSchedulingPage() {
                 canViewInstallerTimer={permissions.can_create}
                 canAddNote={canAddNote}
                 canToggleOnHold={canToggleOnHold}
+                noteStage="install_scheduling"
             />
         </Container>
     );

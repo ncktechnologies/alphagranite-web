@@ -102,7 +102,7 @@ export function SlabSmithDetailsPage() {
 
   const defaultPauseSqftDrafted = useMemo(() => {
     if (!ssSessionData?.data) return '';
-    return ssSessionData.data.cumulative_sqft_drafted ?? '';
+    return ssSessionData.data.sqft_completed ?? '';
   }, [ssSessionData]);
 
   // ── Sync session data ─────────────────────────────────────────────────────

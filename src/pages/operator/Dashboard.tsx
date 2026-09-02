@@ -55,7 +55,7 @@ const FAB_TYPE_COLORS: Record<string, { bg: string; border: string; text: string
     'ag redo': { bg: '#f5cc94', border: '#e6a832', text: '#7a4b0e' },
 };
 
-const DEFAULT_COLOR = { bg: '#f1f2f4', border: '#8f929c', text: '#4b5563' };
+const DEFAULT_COLOR = { bg: '#ffffff', border: '#000000', text: '#1e293b' };
 
 function getColorForFabType(fabType?: string) {
     if (!fabType) return DEFAULT_COLOR;
@@ -300,7 +300,7 @@ export function OperatorDashboard() {
         return { events: positioned, rowHeight };
     }, []);
 
-    // ─── Render a single event card ──────────────────────────────────────────
+    // ─── Render a single event card with pointer-events-none tooltip ──────
     const renderEventCard = useCallback((event: any) => {
         const { bg, border, text } = getColorForFabType(event.fab_type);
         const finalBorderColor = event.has_pending_shop_revision ? '#ff0000' : border;
@@ -376,7 +376,7 @@ export function OperatorDashboard() {
                         </div>
                     </div>
                 </TooltipTrigger>
-                <TooltipContent side="center" sideOffset={6} className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
+                <TooltipContent side="right" sideOffset={6} className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700 pointer-events-none">
                     <div className="space-y-1">
                         <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
                         <p><span className="font-semibold">Workstation:</span> {event.workstation_name || 'N/A'}</p>
@@ -455,12 +455,11 @@ export function OperatorDashboard() {
                                 />
                             )}
                             {activeTimerFabs.length > 0 && (
-                                <div className="flex max-w-[760px] flex-wrap justify-end gap-2" aria-label="Active FAB timers">
+                                <div className="flex max-w-[760px] flex-wrap justify-end gap-2" aria-label={t('OPERATOR.ACTIVE_TIMERS')}>
                                     {activeTimerFabs.slice(0, 5).map((fabId: number) => (
                                         <div key={fabId} className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm">
                                             <span className="size-2 rounded-full bg-emerald-500" aria-hidden="true" />
                                             <span className="font-semibold text-foreground">FAB-{fabId}</span>
-                                            {/* Optional: if we can fetch elapsed time, show it */}
                                         </div>
                                     ))}
                                 </div>
@@ -479,13 +478,12 @@ export function OperatorDashboard() {
                                         : 'text-[#78829d]'
                                         }`}
                                 >
-                                    {mode === 'day' && <Columns3 className="w-4 h-4 inline-block mr-1" />}
-                                    {mode === 'week' && <Rows3 className="w-4 h-4 inline-block mr-1" />}
-                                    {mode}
+                                    {t(`CALENDAR.${mode.toUpperCase()}`)}
                                 </button>
                             ))}
                         </div>
 
+                        {/* Axis swap buttons removed for clarity; can add back if needed */}
                     </div>
                 </div>
 

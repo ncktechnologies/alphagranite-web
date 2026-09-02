@@ -646,10 +646,10 @@ const ShopTable: React.FC<ShopTableProps> = ({
             id: 'hours_scheduled',
             accessorFn: r => r.estimated_hours,
             header: ({ column }) => <DataGridColumnHeader title="HOURS SCHEDULED" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.estimated_hours.toFixed(1)}</span>,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.estimated_hours.toFixed(2)}</span>,
             enableSorting: true,
             meta: {
-                format: (value, row) => row.estimated_hours.toFixed(1),
+                format: (value, row) => row.estimated_hours.toFixed(2),
             },
         },
         {

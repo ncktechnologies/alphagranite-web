@@ -13,7 +13,6 @@
   "USER.MENU.DARK_MODE": "Dark Mode",
   "USER.MENU.LOGOUT": "Logout",
   "USER.MENU.LANGUAGE": "Language",
-
   "UPLOAD.MEDIA.TITLE": "Upload Media Files",
   "UPLOAD.MEDIA.FIRST_FILE": "Upload First File",
   "UPLOAD.QA.TITLE": "Upload QA Files",
@@ -36,7 +35,6 @@
   "UPLOAD.SELECTED_FILES": "Selected Files ({count})",
   "UPLOAD.REMOVE_FILE": "Remove file",
   "UPLOAD.NO_FILES": "No files selected",
-
   "STAGE.TEMPLATING": "Templating",
   "STAGE.DRAFTING": "Drafting",
   "STAGE.PROGRAMMING": "Programming",
@@ -48,7 +46,6 @@
   "STAGE.EDGING": "Edging",
   "STAGE.CUT_LIST": "Cut List",
   "STAGE.REVISIONS": "Revisions",
-
   "FILE_TYPE.BLOCK_DRAWING": "Block Drawing",
   "FILE_TYPE.LAYOUT": "Layout",
   "FILE_TYPE.SS_LAYOUT": "SS Layout",
@@ -59,7 +56,6 @@
   "FILE_TYPE.VIDEO": "Video",
   "FILE_TYPE.PDF": "PDF",
   "FILE_TYPE.WORD": "Word",
-
   "COMMON.BACK": "Back",
   "COMMON.CANCEL": "Cancel",
   "COMMON.UPLOAD": "Upload",
@@ -91,7 +87,6 @@
   "COMMON.FILE_DELETE_FAILED": "Failed to delete file",
   "COMMON.DELETE_FILE_TITLE": "Delete File",
   "COMMON.DELETE_FILE_CONFIRMATION": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
-
   "JOB.DETAILS": "Job Details",
   "JOB.NAME": "Job Name",
   "JOB.NUMBER": "Job Number",
@@ -111,7 +106,6 @@
   "JOB.STATUS.ACTIVE": "ACTIVE",
   "JOB.STATUS.ON_HOLD": "ON HOLD",
   "JOB.STATUS.LOADING": "LOADING",
-
   "OPERATOR.QA_UPLOAD": "Operator QA Upload",
   "OPERATOR.STAGE_SELECT": "Select Operator Stage",
   "OPERATOR.TASK_DETAILS_TITLE": "Operator Task Details",
@@ -139,16 +133,13 @@
   "OPERATOR.SUBMIT_WORK_SUCCESS": "Work submitted successfully!",
   "OPERATOR.SUBMIT_WORK_FAILED": "Failed to submit work",
   "OPERATOR.COMPLETE": "complete",
-
   "QA.DOCUMENTATION": "QA Documentation",
   "QA.DOCUMENTATION_DESCRIPTION": "Uploaded photos and files",
   "QA.UPLOAD_FILES": "Upload Files",
   "QA.NO_FILES": "No QA files uploaded yet.",
   "QA.SHOP_UPLOADS": "Shop Uploads",
-
   "TIMER.CONTROLS": "Timer Controls",
   "TIMER.CONTROLS_DESCRIPTION": "Start, pause, or resume your work session",
-
   "CALENDAR.VIEW.DAY": "Day",
   "CALENDAR.VIEW.WEEK": "Week",
   "CALENDAR.VIEW.MONTH": "Month",
@@ -159,7 +150,6 @@
   "CALENDAR.DAYS.FRI": "FRI",
   "CALENDAR.DAYS.SAT": "SAT",
   "CALENDAR.DAYS.SUN": "SUN",
-
   "LABEL.ACCOUNT_NAME": "Account Name",
   "LABEL.JOB_NAME": "Job Name",
   "LABEL.NO_OF_PIECES": "No. Of Pieces",
@@ -171,17 +161,14 @@
   "LABEL.PERCENT_COMPLETE": "% Complete",
   "LABEL.EST_FAB_COMP_DATE": "Est. FAB Comp Date",
   "LABEL.EMPLOYEE": "Employee",
-
   "DRAFTING.SUBMISSION": "Drafting Submission",
   "DRAFTING.FILES": "Drafting Files",
   "DRAFTING.REVISION": "Drafting Revision",
-
   "VALIDATION.REQUIRED": "This field is required",
   "VALIDATION.INVALID_FILE": "Invalid file",
   "VALIDATION.FILE_TOO_LARGE": "File is too large",
   "VALIDATION.STAGE_REQUIRED": "Please select a stage before uploading",
   "VALIDATION.FILE_TYPE_REQUIRED": "Please select a file type before uploading",
-
   "FILES.UPLOADED": "Uploaded Files",
   "FILES.ADD": "Add Files",
   "FILES.VIEW": "View File",
@@ -190,35 +177,29 @@
   "FILES.START_TIMER": "Start the timer to enable file uploads",
   "FILES.WILL_APPEAR": "Files will appear here once uploaded",
   "FILES.SESSION_PAUSED": "Session is paused. Please resume to enable file uploads",
-
   "SLABSMITH.TITLE": "Slab Smith",
   "SLABSMITH.FILES": "Slab Smith Files",
   "SLABSMITH.SUBMIT_WORK": "Submit SlabSmith Work",
   "SLABSMITH.UPLOAD_FILES": "Upload SlabSmith Files",
-
   "FINAL_PROGRAMMING.TITLE": "Final Programming",
   "FINAL_PROGRAMMING.FILES": "Final Programming Files",
   "FINAL_PROGRAMMING.SUBMIT_WORK": "Submit Final Programming Work",
   "FINAL_PROGRAMMING.UPLOAD_FILES": "Upload Final Programming Files",
   "FINAL_PROGRAMMING.CUT_LIST": "Cut List",
-
   "REVISION.TITLE": "Revision",
   "REVISION.FILES": "Revision Files",
   "REVISION.SUBMIT": "Submit Revision",
   "REVISION.UPLOAD_FILES": "Upload Revision Files",
   "REVISION.TYPE": "Revision Type",
   "REVISION.REASON": "Revision Reason",
-
   "DRAFTING.TITLE": "Drafting",
   "DRAFTING.SUBMIT_WORK": "Submit Drafting Work",
   "DRAFTING.UPLOAD_FILES": "Upload Drafting Files",
   "DRAFTING.PRE_DRAFT_REVIEW": "Pre-Draft Review",
-
   "BACK_TO_SALES.TITLE": "Back to Sales",
   "BACK_TO_SALES.FILES": "Back to Sales Files",
   "BACK_TO_SALES.SUBMIT_WORK": "Submit Work",
   "BACK_TO_SALES.APPROVE_SEND": "Approve and Send to Slab Smith",
-
   "TIMER.START": "Start",
   "TIMER.PAUSE": "Pause",
   "TIMER.RESUME": "Resume",
@@ -243,17 +224,14 @@
   "TIMER.READY_TO_START": "Ready to Start",
   "TIMER.DAYS": "days",
   "TIMER.DAY": "day",
-
   "SUBMISSION.TITLE": "Submit Work",
   "SUBMISSION.DESCRIPTION": "Submission Description",
   "SUBMISSION.NOTES": "Additional Notes",
   "SUBMISSION.CONFIRM": "Confirm Submission?",
-
   "NAVIGATION.JOBS": "Jobs",
   "NAVIGATION.DASHBOARD": "Dashboard",
   "NAVIGATION.SETTINGS": "Settings",
   "NAVIGATION.PROFILE": "Profile",
-
   "DASHBOARD.TITLE": "Dashboard",
   "DASHBOARD.FINANCE": "Finance",
   "DASHBOARD.REVENUE_INSTALLED": "Revenue Installed",
@@ -270,7 +248,6 @@
   "DASHBOARD.TEAMS": "Teams",
   "DASHBOARD.TEAM_MEETING": "Team Meeting",
   "DASHBOARD.ENTRIES": "Entries",
-
   "CALENDAR.TITLE": "Calendar",
   "CALENDAR.EVENTS": "Events",
   "CALENDAR.ADD_EVENT": "Add Event",
@@ -291,7 +268,6 @@
   "CALENDAR.WEEK": "Week",
   "CALENDAR.DAY": "Day",
   "CALENDAR.LIST": "List",
-
   "OPERATOR.DASHBOARD": "Operator Dashboard",
   "OPERATOR.TASKS": "Tasks",
   "OPERATOR.MY_TASKS": "My Tasks",
@@ -321,7 +297,6 @@
   "OPERATOR.SUBMISSION_NOTES": "Submission Notes",
   "OPERATOR.WORKSTATION_SWITCH": "Switch Workstation",
   "OPERATOR.WORKSTATION_SELECT": "Select Workstation",
-
   "INSTALLER.TIMER.START_SUCCESS": "Timer started successfully",
   "INSTALLER.TIMER.START_FAILED": "Failed to start timer",
   "INSTALLER.TIMER.RESUME_SUCCESS": "Timer resumed successfully",
@@ -329,7 +304,6 @@
   "INSTALLER.TIMER.MISSING_INFO_TITLE": "Missing Information",
   "INSTALLER.TIMER.MISSING_INFO_DESCRIPTION": "Job ID or installer information is missing. Please go back and try again.",
   "INSTALLER.TIMER.DESCRIPTION": "Track your installation work time",
-
   "INSTALLER.PAUSE.TITLE": "Pause Installation Timer",
   "INSTALLER.PAUSE.JOB_NO": "Job No.",
   "INSTALLER.PAUSE.SQFT_INSTALLED": "Square Feet Installed",
@@ -342,7 +316,6 @@
   "INSTALLER.PAUSE.CONFIRM": "Pause Timer",
   "INSTALLER.PAUSE.SUCCESS": "Timer paused successfully",
   "INSTALLER.PAUSE.FAILED": "Failed to pause timer",
-
   "INSTALLER.STOP.TITLE": "Stop Installation Timer",
   "INSTALLER.STOP.JOB_NO": "Job No.",
   "INSTALLER.STOP.SQFT_INSTALLED": "Square Feet Installed",
@@ -355,7 +328,6 @@
   "INSTALLER.STOP.FAILED": "Failed to stop timer",
   "INSTALLER.STOP.SUBMITTING": "Submitting...",
   "INSTALLER.STOP.CONFIRM": "Stop Timer",
-
   "INSTALLER.TIMER_HISTORY.LOADING": "Loading timer history...",
   "INSTALLER.TIMER_HISTORY.FAILED_LOAD": "Failed to load timer history",
   "INSTALLER.TIMER_HISTORY.TITLE": "Timer History",
@@ -364,12 +336,10 @@
   "INSTALLER.TIMER_HISTORY.PAUSED": "Paused",
   "INSTALLER.TIMER_HISTORY.RESUMED": "Resumed",
   "INSTALLER.TIMER_HISTORY.STOPPED": "Stopped",
-
   "WORK_PERCENTAGE.COMPLETE": "Complete",
   "WORK_PERCENTAGE.INCOMPLETE": "Incomplete",
   "WORK_PERCENTAGE.PERCENTAGE": "Percentage",
   "WORK_PERCENTAGE.UPDATE": "Update Percentage",
-
   "TASK.STATUS": "Status",
   "TASK.PRIORITY": "Priority",
   "TASK.ASSIGNEE": "Assignee",
@@ -380,7 +350,6 @@
   "TASK.COMMENTS": "Comments",
   "TASK.INFORMATION": "Task Information",
   "TASK.INFORMATION_DESCRIPTION": "Details for this operator task",
-
   "COMMON.FILTER": "Filter",
   "COMMON.SORT": "Sort",
   "COMMON.GROUP_BY": "Group By",
@@ -407,7 +376,6 @@
   "COMMON.SAVE_CHANGES": "Save Changes",
   "COMMON.DISCARD_CHANGES": "Discard Changes",
   "COMMON.UNSAVED_CHANGES": "You have unsaved changes",
-
   "FORM.SELECT_PLACEHOLDER": "Select...",
   "FORM.ENTER_VALUE": "Enter value",
   "FORM.TYPE_TO_SEARCH": "Type to search...",
@@ -415,7 +383,6 @@
   "FORM.NO_RESULTS": "No results found",
   "FORM.REQUIRED": "Required",
   "FORM.OPTIONAL": "Optional",
-
   "LABEL.NAME": "Name",
   "LABEL.EMAIL": "Email",
   "LABEL.PHONE": "Phone",
@@ -617,7 +584,6 @@
   "LABEL.TUTORIAL": "Tutorial",
   "LABEL.DOCUMENTATION": "Documentation",
   "LABEL.MANUAL": "Manual",
-
   "SHOP_REVISION.HISTORY": "Shop Revision History",
   "SHOP_REVISION.NO_REVISIONS": "No shop revisions exist for this FAB.",
   "SHOP_REVISION.SELECT_TO_VIEW": "Select a revision from the history list to view details.",
@@ -649,12 +615,21 @@
   "SHOP_REVISION.PENDING_WARNING_DESC": "Timer actions and creating a new revision are disabled until the current pending revision is marked as complete.",
   "SHOP_REVISION.TIME_IN_REVISION": "Time in Shop Revision:",
   "SHOP_REVISION.PAUSE_NOTE": "Paused automatically before creating shop revision",
-
   "FAB.FILES": "FAB Files",
   "FAB.FILES_DESCRIPTION": "Drafting, SlabSmith, Sales CT, QA, and shop revision files",
   "FAB.NO_FILES": "No files have been uploaded for this FAB yet.",
-
   "FILE.DELETE.NO_ID": "Could not determine file ID",
   "FILE.DELETE.SUCCESS": "File deleted successfully",
-  "FILE.DELETE.FAILED": "Failed to delete file"
+  "FILE.DELETE.FAILED": "Failed to delete file",
+  "CALENDAR.BREAK": "Break",
+  "CALENDAR.LOADING": "Loading calendar events…",
+  "TOOLTIP.FAB_ID": "FAB ID",
+  "TOOLTIP.WORKSTATION": "Workstation",
+  "TOOLTIP.EST_HOURS": "Est. Hours",
+  "TOOLTIP.PERCENT_COMPLETE": "% Complete",
+  "TOOLTIP.JOB": "Job",
+  "TOOLTIP.JOB_NO": "Job No",
+  "TOOLTIP.ACCOUNT_NAME": "Account Name",
+  "TOOLTIP.PLAN": "Plan",
+  "TOOLTIP.NOTES": "Notes"
 }

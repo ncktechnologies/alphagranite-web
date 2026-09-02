@@ -277,7 +277,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             cell: ({ row }) => <span className="text-xs">{row.original.total_sq_ft.toFixed(1)}</span>,
             enableSorting: true,
             size: 100,
-            meta: { format: (value: number) => value?.toFixed(1) ?? '0' },
+            meta: { format: (value: number) => value?.toFixed(2) ?? '0' },
         },
            // NEW COLUMN: REVENUE
         {
