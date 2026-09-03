@@ -2510,7 +2510,7 @@ export const jobApi = createApi({
                         install_date,
                         completion_date,
                         installer_id,
-                        is_completed: true
+                        is_completed: false
                     }
                 }),
                 invalidatesTags: ["Fab"],

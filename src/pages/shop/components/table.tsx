@@ -753,7 +753,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
                     <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3 border-b">
                         <div className="flex flex-wrap items-center gap-3">
                             <div className="relative flex items-center">
-                                <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number' | 'job_name')}>
+                                <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number' | 'job_name' | 'account_name')}>
                                     <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
                                         <SelectValue placeholder="Search by" />
                                     </SelectTrigger>
@@ -761,6 +761,8 @@ const ShopTable: React.FC<ShopTableProps> = ({
                                         <SelectItem value="fab_id">Fab ID</SelectItem>
                                         <SelectItem value="job_number">Job Number</SelectItem>
                                         <SelectItem value="job_name">Job Name</SelectItem>
+                                        <SelectItem value="account_name">Account Name</SelectItem>
+
                                     </SelectContent>
                                 </Select>
                                 <div className="relative">

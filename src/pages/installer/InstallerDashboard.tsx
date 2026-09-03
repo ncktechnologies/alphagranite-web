@@ -199,6 +199,7 @@ export function InstallerScheduleCards() {
                             <SelectItem value="fab_id">Fab ID</SelectItem>
                             <SelectItem value="job_number">Job Number</SelectItem>
                             <SelectItem value="job_name">Job Name</SelectItem>
+                            <SelectItem value="account_name">Account Nmae</SelectItem>
                         </SelectContent>
                     </Select>
                     <div className="relative">

@@ -12,6 +12,8 @@ import { InstallChecklistForm } from './reviewCheckList';
 import { BackButton } from '@/components/common/BackButton';
 import { stageConfig } from '@/utils/note-utils';
 import { Can } from '@/components/permission';
+import { FabFilesGallery } from './FabFiles';
+import { Documents } from '@/pages/shop/components/files';
 
 // Helper function to get all fab notes (unfiltered)
 const getAllFabNotes = (fabNotes: any[]) => {
@@ -247,7 +249,13 @@ export function InstallSchedulingDetailsPage() {
                             </div>
                         </CardContent>
                     </Card>
-
+                    <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
+                        <Documents
+                            fab={fab}
+                            // onFileClick={handleFileClick}
+                            showDeleteButton={false}
+                        />
+                    </CardContent>
                     {/* Notes Card (optional – can be removed if GraySidebar already contains FAB Notes) */}
                     {fab.fab_notes && fab.fab_notes.length > 0 && (
                         <Card>

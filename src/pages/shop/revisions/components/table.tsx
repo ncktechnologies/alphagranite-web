@@ -73,7 +73,7 @@ export const ShopRevisionTable = ({ canViewDetails = false, canExport = false }:
   const navigate = useNavigate();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
+  const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name' | 'account_name'>('fab_id');
 
   const { data, isLoading } = useGetShopRevisionFabsQuery();
 
@@ -221,7 +221,7 @@ export const ShopRevisionTable = ({ canViewDetails = false, canExport = false }:
           <div className="flex flex-wrap items-center gap-3">
             <Select
               value={searchType}
-              onValueChange={(value: 'fab_id' | 'job_number' | 'job_name') => setSearchType(value)}
+              onValueChange={(value: 'fab_id' | 'job_number' | 'job_name' | 'account_name') => setSearchType(value)}
             >
               <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed] focus-visible:ring-0">
                 <SelectValue placeholder="Search by" />
@@ -230,6 +230,7 @@ export const ShopRevisionTable = ({ canViewDetails = false, canExport = false }:
                 <SelectItem value="fab_id">FAB ID</SelectItem>
                 <SelectItem value="job_number">Job Number</SelectItem>
                 <SelectItem value="job_name">Job Name</SelectItem>
+                <SelectItem value="account_name">Account Name</SelectItem>
               </SelectContent>
             </Select>
 

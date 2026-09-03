@@ -176,8 +176,8 @@ interface CutListTableWithCalculationsProps {
     setPagination?: (pagination: { pageIndex: number; pageSize: number }) => void;
     searchQuery?: string;
     setSearchQuery?: (query: string) => void;
-    searchType?: 'fab_id' | 'job_number' | 'job_name';
-    setSearchType?: (type: 'fab_id' | 'job_number' | 'job_name') => void;
+    searchType?: 'fab_id' | 'job_number' | 'job_name' | 'account_name';
+    setSearchType?: (type: 'fab_id' | 'job_number' | 'job_name' | 'account_name') => void;
     dateFilter?: string;
     setDateFilter?: (filter: string) => void;
     fabTypeFilter?: string;
@@ -644,6 +644,7 @@ export const CutListTableWithCalculations = ({
                                             <SelectItem value="fab_id">Fab ID</SelectItem>
                                             <SelectItem value="job_number">Job Number</SelectItem>
                                             <SelectItem value="job_name">Job Name</SelectItem>
+                                            <SelectItem value="account_name">Account Name</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <div className="relative">

@@ -170,7 +170,7 @@ export const JobTable = ({
     });
     const [sorting, setSorting] = useState<SortingState>([]);
     const [localSearchQuery, setLocalSearchQuery] = useState('');
-    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name' | 'account_name'>('fab_id');
     const [localDateFilter, setLocalDateFilter] = useState<string>('all');
     const [localFabTypeFilter, setLocalFabTypeFilter] = useState<string>('all');
     const [localSalesPersonFilter, setLocalSalesPersonFilter] = useState<string>('all');
@@ -255,6 +255,7 @@ export const JobTable = ({
                 if (effectiveSearchType === 'fab_id') return job.fab_id?.toLowerCase().includes(q);
                 if (effectiveSearchType === 'job_number') return job.job_no?.toLowerCase().includes(q);
                 if (effectiveSearchType === 'job_name') return job.job_name?.toLowerCase().includes(q);
+                if(effectiveSearchType === 'account_name') return job.account_name?.toLowerCase().includes(q);
                 return false;
             });
         }
@@ -1394,9 +1395,29 @@ export const JobTable = ({
     },
     // ─── Install Confirmed ──────────────────────────────────────────────────
     {
+        id: 'install_completed',
+        accessorKey: 'install_completed',
+        header: ({ column }) => <DataGridColumnHeader title="INSTALL Completed" column={column} />,
+        cell: ({ row }) => {
+            const confirmed = (row.original as any).install_completed;
+            if (confirmed === true || confirmed === 'Yes') return <span className="text-xs font-medium text-green-600">Yes</span>;
+            if (confirmed === false || confirmed === 'No') return <span className="text-xs font-medium text-red-500">No</span>;
+            return <span className="text-xs text-gray-400">-</span>;
+        },
+        size: 140,
+        enableSorting: true,
+        meta: {
+            format: (value: any) => {
+                if (value === true || value === 'Yes') return 'Yes';
+                if (value === false || value === 'No') return 'No';
+                return '-';
+            },
+        },
+    },
+      {
         id: 'install_confirmed',
         accessorKey: 'install_confirmed',
-        header: ({ column }) => <DataGridColumnHeader title="INSTALL Completed" column={column} />,
+        header: ({ column }) => <DataGridColumnHeader title="INSTALL CONFIRMED" column={column} />,
         cell: ({ row }) => {
             const confirmed = (row.original as any).install_confirmed;
             if (confirmed === true || confirmed === 'Yes') return <span className="text-xs font-medium text-green-600">Yes</span>;
@@ -1696,7 +1717,7 @@ export const JobTable = ({
                             <div className="relative flex items-center">
                                 <Select
                                     value={effectiveSearchType}
-                                    onValueChange={v => setEffectiveSearchType(v as 'fab_id' | 'job_number' | 'job_name')}
+                                    onValueChange={v => setEffectiveSearchType(v as 'fab_id' | 'job_number' | 'job_name' | 'account_name')}
                                 >
                                     <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
                                         <SelectValue placeholder="Search by" />
@@ -1705,6 +1726,7 @@ export const JobTable = ({
                                         <SelectItem value="fab_id">Fab ID</SelectItem>
                                         <SelectItem value="job_number">Job Number</SelectItem>
                                         <SelectItem value="job_name">Job Name</SelectItem>
+                                        <SelectItem value="account_name">Account Name</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <div className="relative">

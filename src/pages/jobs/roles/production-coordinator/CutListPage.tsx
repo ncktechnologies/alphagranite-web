@@ -19,7 +19,7 @@ const CutListPage = () => {
     const canExport = isSuperAdmin || permissions.can_read;         // Export CSV button (optional)
 
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name' | 'account_name'>('fab_id');
     const [dateFilter, setDateFilter] = useState('all');
     const [fabTypeFilter, setFabTypeFilter] = useState('all');
     const [salesPersonFilter, setSalesPersonFilter] = useState('all');
@@ -138,7 +138,7 @@ const CutListPage = () => {
                 </Toolbar>
             </Container>
 
-            <div className="flex flex-wrap gap-x-3 items-center">
+            {/* <div className="flex flex-wrap gap-x-3 items-center">
                 <div className="pl-5 text-[#4B5675] text-[14px]">Total SQ. FT: {stageTotals?.total_sqft || 0}</div>
                 <div className="pl-5 text-[#4B5675] text-[14px]">WJ: LIN FT: {stageTotals?.wj_linft || 0}</div>
                 <div className="pl-5 text-[#4B5675] text-[14px]">Edging: LIN FT: {stageTotals?.edging_linft || 0}</div>
@@ -147,7 +147,7 @@ const CutListPage = () => {
                 <div className="pl-5 text-[#4B5675] text-[14px]">No. of Pieces: {stageTotals?.no_of_pieces || 0}</div>
                 <div className="pl-5 text-[#4B5675] text-[14px]">GP: {stageTotals?.gp || 0}</div>
                 <div className="pl-5 text-[#4B5675] text-[14px]">Revenue: ${totalRevenue.toLocaleString()}</div>
-            </div>
+            </div> */}
 
             <Container className="mt-6">
                 <CutListTableWithCalculations
@@ -173,7 +173,6 @@ const CutListPage = () => {
                     onAddNote={handleNoteSubmit}
                     onToggleSuccess={refetch}
                     totalCount={fabsData?.total}
-                    // 👇 Pass permission props
                     canAddNote={canAddNote}
                     canToggleOnHold={canToggleOnHold}
                     canExport={canExport}

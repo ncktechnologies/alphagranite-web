@@ -33,6 +33,7 @@ import { DateRange } from 'react-day-picker';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useGetFabsQuery } from '@/store/api/job';
+import { _includes } from 'zod/v4/core';
 
 // ─────────────────────────────────────────────────────────
 // Types (unchanged from original)
@@ -113,7 +114,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
     const [sorting, setSorting] = useState<SortingState>([]);
     const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name' | 'account_name'>('fab_id');
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>();
@@ -187,6 +188,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
                 if (searchType === 'fab_id') return r.fab_id.toLowerCase().includes(q);
                 if (searchType === 'job_number') return r.job_no.toLowerCase().includes(q);
                 if (searchType === 'job_name') return r.job_name.toLowerCase().includes(q);
+                if (searchType === 'account_name') return r.acct_name.toLowerCase().includes(q)
                 return false;
             });
         }
@@ -485,7 +487,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
                                 <Select
                                     value={searchType}
                                     onValueChange={v => {
-                                        setSearchType(v as 'fab_id' | 'job_number' | 'job_name');
+                                        setSearchType(v as 'fab_id' | 'job_number' | 'job_name' | 'account_name');
                                         setPagination(p => ({ ...p, pageIndex: 0 }));
                                     }}
                                 >
@@ -496,6 +498,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
                                         <SelectItem value="fab_id">Fab ID</SelectItem>
                                         <SelectItem value="job_number">Job Number</SelectItem>
                                         <SelectItem value="job_name">Job Name</SelectItem>
+                                        <SelectItem value="account_name">Account Name</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <div className="relative">

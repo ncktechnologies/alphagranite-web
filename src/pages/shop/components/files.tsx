@@ -20,6 +20,7 @@ import {
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import Popup from '@/components/ui/popup'; // 👈 new import
+import { FileViewer } from '@/pages/jobs/roles/drafters/components';
 
 // Helper function to convert file_design value to label
 const getFileDesignLabel = (value: string): string => {
@@ -58,6 +59,7 @@ interface UploadBoxProps {
   sctData?: any;
   cncData?: any;
   showDeleteButton?: boolean;
+  fab?: any;
 }
 
 // ─── Resolve stage label + className (mirrors FileGallery) ───────────────────
@@ -97,6 +99,7 @@ export function Documents({
   sctData,
   cncData,
   showDeleteButton = true,
+  fab,
 }: UploadBoxProps) {
   const { t } = useTranslation();
 
@@ -107,6 +110,46 @@ export function Documents({
   // useMemo to compute files
   const files = useMemo(() => {
     const allFiles: FileMetadata[] = [];
+
+    if (fab) {
+      // Helper to convert any file array into FileMetadata[]
+      const processFiles = (fileArray: any[], source: string) => {
+        if (!fileArray) return [];
+        return fileArray.map((file: any) => ({
+          id: String(file.id),
+          name: file.name || file.filename || `File_${file.id}`,
+          size: parseInt(file.file_size) || file.size || 0,
+          type: file.file_type || file.mime_type || 'application/octet-stream',
+          url: file.file_url || file.url || '/images/app/upload-file.svg',
+          stage: getFileStage(file.name || file.filename, { currentStage: source }),
+          stage_name: file.stage_name ?? file.stage ?? source,
+          file_design: file.file_design ?? undefined,
+          uploaded_by_name: file.uploaded_by_name ?? file.uploader_name ?? undefined,
+          uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? undefined,
+          uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
+        }));
+      };
+
+      // 1. Drafting files
+      if (fab.draft_data?.files) allFiles.push(...processFiles(fab.draft_data.files, 'drafting'));
+      // 2. SlabSmith
+      if (fab.slabsmith_data?.files) allFiles.push(...processFiles(fab.slabsmith_data.files, 'slab_smith'));
+      // 3. SCT
+      if (fab.sales_ct_data?.files) allFiles.push(...processFiles(fab.sales_ct_data.files, 'sct'));
+      // 4. CNC
+      if (fab.cnc_data?.files) allFiles.push(...processFiles(fab.cnc_data.files, 'cnc'));
+      // 5. Top-level files
+      if (fab.files) allFiles.push(...processFiles(fab.files, 'general'));
+      // 6. Operator files
+      if (fab.operator_files) allFiles.push(...processFiles(fab.operator_files, 'operator'));
+      // 7. Shop revision files (nested)
+      if (fab.shop_revisions) {
+        fab.shop_revisions.forEach((rev: any) => {
+          if (rev.files) allFiles.push(...processFiles(rev.files, 'shop_revision'));
+        });
+      }
+      return allFiles;
+    }
 
     // Drafting files
     if (draftingData) {
@@ -251,10 +294,19 @@ export function Documents({
     if (type.includes('zip') || type.includes('rar')) return <FileArchiveIcon className="size-4" />;
     return <FileTextIcon className="size-4" />;
   }, []);
+  const [activeFile, setActiveFile] = useState<FileMetadata | null>(null);
 
+  // Replace the existing handleViewFile (or add it)
   const handleViewFile = useCallback((file: FileMetadata) => {
-    if (onFileClick) onFileClick(file);
-  }, [onFileClick]);
+    setActiveFile(file);
+  }, []);
+  const handleCloseViewer = useCallback(() => {
+    setActiveFile(null);
+  }, [])
+
+  // const handleViewFile = useCallback((file: FileMetadata) => {
+  //   if (onFileClick) onFileClick(file);
+  // }, [onFileClick]);
 
   const [deleteFile, { isLoading: isDeleting }] = useDeleteFileMutation();
 
@@ -406,6 +458,12 @@ export function Documents({
           </Button>
         </div>
       </Popup>
+      {activeFile && (
+        <div className="fixed inset-0 z-50 bg-white overflow-auto">
+          <FileViewer file={activeFile} onClose={handleCloseViewer} />
+        </div>
+      )}
     </div>
+
   );
 }

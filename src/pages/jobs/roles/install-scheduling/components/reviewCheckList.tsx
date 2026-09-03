@@ -70,6 +70,7 @@ const parseDateString = (dateString: string | undefined): Date | undefined => {
 
 const installChecklistSchema = z.object({
   install_completed: z.boolean(),
+  install_confirm: z.boolean().optional(),
   fab_notes: z.string().optional(),
   installer_id: z.string().optional(),
   scheduled_install_date: z.string().optional(),
@@ -233,6 +234,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
     resolver: zodResolver(installChecklistSchema),
     defaultValues: {
       install_completed: false,
+      install_confirm: false,
       fab_notes: "",
       installer_id: "",
       scheduled_install_date: "",
@@ -242,9 +244,10 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
 
   const installCompleted = form.watch("install_completed");
 
-  // Reset form whenever fabId or any of the fetched data changes
+  // Reset form – wait for installerOptions to be ready
   useEffect(() => {
     if (!fabId) return;
+    if (installerOptions.length === 0) return;
 
     const fab = fabData?.data;
     const install = installData?.data ?? installData;
@@ -252,6 +255,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
 
     form.reset({
       install_completed: completion?.is_completed === true,
+      install_confirm: completion?.install_confirm === true,
       fab_notes: fab?.fab_notes || "",
       installer_id: install?.installer_id ? String(install.installer_id) : "",
       scheduled_install_date: install?.scheduled_install_date
@@ -268,7 +272,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
     if (install?.extra_crew_2_id && install.extra_crew_2_id !== 0) crewSet.add(String(install.extra_crew_2_id));
     if (install?.extra_crew_3_id && install.extra_crew_3_id !== 0) crewSet.add(String(install.extra_crew_3_id));
     setSelectedExtraCrewIds(crewSet);
-  }, [fabId, fabData, installData, completionData, form]);
+  }, [fabId, fabData, installData, completionData, installerOptions, form]);
 
   const toggleExtraCrew = useCallback((userId: string, checked: boolean) => {
     if (checked) {
@@ -297,6 +301,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
     return payload;
   }, [selectedExtraCrewIds]);
 
+  // ---------- MAIN SUBMIT LOGIC ----------
   const doSubmit = useCallback(async (values: InstallChecklistData) => {
     if (!fabId) {
       toast.error("No FAB ID provided.");
@@ -309,8 +314,9 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
     const isCompleted = values.install_completed;
     const hasEndDate = !!values.scheduled_end_date;
     const hasExtraCrew = selectedExtraCrewIds.size > 0;
+    const hasConfirm = values.install_confirm === true;
 
-    if (!hasNotes && !hasInstallDate && !hasInstaller && !isCompleted && !hasEndDate && !hasExtraCrew) {
+    if (!hasNotes && !hasInstallDate && !hasInstaller && !isCompleted && !hasEndDate && !hasExtraCrew && !hasConfirm) {
       toast.warning("No changes to save.");
       return;
     }
@@ -331,7 +337,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
 
       // 2. Install scheduling – get or create
       let installId = installData?.data?.id ?? installData?.id;
-      if (!installId && (hasInstallDate || hasInstaller || isCompleted || hasEndDate || hasExtraCrew)) {
+      if (!installId && (hasInstallDate || hasInstaller || isCompleted || hasEndDate || hasExtraCrew || hasConfirm)) {
         const createRes = await createInstallScheduling({ fab_id: fabId }).unwrap();
         installId = createRes?.data?.id ?? createRes?.id;
         if (!installId) throw new Error("Failed to create install scheduling");
@@ -339,24 +345,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
         await refetchInstall();
       }
 
-      // 3. COMPLETION – ensure we have a record with an ID
-      let completionId = completionData?.data?.id;
-      // If no completion record exists, create a stub (incomplete)
-      if (installId && !completionId) {
-        const stubPayload = {
-          fab_id: fabId,
-          is_completed: false,
-          installer_id: hasInstaller ? Number(values.installer_id) : undefined,
-          install_date: hasInstallDate ? values.scheduled_install_date : undefined,
-          completion_date: hasEndDate ? values.scheduled_end_date! : formatDate(new Date()),
-        };
-        const createCompRes = await createInstallCompletion(stubPayload).unwrap();
-        completionId = createCompRes?.data?.id ?? createCompRes?.id;
-        someSuccess = true;
-        await refetchCompletion();
-      }
-
-      // 4. Update install scheduling details
+      // 3. Update install scheduling details (if installId exists)
       if (installId && (hasInstallDate || hasInstaller || hasExtraCrew || hasEndDate || isCompleted)) {
         const schedulePayload: any = { ...getExtraCrewPayload() };
         if (hasInstaller) schedulePayload.installer_id = Number(values.installer_id);
@@ -365,32 +354,33 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
         if (isCompleted && !hasEndDate) {
           schedulePayload.scheduled_end_date = formatDate(new Date());
         }
-        schedulePayload.is_completed = isCompleted || false;
+        schedulePayload.is_completed =  false;
         await updateInstallScheduling({ install_scheduling_id: installId, data: schedulePayload }).unwrap();
         someSuccess = true;
       }
 
-      // 5. COMPLETION – if marked completed, update OR create
-      if (isCompleted) {
-        const completionPayload = {
+      // 4. Handle Install Completion – ONLY if install_confirm is checked
+      if (hasConfirm) {
+        const completionPayload: any = {
           fab_id: fabId,
           installer_id: hasInstaller ? Number(values.installer_id) : undefined,
-          completion_date: hasEndDate ? values.scheduled_end_date! : formatDate(new Date()),
           install_date: hasInstallDate ? values.scheduled_install_date : undefined,
-          is_completed: true,
+          completion_date: hasEndDate ? values.scheduled_end_date : null,
+          is_completed: isCompleted || false,
+          install_confirm: true, // always true because we're in hasConfirm block
         };
 
+        let completionId = completionData?.data?.id;
         if (completionId) {
           await updateInstallCompletion({ fab_id: completionId, data: completionPayload }).unwrap();
-          someSuccess = true;
         } else {
           const createCompRes = await createInstallCompletion(completionPayload).unwrap();
           completionId = createCompRes?.data?.id ?? createCompRes?.id;
-          someSuccess = true;
         }
+        someSuccess = true;
       }
 
-      // 6. Stage transition – only if stage is not already install_completion
+      // 5. Stage transition – only if stage is not already install_completion
       if (hasInstallDate && fabData?.data?.current_stage !== "install_completion") {
         await updateFabStage({ fab_id: fabId, data: { current_stage: "install_completion" } }).unwrap();
         someSuccess = true;
@@ -436,15 +426,30 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
     if (!pendingValues) return "";
     const endDate = pendingValues.scheduled_end_date;
     if (endDate) return new Date(endDate).toLocaleDateString();
-    return `${new Date().toLocaleDateString()} (set automatically to today's date)`;
+    return "No end date provided";
   }, [pendingValues]);
 
+  // ---------- RENDER ----------
   return (
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* <Can action="update" on="Pre-draft Review"> */}
-            {showCompletionFields && (
+          {showCompletionFields && (
+            <>
+              <FormField
+                control={form.control}
+                name="install_confirm"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3">
+                    <FormControl>
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <FormLabel className="text-base font-semibold text-text">
+                      Install confirmation
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="install_completed"
@@ -457,54 +462,73 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
                   </FormItem>
                 )}
               />
+            </>
+          )}
+
+          <FormField
+            control={form.control}
+            name="installer_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Installer</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="h-[34px]">
+                      <SelectValue placeholder={isLoading ? "Loading installers..." : "Select an installer"} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
+                    {!isLoading &&
+                      installerOptions.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.name}
+                        </SelectItem>
+                      ))}
+                    {!isLoading && installerOptions.length === 0 && (
+                      <div className="px-2 py-1 text-sm text-muted-foreground">No installers found</div>
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
             )}
+          />
 
-            <FormField
-              control={form.control}
-              name="installer_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Installer</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="h-[34px]">
-                        <SelectValue placeholder={isLoading ? "Loading installers..." : "Select an installer"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="max-h-[200px] overflow-y-auto">
-                      {!isLoading &&
-                        installerOptions.map((option) => (
-                          <SelectItem key={option.id} value={option.id}>
-                            {option.name}
-                          </SelectItem>
-                        ))}
-                      {!isLoading && installerOptions.length === 0 && (
-                        <div className="px-2 py-1 text-sm text-muted-foreground">No installers found</div>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <FormItem>
+            <FormLabel>Extra Crew (max 3)</FormLabel>
+            <ExtraCrewList
+              options={installerOptions}
+              selectedIds={selectedExtraCrewIds}
+              onToggle={toggleExtraCrew}
+              maxSelections={3}
             />
+            <FormMessage />
+          </FormItem>
 
-            <FormItem>
-              <FormLabel>Extra Crew (max 3)</FormLabel>
-              <ExtraCrewList
-                options={installerOptions}
-                selectedIds={selectedExtraCrewIds}
-                onToggle={toggleExtraCrew}
-                maxSelections={3}
-              />
-              <FormMessage />
-            </FormItem>
+          <FormField
+            control={form.control}
+            name="scheduled_install_date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Scheduled install date</FormLabel>
+                <DateTimePicker
+                  mode="date"
+                  value={parseDateString(field.value)}
+                  onChange={(date) => field.onChange(formatDate(date))}
+                  triggerClassName="h-[34px]"
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
+          {showCompletionFields && installCompleted && (
             <FormField
               control={form.control}
-              name="scheduled_install_date"
+              name="scheduled_end_date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Scheduled install date</FormLabel>
+                  <FormLabel>Actual end date</FormLabel>
                   <DateTimePicker
                     mode="date"
                     value={parseDateString(field.value)}
@@ -515,56 +539,35 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
                 </FormItem>
               )}
             />
+          )}
 
-            {showCompletionFields && installCompleted && (
-              <FormField
-                control={form.control}
-                name="scheduled_end_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Actual end date</FormLabel>
-                    <DateTimePicker
-                      mode="date"
-                      value={parseDateString(field.value)}
-                      onChange={(date) => field.onChange(formatDate(date))}
-                      triggerClassName="h-[34px]"
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="fab_notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notes</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Type here..." className="min-h-[100px] resize-none" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-
-            <FormField
-              control={form.control}
-              name="fab_notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Type here..." className="min-h-[100px] resize-none" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          {/* </Can> */}
+          />
 
           <Separator className="my-4" />
 
           <div className="space-y-3 mt-6">
-            {/* <Can action="update" on="Pre-draft Review"> */}
-              <Button className="w-full py-6 text-base" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <LoaderCircle className="w-4 h-4 animate-spin" />
-                    Processing...
-                  </span>
-                ) : (
-                  "Save Changes"
-                )}
-              </Button>
-            {/* </Can> */}
+            <Button className="w-full py-6 text-base" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <LoaderCircle className="w-4 h-4 animate-spin" />
+                  Processing...
+                </span>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
             <Button variant="outline" type="button" className="w-full text-secondary font-bold py-6 text-base" onClick={() => navigate(-1)}>
               Cancel
             </Button>

@@ -321,7 +321,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     });
 
     const [sorting, setSorting] = useState<SortingState>([]);
-    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name' | 'account_name'>('fab_id');
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
@@ -1133,7 +1133,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     {/* ---- Filters ---- */}
                     <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3 border-b border-[#e2e4ed] px-5">
                         <div className="flex flex-wrap items-center gap-3">
-                            <Select value={searchType} onValueChange={(value: 'fab_id' | 'job_number' | 'job_name') => setSearchType(value)}>
+                            <Select value={searchType} onValueChange={(value: 'fab_id' | 'job_number' | 'job_name' | 'account_name') => setSearchType(value)}>
                                 <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed] focus-visible:ring-0">
                                     <SelectValue placeholder="Search by" />
                                 </SelectTrigger>
@@ -1141,6 +1141,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                     <SelectItem value="fab_id">FAB ID</SelectItem>
                                     <SelectItem value="job_number">Job Number</SelectItem>
                                     <SelectItem value="job_name">Job Name</SelectItem>
+                                    <SelectItem value="account_name">Account Name</SelectItem>
                                 </SelectContent>
                             </Select>
 

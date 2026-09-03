@@ -6,7 +6,7 @@ export interface TableState {
   pagination: PaginationState;
   sorting: SortingState;
   searchQuery: string;
-  searchType?: 'fab_id' | 'job_number' | 'job_name';
+  searchType?: 'fab_id' | 'job_number' | 'job_name' | 'account_name';
   dateFilter: string;
   fabTypeFilter: string;
   scheduleFilter?: string;

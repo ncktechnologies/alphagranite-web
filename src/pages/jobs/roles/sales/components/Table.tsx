@@ -140,7 +140,7 @@ export const JobSalesTable = ({
     });
     const [sorting, setSorting] = useState<SortingState>([]);
     const [localSearchQuery, setLocalSearchQuery] = useState('');
-    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name' | 'account_name'>('fab_id');
     const [localDateFilter, setLocalDateFilter] = useState<string>('all');
     const [localFabTypeFilter, setLocalFabTypeFilter] = useState<string>('all');
     const [localSalesPersonFilter, setLocalSalesPersonFilter] = useState<string>('all');
@@ -1417,7 +1417,7 @@ export const JobSalesTable = ({
                             <div className="relative flex items-center">
                                 <Select
                                     value={effectiveSearchType}
-                                    onValueChange={v => setEffectiveSearchType(v as 'fab_id' | 'job_number' | 'job_name')}
+                                    onValueChange={v => setEffectiveSearchType(v as 'fab_id' | 'job_number' | 'job_name' | 'account_name')}
                                 >
                                     <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
                                         <SelectValue placeholder="Search by" />
@@ -1426,6 +1426,7 @@ export const JobSalesTable = ({
                                         <SelectItem value="fab_id">Fab ID</SelectItem>
                                         <SelectItem value="job_number">Job Number</SelectItem>
                                         <SelectItem value="job_name">Job Name</SelectItem>
+                                        <SelectItem value="account_name">Account Name</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <div className="relative">

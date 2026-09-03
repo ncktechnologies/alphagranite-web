@@ -31,7 +31,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, useGetEmployeesQuery, useGetPlanningSectionsQuery } from '@/store/api';
+import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, useGetEmployeesQuery, useGetPlanningSectionsQuery, useGetRolesQuery } from '@/store/api';
 import { formatTime } from '@/utils/date-utils';
 import CreatePlanPage from './createPlanePage';
 import {
@@ -127,7 +127,23 @@ const ShopCalendarPage: React.FC = () => {
   // ── Data fetching ──
   const { data: fabTypesData } = useGetFabTypesQuery();
   const { data: workstationsData } = useGetWorkstationsQuery();
-  const { data: employeesData } = useGetEmployeesQuery();
+
+  // ─── Fetch Roles to get "operator" role ID ──────────────────────────────
+  const { data: rolesData, isLoading: rolesLoading } = useGetRolesQuery();
+  const operatorRoleId = useMemo(() => {
+    if (!rolesData) return null;
+    const roles = rolesData?.data?.data ?? rolesData?.data ?? rolesData;
+    if (!Array.isArray(roles)) return null;
+    const role = roles.find((r: any) => (r.name || '').toLowerCase().trim() === 'operator');
+    return role?.id ?? null;
+  }, [rolesData]);
+
+  // ─── Fetch Employees filtered by operator role ──────────────────────────
+  const { data: employeesData, isLoading: employeesLoading } = useGetEmployeesQuery(
+    { role_id: operatorRoleId ?? undefined },
+    { skip: !operatorRoleId }
+  );
+
   const { data: planningSectionsData } = useGetPlanningSectionsQuery();
 
   const fabTypes = useMemo(() => {
@@ -142,9 +158,14 @@ const ShopCalendarPage: React.FC = () => {
   }, [workstationsData]);
 
   const operators = useMemo(() => {
-    const arr = employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
-    return arr
-      .map((e: any) => ({ id: String(e.id), name: `${e.first_name || ''} ${e.last_name || ''}`.trim() || e.email }))
+    if (!employeesData) return [];
+    const employees = employeesData?.data ?? employeesData;
+    if (!Array.isArray(employees)) return [];
+    return employees
+      .map((e: any) => ({
+        id: String(e.id),
+        name: `${e.first_name || ''} ${e.last_name || ''}`.trim() || e.email,
+      }))
       .sort((a: any, b: any) => a.name.localeCompare(b.name));
   }, [employeesData]);
 
@@ -227,72 +248,72 @@ const ShopCalendarPage: React.FC = () => {
   }, [currentDate, viewMode]);
 
   // ─── Group events by day ────────────────────────────────────────────────────
- const eventsByDay = useMemo(() => {
-  const grouped: Record<string, any[]> = {};
-  const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
-  allDays.forEach((d) => { grouped[format(d, 'yyyy-MM-dd')] = []; });
+  const eventsByDay = useMemo(() => {
+    const grouped: Record<string, any[]> = {};
+    const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
+    allDays.forEach((d) => { grouped[format(d, 'yyyy-MM-dd')] = []; });
 
-  // Ensure flatPlans is an array (it should be, but guard anyway)
-  const plans = Array.isArray(flatPlans) ? flatPlans : [];
+    // Ensure flatPlans is an array (it should be, but guard anyway)
+    const plans = Array.isArray(flatPlans) ? flatPlans : [];
 
-  plans.forEach((event: any) => {
-    const startDate = new Date(event.scheduled_start_date);
-    let remainingHours = Number(event.estimated_hours) || 0;
-    let currentDate = startDate;
-    let currentHour = startDate.getHours() + startDate.getMinutes() / 60;
+    plans.forEach((event: any) => {
+      const startDate = new Date(event.scheduled_start_date);
+      let remainingHours = Number(event.estimated_hours) || 0;
+      let currentDate = startDate;
+      let currentHour = startDate.getHours() + startDate.getMinutes() / 60;
 
-    // If start time falls inside break, move to end of break
-    if (currentHour >= BREAK_START_HOUR && currentHour < BREAK_END_HOUR) {
-      currentHour = BREAK_END_HOUR;
-      currentDate.setHours(BREAK_END_HOUR, 0, 0, 0);
-    }
-
-    while (remainingHours > 0) {
-      let hoursToday = 0;
-      if (currentHour < BREAK_START_HOUR) {
-        hoursToday = Math.min(remainingHours, BREAK_START_HOUR - currentHour);
-      } else if (currentHour >= BREAK_END_HOUR) {
-        hoursToday = Math.min(remainingHours, DAY_END_HOUR - currentHour);
-      } else {
-        // Should not happen – skip to break end
-        currentHour = BREAK_END_HOUR;
-        continue;
-      }
-
-      if (hoursToday > 0) {
-        const partStart = new Date(currentDate);
-        partStart.setHours(currentHour, 0, 0, 0);
-        const key = format(currentDate, 'yyyy-MM-dd');
-        // Safety: ensure the key exists before pushing
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push({
-          ...event,
-          _isSplitPart: true,
-          _originalHours: event.estimated_hours,
-          estimated_hours: hoursToday,
-          scheduled_start_date: partStart.toISOString(),
-          _planId: event.id,
-        });
-        remainingHours -= hoursToday;
-        currentHour += hoursToday;
-      }
-
-      // If we've reached the break, skip over it
+      // If start time falls inside break, move to end of break
       if (currentHour >= BREAK_START_HOUR && currentHour < BREAK_END_HOUR) {
         currentHour = BREAK_END_HOUR;
+        currentDate.setHours(BREAK_END_HOUR, 0, 0, 0);
       }
 
-      // If we've reached end of day or no time left, move to next day
-      if (currentHour >= DAY_END_HOUR || remainingHours <= 0) {
-        currentDate = addDays(currentDate, 1);
-        currentHour = DAY_START_HOUR;
-      }
-    }
-  });
+      while (remainingHours > 0) {
+        let hoursToday = 0;
+        if (currentHour < BREAK_START_HOUR) {
+          hoursToday = Math.min(remainingHours, BREAK_START_HOUR - currentHour);
+        } else if (currentHour >= BREAK_END_HOUR) {
+          hoursToday = Math.min(remainingHours, DAY_END_HOUR - currentHour);
+        } else {
+          // Should not happen – skip to break end
+          currentHour = BREAK_END_HOUR;
+          continue;
+        }
 
-  return grouped;
-}, [flatPlans, displayDays, monthWeeks, viewMode]);
-const totalPlans = useMemo(
+        if (hoursToday > 0) {
+          const partStart = new Date(currentDate);
+          partStart.setHours(currentHour, 0, 0, 0);
+          const key = format(currentDate, 'yyyy-MM-dd');
+          // Safety: ensure the key exists before pushing
+          if (!grouped[key]) grouped[key] = [];
+          grouped[key].push({
+            ...event,
+            _isSplitPart: true,
+            _originalHours: event.estimated_hours,
+            estimated_hours: hoursToday,
+            scheduled_start_date: partStart.toISOString(),
+            _planId: event.id,
+          });
+          remainingHours -= hoursToday;
+          currentHour += hoursToday;
+        }
+
+        // If we've reached the break, skip over it
+        if (currentHour >= BREAK_START_HOUR && currentHour < BREAK_END_HOUR) {
+          currentHour = BREAK_END_HOUR;
+        }
+
+        // If we've reached end of day or no time left, move to next day
+        if (currentHour >= DAY_END_HOUR || remainingHours <= 0) {
+          currentDate = addDays(currentDate, 1);
+          currentHour = DAY_START_HOUR;
+        }
+      }
+    });
+
+    return grouped;
+  }, [flatPlans, displayDays, monthWeeks, viewMode]);
+  const totalPlans = useMemo(
     () => Object.values(eventsByDay).reduce((acc, evs) => acc + evs.length, 0),
     [eventsByDay],
   );
@@ -394,7 +415,8 @@ const totalPlans = useMemo(
               left: colLeft,
               width: colW,
               backgroundColor: bg,
-              borderColor: border,
+              borderColor: event?.has_pending_shop_revision ? '#ff0000' : border,
+              borderWidth: event?.has_pending_shop_revision ? 2 : 1,
             }}
             onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(event); }}
           >
@@ -580,7 +602,7 @@ const totalPlans = useMemo(
               </PopoverContent>
             </Popover>
 
-            {/* OPERATOR multi‑select */}
+            {/* OPERATOR multi‑select – only shows operator role users */}
             <Popover open={operatorPopoverOpen} onOpenChange={setOperatorPopoverOpen}>
               <PopoverTrigger asChild>
                 <button className="min-w-[137px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
@@ -595,31 +617,37 @@ const totalPlans = useMemo(
                   <CommandList>
                     <CommandEmpty>No operators found.</CommandEmpty>
                     <CommandGroup>
-                      {operators.map((o: any) => {
-                        const isSelected = filterOperator.includes(o.id);
-                        return (
-                          <CommandItem
-                            key={o.id}
-                            onSelect={() => {
-                              if (isSelected) {
-                                setFilterOperator(filterOperator.filter(id => id !== o.id));
-                              } else {
-                                setFilterOperator([...filterOperator, o.id]);
-                              }
-                            }}
-                          >
-                            <div
-                              className={cn(
-                                "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
-                              )}
+                      {operators.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-muted-foreground">
+                          {employeesLoading || rolesLoading ? 'Loading operators...' : 'No operator users found'}
+                        </div>
+                      ) : (
+                        operators.map((o: any) => {
+                          const isSelected = filterOperator.includes(o.id);
+                          return (
+                            <CommandItem
+                              key={o.id}
+                              onSelect={() => {
+                                if (isSelected) {
+                                  setFilterOperator(filterOperator.filter(id => id !== o.id));
+                                } else {
+                                  setFilterOperator([...filterOperator, o.id]);
+                                }
+                              }}
                             >
-                              <Check className={cn("h-4 w-4")} />
-                            </div>
-                            <span className="truncate">{o.name}</span>
-                          </CommandItem>
-                        );
-                      })}
+                              <div
+                                className={cn(
+                                  "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                  isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
+                                )}
+                              >
+                                <Check className={cn("h-4 w-4")} />
+                              </div>
+                              <span className="truncate">{o.name}</span>
+                            </CommandItem>
+                          );
+                        })
+                      )}
                     </CommandGroup>
                   </CommandList>
                 </Command>
@@ -992,7 +1020,8 @@ const totalPlans = useMemo(
                                             top: laneIdx * (ROW_LANE_H + GAP) + GAP,
                                             height: ROW_LANE_H,
                                             backgroundColor: bg,
-                                            borderColor: border,
+                                            borderColor: event?.has_pending_shop_revision ? '#ff0000' : border,
+                                            borderWidth: event?.has_pending_shop_revision ? 2 : 1,
                                           }}
                                           onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
                                         >

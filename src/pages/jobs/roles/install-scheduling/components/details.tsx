@@ -12,6 +12,8 @@ import { InstallChecklistForm } from './reviewCheckList';
 import { BackButton } from '@/components/common/BackButton';
 import { stageConfig } from '@/utils/note-utils';
 import { Can } from '@/components/permission';
+import { FabFilesGallery } from '../../install-completion/components/FabFiles';
+import { Documents } from '@/pages/shop/components/files';
 
 // Helper function to get all fab notes (unfiltered)
 const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
@@ -40,7 +42,7 @@ export function InstallSchedulingDetailsPage() {
         : '#';
 
     const jobInfo = fab ? [
-        { label: 'FAB ID', value:<Link to={`/sales/${fab.id}`} className="text-primary hover:underline">{String(fab.id)}</Link> },
+        { label: 'FAB ID', value: <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">{String(fab.id)}</Link> },
         { label: 'FAB Type', value: <span className="uppercase">{fab.fab_type}</span> },
         { label: 'Account', value: fab.account_name },
         { label: 'Job name', value: fab.job_details?.name },
@@ -218,6 +220,13 @@ export function InstallSchedulingDetailsPage() {
                     <div className="mt-4">
                         <GraySidebar sections={sidebarSections as any} className="bg-transparent border-none pl-0" />
                     </div>
+                    <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
+                        <Documents
+                            fab={fab}
+                            // onFileClick={handleFileClick}
+                            showDeleteButton={false}
+                        />
+                    </CardContent>
                 </div>
 
                 {/* RIGHT: Review checklist – permission based on current route */}
