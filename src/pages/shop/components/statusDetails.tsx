@@ -631,7 +631,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                                 <DateTimePicker
                                     mode="date"
                                     value={draft.end_date}
-                                    onChange={() => {}}
+                                    onChange={() => { }}
                                     disabled={true}
                                 />
                             </div>
@@ -639,7 +639,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                             {/* End Time - disabled */}
                             <div className="flex flex-col gap-1.5">
                                 <Label className="text-xs text-muted-foreground uppercase tracking-wide">End Time (auto)</Label>
-                                <Select value={draft.end_time} onValueChange={() => {}} disabled>
+                                <Select value={draft.end_time} onValueChange={() => { }} disabled>
                                     <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm bg-gray-50 cursor-not-allowed">
                                         <SelectValue placeholder="Auto‑calculated" />
                                     </SelectTrigger>
@@ -819,6 +819,7 @@ const FabDetailsPage = () => {
 
     const [showRevisionDialog, setShowRevisionDialog] = useState(false);
     const [revisionNote, setRevisionNote] = useState('');
+    const [revisionType, setRevisionType] = useState('');
     const [isCreatingRevision, setIsCreatingRevision] = useState(false);
 
     const [showShopUploadModal, setShowShopUploadModal] = useState(false);
@@ -943,12 +944,14 @@ const FabDetailsPage = () => {
             await createShopRevision({
                 fab_id: numericFabId,
                 revision_note: revisionNote.trim(),
+                shop_revision_type: revisionType,
                 requested_by: currentOperatorId,
                 assigned_to: currentOperatorId,
                 revision_completed: false,
             }).unwrap();
             toast.success('Shop revision created.');
             setRevisionNote('');
+            setRevisionType('');
             setShowRevisionDialog(false);
             refetch();
             refetchRevisions();
@@ -1409,7 +1412,13 @@ const FabDetailsPage = () => {
             )}
 
             <Dialog open={showRevisionDialog} onOpenChange={setShowRevisionDialog}>
-                <DialogContent>
+                <DialogContent
+                    onClose={() => {
+                        setShowRevisionDialog(false);
+                        setRevisionNote('');
+                        setRevisionType('');
+                    }}
+                >
                     <DialogHeader><DialogTitle>Create Shop Revision</DialogTitle></DialogHeader>
                     <div className="space-y-4 pt-2">
                         <p className="text-sm text-muted-foreground">
@@ -1419,6 +1428,16 @@ const FabDetailsPage = () => {
                             <Label htmlFor="revision-note" className="text-xs uppercase tracking-wide text-muted-foreground">
                                 Revision Note
                             </Label>
+                            <Select value={revisionType} onValueChange={(value) => setRevisionType(value)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select revision type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Final Programming">Final Programming</SelectItem>
+                                    <SelectItem value="CNC Programming">CNC Programming</SelectItem>
+                                    <SelectItem value="Material Issue">Material Issue</SelectItem>
+                                </SelectContent>
+                            </Select>
                             <Textarea
                                 id="revision-note"
                                 value={revisionNote}
@@ -1433,6 +1452,7 @@ const FabDetailsPage = () => {
                                 onClick={() => {
                                     setShowRevisionDialog(false);
                                     setRevisionNote('');
+                                    setRevisionType('');
                                 }}
                                 disabled={isCreatingRevision}
                             >

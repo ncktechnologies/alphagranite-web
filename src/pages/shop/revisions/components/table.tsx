@@ -147,13 +147,13 @@ export const ShopRevisionTable = ({ canViewDetails = false, canExport = false }:
       cell: ({ row }) => <span className="text-sm uppercase">{row.original.fab_type || '—'}</span>,
       size: 130,
     },
-    // {
-    //   id: 'pending_revision_count',
-    //   accessorFn: (r) => r.pending_revision_count,
-    //   header: ({ column }) => <DataGridColumnHeader title="PENDING REVISIONS" column={column} />,
-    //   cell: ({ row }) => <span className="text-sm">{row.original.pending_revision_count ?? 0}</span>,
-    //   size: 160,
-    // },
+    {
+      id: 'revision_type',
+      accessorFn: (r) => r.revision_type,
+      header: ({ column }) => <DataGridColumnHeader title="REVISION TYPE" column={column} />,
+      cell: ({ row }) => <span className="text-sm">{row.original.latest_pending_revision?.shop_revision_type ?? "-"}</span>,
+      size: 160,
+    },
     // {
     //   id: 'has_pending_shop_revision',
     //   accessorFn: (r) => r.has_pending_shop_revision,

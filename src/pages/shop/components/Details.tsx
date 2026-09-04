@@ -98,8 +98,8 @@ export const StationDetailsView = ({ role, onEdit, onDelete, onStatusChange }: R
           <h2 className="text-black leading-6 font-semibold ">{Array.isArray(operatorNames) ? operatorNames.join(', ') : operatorNames || '-'}</h2>
         </div>
         <div>
-          <h4 className="text-secondary font-semibold text-sm pb-2.5">Other</h4>
-          <h2 className="text-black leading-6 font-semibold ">{role.other || '-'}</h2>
+          <h4 className="text-secondary font-semibold text-sm pb-2.5">Attendance Required</h4>
+          <h2 className="text-black leading-6 font-semibold ">{role.attendance_required ? 'Yes' : 'No'}</h2>
         </div>
       </div>
 

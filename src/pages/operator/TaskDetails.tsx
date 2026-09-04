@@ -41,6 +41,8 @@ import {
 import { UniversalUploadModal } from '@/components/universal-upload';
 import { SCTTimer } from '@/pages/jobs/roles/back-to-sales/components/SCTTimer';
 import { safeFormatDate } from '../shop/components/statusDetails';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import RevisionDetailsPage from '../jobs/roles/revisiondraft/Revisiondetails';
 
 // Helper for status display
 const getStatusInfo = (statusId: number | undefined, t: any) => {
@@ -61,6 +63,10 @@ export function OperatorTaskDetails() {
     const workstationId = Number(searchParams.get('workstation_id')) || 0;
     const scheduledStartDate = searchParams.get('scheduled_start_date');
 
+    const returnView = searchParams.get('return_view') || 'week';
+    const returnDate =
+        searchParams.get('return_date') ||
+        (scheduledStartDate ? scheduledStartDate.slice(0, 10) : format(new Date(), 'yyyy-MM-dd'));
     const currentUser = useSelector((s: any) => s.user.user);
     const operatorId = currentUser?.employee_id || currentUser?.id || 0;
 
@@ -77,6 +83,7 @@ export function OperatorTaskDetails() {
     const [showRevisionDialog, setShowRevisionDialog] = useState(false);
     const [selectedRevisionId, setSelectedRevisionId] = useState<number | null>(null);
     const [revisionNote, setRevisionNote] = useState('');
+    const [RevisionType, setRevisionType] = useState<string>('');
     const [activeFile, setActiveFile] = useState<UnifiedFile | null>(null);
 
     const { data: taskData, isLoading: isTasksLoading, refetch: refetchTask } =
@@ -422,10 +429,12 @@ export function OperatorTaskDetails() {
                 requested_by: Number(operatorId),
                 assigned_to: null,
                 revision_completed: false,
+                shop_revision_type: RevisionType,
             }).unwrap();
 
             toast.success(t('SHOP_REVISION.CREATE_SUCCESS', 'Shop revision created successfully.'));
             setRevisionNote('');
+            setRevisionType('');
             setShowRevisionDialog(false);
             await refetchTimer();
             await refetchRevisions().then(() => {
@@ -549,7 +558,8 @@ export function OperatorTaskDetails() {
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
                                     {statusInfo.text}
                                 </span>
-                                <BackButton fallbackUrl={`/operator/dashboard?view=week&date=${scheduledStartDate ? scheduledStartDate.slice(0,10) : format(new Date(), 'yyyy-MM-dd')}`} />
+                                {/* <BackButton fallbackUrl={`/operator/dashboard?view=week&date=${scheduledStartDate ? scheduledStartDate.slice(0, 10) : format(new Date(), 'yyyy-MM-dd')}`} /> */}
+                                <BackButton fallbackUrl={`/operator/dashboard?view=${returnView}&date=${returnDate}`} />
                             </div>
                         </div>
                     </Toolbar>
@@ -854,9 +864,12 @@ export function OperatorTaskDetails() {
                 workstationId={workstationId}
                 fabId={currentTask?.fab_id}
                 jobId={currentTask?.business_job?.id}
+
             />
 
-            <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+            <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}
+
+            >
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
@@ -901,7 +914,13 @@ export function OperatorTaskDetails() {
             )}
 
             <Dialog open={showRevisionDialog} onOpenChange={setShowRevisionDialog}>
-                <DialogContent className="max-w-lg">
+                <DialogContent className="max-w-lg"
+                    onClose={() => {
+                        setShowRevisionDialog(false);
+                        setRevisionNote('');
+                        setRevisionType('');
+                    }}
+                >
                     <DialogHeader>
                         <DialogTitle>
                             {t('SHOP_REVISION.CREATE_TITLE')} {currentTask?.fab_id ? `FAB-${currentTask.fab_id}` : ''}
@@ -913,6 +932,19 @@ export function OperatorTaskDetails() {
                         </div>
                     )}
                     <div className="space-y-4">
+                        <Select
+                            value={RevisionType}
+                            onValueChange={(value) => setRevisionType(value)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select revision type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Final Programming">Final Programming</SelectItem>
+                                <SelectItem value="CNC Programming">CNC Programming</SelectItem>
+                                <SelectItem value="Material Issue">Material Issue</SelectItem>
+                            </SelectContent>
+                        </Select>
                         <Textarea
                             value={revisionNote}
                             onChange={(e) => setRevisionNote(e.target.value)}
@@ -923,7 +955,11 @@ export function OperatorTaskDetails() {
                         <div className="flex justify-end gap-2">
                             <Button
                                 variant="outline"
-                                onClick={() => setShowRevisionDialog(false)}
+                                onClick={() => {
+                                    setShowRevisionDialog(false);
+                                    setRevisionNote('');
+                                    setRevisionType('');
+                                }}
                                 disabled={isCreatingRevision}
                             >
                                 {t('COMMON.CANCEL')}

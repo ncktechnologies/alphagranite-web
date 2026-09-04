@@ -1020,8 +1020,8 @@ const ShopCalendarPage: React.FC = () => {
                                             top: laneIdx * (ROW_LANE_H + GAP) + GAP,
                                             height: ROW_LANE_H,
                                             backgroundColor: bg,
-                                            borderColor: event?.has_pending_shop_revision ? '#ff0000' : border,
-                                            borderWidth: event?.has_pending_shop_revision ? 2 : 1,
+                                            borderColor: ev?.has_pending_shop_revision ? '#ff0000' : border,
+                                            borderWidth: ev?.has_pending_shop_revision ? 2 : 1,
                                           }}
                                           onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
                                         >

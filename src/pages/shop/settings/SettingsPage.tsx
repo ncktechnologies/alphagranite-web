@@ -111,6 +111,7 @@ function SettingsPage() {
                 planning_section_id: ws.planning_section_id,
                 planning_section_name: ws.planning_section_name,
                 operator_ids: ws.operators?.map((op: any) => op.id) || [],
+                attendance_required: ws.attendance_required === true
             } as Station;
         });
     }, [workstationsData]);

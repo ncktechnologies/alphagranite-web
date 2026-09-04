@@ -170,9 +170,9 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             est_completion_date: fab.estimated_completion_date ?? fab.shop_date_schedule ?? null,
             percent_complete: fab.percentage_completion ?? fab.percent_complete ?? 0,
             shop_completion_date: fab.shop_est_completion_date ?? null,
-            install_date: fab.installation_date ?? null,
+            install_date: fab.install_details?.scheduled_end_date ?? null,
             install_confirmed: fab.install_confirmed === true,
-            installed: fab.is_complete === true,
+            installed: fab.install_details?.is_completed === true,
             revenue: fab.revenue ?? 0,
             cost_of_stone: fab.cost_of_stone ?? 0,
         }));

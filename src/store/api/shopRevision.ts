@@ -17,6 +17,7 @@ export interface ShopRevision {
   completed_at?: string;
   created_at?: string;
   updated_at?: string;
+  shop_revision_type?: string;
 }
 
 export interface ShopRevisionFabSummary {
@@ -35,6 +36,7 @@ export interface ShopRevisionFabSummary {
   latest_revision_created_at?: string;
   latest_pending_revision?: ShopRevision | null;
   created_at?: string;
+  shop_revision_type?: string;
 }
 
 export interface CreateShopRevisionPayload {
@@ -43,6 +45,7 @@ export interface CreateShopRevisionPayload {
   requested_by: number;
   assigned_to: number;
   revision_completed?: boolean;
+  shop_revision_type?: string;
 }
 
 export interface ShopRevisionSuccessResponse<T = any> {

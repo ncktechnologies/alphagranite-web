@@ -16,6 +16,7 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox'; // 👈 import checkbox
 import { UserAssignment } from "./AssignUser";
 import { useCreateWorkstationMutation, useUpdateWorkstationMutation, useGetPlanningSectionsQuery } from '@/store/api/workstation';
 import { toast } from 'sonner';
@@ -31,6 +32,7 @@ const workstationSchema = z.object({
     other: z.string().optional(),
     operator_ids: z.array(z.string()).optional(),
     planning_section_id: z.string().optional(),
+    attendance_required: z.boolean().optional(), // 👈 new field
 });
 
 type WorkstationFormType = z.infer<typeof workstationSchema>;
@@ -56,6 +58,7 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
             other: '',
             operator_ids: [],
             planning_section_id: undefined,
+            attendance_required: false, // 👈 default
         },
     });
 
@@ -76,6 +79,7 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
                 other: role.other || '',
                 operator_ids: operatorIds.map(String),
                 planning_section_id: psId,
+                attendance_required: rawRole.attendance_required ?? false, // 👈 populate
             });
             setSelectedUsers(operatorIds.map(String));
         } else if (mode === 'new') {
@@ -84,6 +88,7 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
                 other: '',
                 operator_ids: [],
                 planning_section_id: undefined,
+                attendance_required: false,
             });
             setSelectedUsers([]);
         }
@@ -108,6 +113,7 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
                 name: values.workstationName,
                 status_id: 1,
                 operator_ids: selectedUsers.map(Number),
+                attendance_required: values.attendance_required ?? false, // 👈 include
                 ...(values.other ? { machine_statuses: values.other } : {}),
             };
 
@@ -164,7 +170,7 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
                     )}
                 />
 
-                {/* Shop Activity – with key that forces re‑render when sections or value change */}
+                {/* Shop Activity */}
                 <FormItem>
                     <FormLabel>Shop Activity *</FormLabel>
                     <Select
@@ -186,13 +192,35 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
                             ))}
                         </SelectContent>
                     </Select>
-                    {selectedSectionName && (
+                    {/* {selectedSectionName && (
                         <p className="text-xs text-muted-foreground mt-1">
                             Selected: {selectedSectionName}
                         </p>
-                    )}
+                    )} */}
                     <FormMessage />
                 </FormItem>
+
+                {/* ─── Attendance Required Checkbox ─── */}
+                <FormField
+                    control={form.control}
+                    name="attendance_required"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                                <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                                <FormLabel className="text-sm font-medium">
+                                    Attendance Required
+                                </FormLabel>
+                               
+                            </div>
+                        </FormItem>
+                    )}
+                />
 
                 {/* Assign Operator */}
                 <div>
