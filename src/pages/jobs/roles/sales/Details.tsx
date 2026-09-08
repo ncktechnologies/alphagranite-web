@@ -15,6 +15,11 @@ import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Can } from '@/components/permission';
 import { stageConfig } from '@/utils/note-utils';
 
+// ─── NEW IMPORTS ──────────────────────────────────────────────────────────
+import { useGetWorkstationsQuery } from '@/store/api/workstation';
+import { useGetEmployeesQuery } from '@/store/api/employee';
+import { PlanStageCard } from '@/pages/shop/components/statusDetails';
+
 // Helper function to get FAB status display
 const getFabStatusInfo = (statusId: number | undefined) => {
   if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
@@ -27,21 +32,28 @@ export function SalesDetailsPage() {
   const navigate = useNavigate();
   const [activeFile, setActiveFile] = useState<UnifiedFile | null>(null);
 
+  // ─── Existing query ─────────────────────────────────────────────────────
   const { data: response, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
   const fab = (response as any)?.data ?? response;
 
-  // Prepare clickable links
+  // ─── NEW: fetch workstations & employees for plan cards ────────────────
+  const { data: workstationsData } = useGetWorkstationsQuery();
+  const workstations: any[] = workstationsData?.data || (Array.isArray(workstationsData) ? workstationsData : []);
+
+  const { data: employeesData } = useGetEmployeesQuery();
+  const employees: any[] = employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
+
+  // ─── Prepare links ──────────────────────────────────────────────────────
   const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';
   const jobNumberLink = fab?.job_details?.job_number
     ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fab.job_details.job_number}`
     : '#';
 
-  // ─── Build file sources from FAB response ──────────────────────────────
+  // ─── File sources ───────────────────────────────────────────────────────
   const fileSources: FileSource[] = (() => {
     if (!fab) return [];
     const sources: FileSource[] = [];
 
-    // Helper to convert API file array into UnifiedFile[]
     const toUnifiedFiles = (files: any[]): UnifiedFile[] =>
       (files ?? []).map((f): UnifiedFile => ({
         id: String(f.id),
@@ -58,114 +70,92 @@ export function SalesDetailsPage() {
         _raw: f,
       }));
 
-    // 1. Drafting files
-    if (fab.draft_data?.files?.length) {
-      sources.push({ kind: 'raw', data: toUnifiedFiles(fab.draft_data.files) });
-    }
-    // 2. SlabSmith files
-    if (fab.slabsmith_data?.files?.length) {
-      sources.push({ kind: 'raw', data: toUnifiedFiles(fab.slabsmith_data.files) });
-    }
-    // 3. Sales CT files
-    if (fab.sales_ct_data?.files?.length) {
-      sources.push({ kind: 'raw', data: toUnifiedFiles(fab.sales_ct_data.files) });
-    }
-    // 4. CNC files (if you later add cnc_data)
-    if (fab.cnc_data?.files?.length) {
-      sources.push({ kind: 'raw', data: toUnifiedFiles(fab.cnc_data.files) });
-    }
-    // 5. Top-level fab files
-    if (fab.files?.length) {
-      sources.push({ kind: 'raw', data: toUnifiedFiles(fab.files) });
-    }
+    if (fab.draft_data?.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.draft_data.files) });
+    if (fab.slabsmith_data?.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.slabsmith_data.files) });
+    if (fab.sales_ct_data?.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.sales_ct_data.files) });
+    if (fab.cnc_data?.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.cnc_data.files) });
+    if (fab.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.files) });
+    if (fab.operator_files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.operator_files) });
 
-    // 6. Operator files (from `operator_files` array)
-    if (fab.operator_files?.length) {
-      sources.push({ kind: 'raw', data: toUnifiedFiles(fab.operator_files) });
-    }
-
-    // 7. Shop revision files – collect from all revisions
     const shopRevisionFiles: any[] = [];
     (fab.shop_revisions || []).forEach((rev: any) => {
-      if (rev.files?.length) {
-        shopRevisionFiles.push(...rev.files);
-      }
+      if (rev.files?.length) shopRevisionFiles.push(...rev.files);
     });
-    if (shopRevisionFiles.length) {
-      sources.push({ kind: 'raw', data: toUnifiedFiles(shopRevisionFiles) });
-    }
+    if (shopRevisionFiles.length) sources.push({ kind: 'raw', data: toUnifiedFiles(shopRevisionFiles) });
 
     return sources;
   })();
-
   const totalFileCount = fileSources.reduce((sum, s) => sum + (s.kind === 'raw' ? s.data.length : 0), 0);
 
-  // ─── Sidebar sections ─────────────────────────────────────────────────────
+  // ─── NEW: extract and sort plans ──────────────────────────────────────
+  const plans: any[] = [...(fab?.plans || [])].sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
+
+  // ─── Sidebar sections ───────────────────────────────────────────────────
   const sidebarSections = fab
     ? [
-      {
-        title: 'Job Details',
-        type: 'details',
-        items: [
-          { label: 'Account', value: fab.account_name || '—' },
-          { label: 'Fab ID', value: fab.id },
-          { label: 'Area', value: fab.input_area || '—' },
-          {
-            label: 'Material',
-            value: fab.stone_type_name
-              ? `${fab.stone_type_name} - ${fab.stone_color_name || ''} - ${fab.stone_thickness_value || ''}`
-              : '—',
-          },
-          { label: 'Fab Type', value: <span className="uppercase">{fab.fab_type || '—'}</span> },
-          { label: 'Edge', value: fab.edge_name || '—' },
-          { label: 'Total S.F', value: fab.total_sqft?.toString() || '—' },
-          { label: 'Sales Person', value: fab.sales_person_name || '—' },
-          {
-            label: 'Job Notes',
-            value: fab.job_details?.description || 'None',
-          },
-        ],
-      },
-      {
-        title: 'Notes',
-        type: 'notes',
-        notes: Array.isArray(fab.notes)
-          ? fab.notes.map((note: string, index: number) => ({
-            id: index,
-            avatar: 'N',
-            avatarUrl: note.created_by_profile_image_url,
-            content: note,
-            author: '',
-            timestamp: '',
-          }))
-          : [],
-      },
-      {
-        title: 'FAB Notes',
-        type: 'notes',
-        notes: Array.isArray(fab.fab_notes)
-          ? fab.fab_notes.map((note: any) => {
-            const stage = note?.stage || 'general';
-            const config = stageConfig[stage] || stageConfig.general;
-            return {
-              id: note?.id,
-              avatar: note?.created_by_name?.charAt(0).toUpperCase() || 'U',
-              content: note?.note || '',
-              author: note?.created_by_name || 'Unknown',
-              timestamp: note?.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
-              category: config.label,
-              categoryColor: config.color,
-              avatarUrl: note.created_by_profile_image_url,
-            };
-          })
-          : [],
-      },
-    ]
+        {
+          title: 'Job Details',
+          type: 'details',
+          items: [
+            { label: 'Account', value: fab.account_name || '—' },
+            { label: 'Fab ID', value: fab.id },
+            { label: 'Area', value: fab.input_area || '—' },
+            {
+              label: 'Material',
+              value: fab.stone_type_name
+                ? `${fab.stone_type_name} - ${fab.stone_color_name || ''} - ${fab.stone_thickness_value || ''}`
+                : '—',
+            },
+            { label: 'Fab Type', value: <span className="uppercase">{fab.fab_type || '—'}</span> },
+            { label: 'Edge', value: fab.edge_name || '—' },
+            { label: 'Total S.F', value: fab.total_sqft?.toString() || '—' },
+            { label: 'Sales Person', value: fab.sales_person_name || '—' },
+            {
+              label: 'Job Notes',
+              value: fab.job_details?.description || 'None',
+            },
+          ],
+        },
+        {
+          title: 'Notes',
+          type: 'notes',
+          notes: Array.isArray(fab.notes)
+            ? fab.notes.map((note: string, index: number) => ({
+                id: index,
+                avatar: 'N',
+                avatarUrl: note.created_by_profile_image_url,
+                content: note,
+                author: '',
+                timestamp: '',
+              }))
+            : [],
+        },
+        {
+          title: 'FAB Notes',
+          type: 'notes',
+          notes: Array.isArray(fab.fab_notes)
+            ? fab.fab_notes.map((note: any) => {
+                const stage = note?.stage || 'general';
+                const config = stageConfig[stage] || stageConfig.general;
+                return {
+                  id: note?.id,
+                  avatar: note?.created_by_name?.charAt(0).toUpperCase() || 'U',
+                  content: note?.note || '',
+                  author: note?.created_by_name || 'Unknown',
+                  timestamp: note?.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
+                  category: config.label,
+                  categoryColor: config.color,
+                  avatarUrl: note.created_by_profile_image_url,
+                };
+              })
+            : [],
+        },
+      ]
     : [];
 
   const handleFileClick = (file: UnifiedFile) => setActiveFile(file);
 
-  // ─── Loading skeleton ────────────────────────────────────────────────────
+  // ─── Loading skeleton ──────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -186,7 +176,7 @@ export function SalesDetailsPage() {
     );
   }
 
-  // ─── Error state ─────────────────────────────────────────────────────────
+  // ─── Error state ────────────────────────────────────────────────────────
   if (isError || !fab) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -206,7 +196,7 @@ export function SalesDetailsPage() {
     );
   }
 
-  // ─── Full‑screen file viewer ─────────────────────────────────────────────
+  // ─── Full‑screen file viewer ──────────────────────────────────────────
   if (activeFile) {
     return (
       <div className="fixed inset-0 z-50 bg-white overflow-auto">
@@ -256,7 +246,7 @@ export function SalesDetailsPage() {
 
       {/* Main two‑column layout */}
       <div className="flex flex-col lg:flex-row flex-1 min-h-0">
-        {/* Sticky sidebar (GraySidebar) */}
+        {/* Sticky sidebar */}
         <aside
           className={[
             'w-full bg-white border-b',
@@ -273,7 +263,7 @@ export function SalesDetailsPage() {
 
         {/* Main content */}
         <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
-          {/* FAB Files Card */}
+          {/* ─── FAB Files Card ─────────────────────────────────────────── */}
           <Card>
             <CardHeader>
               <CardHeading className="flex flex-col items-start py-4">
@@ -310,6 +300,36 @@ export function SalesDetailsPage() {
               />
             </CardContent>
           </Card>
+
+          {/* ─── NEW: Plans by Stage Card (read‑only) ──────────────────── */}
+          {plans.length > 0 && (
+            <Card>
+              <CardHeader className="border-b pb-4">
+                <CardHeading>
+                  <CardTitle>Plans by Stage</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {plans.length} stage{plans.length !== 1 ? 's' : ''} 
+                  </p>
+                </CardHeading>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+                  {plans.map((plan: any) => (
+                    <PlanStageCard
+                      key={plan.id}
+                      plan={plan}
+                      workstations={workstations}
+                      employees={employees}
+                      totalPlans={plans.length}
+                      onSaved={() => {}} // no‑op in read‑only mode
+                      disabled={true}           // forces read‑only
+                      canEdit={false}           // disables any edit UI
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </main>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { flexRender, ColumnDef, getCoreRowModel, getExpandedRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { CalendarDays, ChevronDown, ChevronRight, Search, X, FileText } from 'lucide-react';
 import { useGetInstallationTemplateReportQuery, useGetInstallationTemplateReportPdfMutation } from '@/store/api/report';
@@ -127,11 +127,18 @@ export function InstallationTemplateReport() {
     const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`;
 
     // ── Permission ──────────────────────────────────────────────────────────
-    const { can_create: canEdit } = usePermission('Installation & Template'); // adjust menu code as needed
+    const { can_create: canEdit } = usePermission('Installation & Template');
 
-    // ── Filters ─────────────────────────────────────────────────────────────
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
+    // ── Default: Previous Day ───────────────────────────────────────────────
+    const yesterday = subDays(new Date(), 1);
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({
+        from: yesterday,
+        to: yesterday,
+    });
+    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>({
+        from: yesterday,
+        to: yesterday,
+    });
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [month, setMonth] = useState(new Date());
 
@@ -141,8 +148,8 @@ export function InstallationTemplateReport() {
 
     // ── PDF Dialog state ────────────────────────────────────────────────────
     const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
-    const [pdfDateRange, setPdfDateRange] = useState<DateRange | undefined>(undefined);
-    const [pdfTempDateRange, setPdfTempDateRange] = useState<DateRange | undefined>(undefined);
+    const [pdfDateRange, setPdfDateRange] = useState<DateRange | undefined>(dateRange);
+    const [pdfTempDateRange, setPdfTempDateRange] = useState<DateRange | undefined>(dateRange);
     const [pdfIsDatePickerOpen, setPdfIsDatePickerOpen] = useState(false);
     const [pdfMonth, setPdfMonth] = useState(new Date());
     const [pdfSearch, setPdfSearch] = useState('');
@@ -182,15 +189,15 @@ export function InstallationTemplateReport() {
 
     const { data, isLoading, refetch } = useGetInstallationTemplateReportQuery(queryParams);
     const { data: salesPersonsData } = useGetEmployeeSalesPersonsQuery();
-         const salesPersons = useMemo(() => {
-            if (!salesPersonsData) return [];
-            return Array.isArray(salesPersonsData)
-              ? salesPersonsData.map((sp: any) => ({
+    const salesPersons = useMemo(() => {
+        if (!salesPersonsData) return [];
+        return Array.isArray(salesPersonsData)
+            ? salesPersonsData.map((sp: any) => ({
                 id: sp.id || sp.user_id,
                 name: sp.name || `${sp.first_name} ${sp.last_name}`,
-              }))
-              : [];
-          }, [salesPersonsData]);
+            }))
+            : [];
+    }, [salesPersonsData]);
     const reportData = data?.data as ReportData | undefined;
 
     const fabTypes = useMemo(() => reportData?.filter_options?.fab_types ?? [], [reportData]);
@@ -231,19 +238,16 @@ export function InstallationTemplateReport() {
                         subRows: (r.timer_sessions || []).map((ts) => ({
                             ...ts,
                             type: 'timer',
-                            id: `timer-${ts.id}`,                     // table key
-                            timer_session_id: ts.id,                  // numeric ID
-                            job_id: r.job_id,                         // job ID
+                            id: `timer-${ts.id}`,
+                            timer_session_id: ts.id,
+                            job_id: r.job_id,
                             activity_type: r.activity_type,
-                            // map fields for display
                             session_start: ts.session_start_at,
                             session_end: ts.stopped_at,
                             work_duration: ts.total_work_seconds,
                             pause_duration: ts.total_pause_seconds,
                             sqft: ts.sqft_templated ?? ts.sqft_installed ?? 0,
                             status: ts.status,
-                            
-                            // Keep the original timer session ID as `timer_session_id`
                         })),
                     })),
                 };
@@ -266,8 +270,7 @@ export function InstallationTemplateReport() {
                 data.forEach(installer => {
                     state[installer.id] = true;
                     installer.subRows?.forEach((job: any) => {
-                        state[job.id] = true; // expand jobs by default
-                        // timers remain collapsed
+                        state[job.id] = true;
                     });
                 });
                 return state;
@@ -279,9 +282,8 @@ export function InstallationTemplateReport() {
     }, [templateData, installData, hasInitialized]);
 
     // ─── Handle edit actions ─────────────────────────────────────────────────
-    // For editing timer sessions – passes the timer session data (which includes id as timer_session_id)
     const handleEditTimer = (timerData: any) => {
-        setSelectedRowData(timerData); // the modal will receive the timer session info
+        setSelectedRowData(timerData);
         setIsUpdateModalOpen(true);
     };
 
@@ -298,7 +300,6 @@ export function InstallationTemplateReport() {
                 id: 'expander',
                 header: () => null,
                 cell: ({ row }) => {
-                    // Show expander for installer and job rows (only if they have children)
                     if (row.original.type === 'installer' || row.original.type === 'job') {
                         const hasSubRows = row.original.subRows && row.original.subRows.length > 0;
                         if (!hasSubRows) return null;
@@ -315,7 +316,6 @@ export function InstallationTemplateReport() {
             },
         ];
 
-        // ── Actions column – only on timer rows, if user has edit permission ──
         if (canEdit) {
             columns.push({
                 id: 'actions',
@@ -335,7 +335,6 @@ export function InstallationTemplateReport() {
             });
         }
 
-        // ── Main columns ──────────────────────────────────────────────────────
         columns.push(
             {
                 id: 'installer',
@@ -442,7 +441,6 @@ export function InstallationTemplateReport() {
                         const val = isTemplate ? row.original.sqft_templated : row.original.sq_ft_installed;
                         return <span>{val?.toFixed(0) ?? '0'}</span>;
                     } else {
-                        // Timer row: show session's sqft
                         const val = row.original.sqft ?? 0;
                         return <span className="text-xs">{val.toFixed(0)}</span>;
                     }
@@ -467,7 +465,6 @@ export function InstallationTemplateReport() {
                         } else if (actType === 'Installation') {
                             val = row.original.sqft_not_installed ?? 0;
                         } else {
-                            // fallback: try both
                             val = row.original.sqft_not_templated ?? row.original.sqft_not_installed ?? 0;
                         }
                         return <span className="text-xs">{val.toFixed(0)}</span>;
@@ -643,8 +640,9 @@ export function InstallationTemplateReport() {
         }
     };
 
-    // ─── CSV Export helper ──────────────────────────────────────────────────
+    // ─── CSV Export helper (updated to include proper headers and Job Info) ──
     const exportFlattenedToCSV = (table: any, filename: string) => {
+        // Flatten all rows (installer, job, timer)
         const flattenRows = (rows: any[]): any[] => {
             let result: any[] = [];
             rows.forEach(row => {
@@ -662,17 +660,180 @@ export function InstallationTemplateReport() {
             return;
         }
 
-        const excludeKeys = ['type', 'id', 'subRows', '_level', '_isGroup', 'children'];
-        const headers = Object.keys(allRows[0]).filter(k => !excludeKeys.includes(k) && k !== 'children');
+        // Define export columns with labels and formatters
+        const exportColumns: {
+            key: string;
+            label: string;
+            formatter: (row: any) => string;
+        }[] = [
+            {
+                key: 'installer',
+                label: 'EMPLOYEE',
+                formatter: (row) => row.installer || '',
+            },
+            {
+                key: 'job_info',
+                label: 'JOB INFO',
+                formatter: (row) => {
+                    if (row.type === 'installer' || row.type === 'timer') return '';
+                    const account = row.account_name || '';
+                    const job = row.job_name || '';
+                    const fabId = row.fab_id ? `FAB-${row.fab_id}` : '';
+                    return [account, job, fabId].filter(Boolean).join(' - ');
+                },
+            },
+            {
+                key: 'job_number',
+                label: 'JOB NO',
+                formatter: (row) => row.job_number || '',
+            },
+            {
+                key: 'activity_complete',
+                label: 'ACTIVITY COMPLETE',
+                formatter: (row) => {
+                    if (row.type === 'job') return row.activity_complete ? 'Yes' : 'No';
+                    return '';
+                },
+            },
+            {
+                key: 'duration',
+                label: 'DURATION',
+                formatter: (row) => {
+                    if (row.type === 'job') {
+                        return formatDuration(row.total_work_seconds || 0);
+                    } else if (row.type === 'timer') {
+                        return formatDuration(row.total_work_seconds || 0);
+                    }
+                    return '';
+                },
+            },
+            {
+                key: 'sqft_1',
+                label: (row: any) => {
+                    const isTemplate = row.activity_type === 'Template';
+                    return isTemplate ? 'SQFT TEMPLATED' : 'SQFT INSTALLED';
+                },
+                formatter: (row) => {
+                    if (row.type === 'installer') {
+                        const key = row.activity_type === 'Template' ? 'total_sqft_templated' : 'total_sqft_installed';
+                        return (row[key] || 0).toFixed(0);
+                    } else if (row.type === 'job') {
+                        const val = row.activity_type === 'Template' ? row.sqft_templated : row.sq_ft_installed;
+                        return (val || 0).toFixed(0);
+                    } else if (row.type === 'timer') {
+                        return (row.sqft || 0).toFixed(0);
+                    }
+                    return '';
+                },
+            },
+            {
+                key: 'sqft_2',
+                label: (row: any) => {
+                    const isTemplate = row.activity_type === 'Template';
+                    return isTemplate ? 'SQFT NOT TEMPLATED' : 'SQFT NOT INSTALLED';
+                },
+                formatter: (row) => {
+                    if (row.type === 'installer') {
+                        const key = row.activity_type === 'Template' ? 'total_sqft_not_templated' : 'total_sqft_incomplete';
+                        return (row[key] || 0).toFixed(0);
+                    } else if (row.type === 'job') {
+                        const val = row.activity_type === 'Template' ? row.sqft_not_templated : row.sq_ft_incomplete;
+                        return (val || 0).toFixed(0);
+                    } else if (row.type === 'timer') {
+                        if (row.activity_type === 'Template') return (row.sqft_not_templated || 0).toFixed(0);
+                        if (row.activity_type === 'Installation') return (row.sqft_not_installed || 0).toFixed(0);
+                        return '0';
+                    }
+                    return '';
+                },
+            },
+            {
+                key: 'reason',
+                label: 'REASON (IF NOT COMPLETE)',
+                formatter: (row) => {
+                    if (row.type === 'job') return row.reason_if_not_complete || '';
+                    if (row.type === 'timer') return row.note || '';
+                    return '';
+                },
+            },
+        ];
 
-        const rows = allRows.map(row =>
-            headers.map(header => {
-                const value = row[header] ?? '';
-                return `"${String(value).replace(/"/g, '""')}"`;
-            }).join(',')
-        );
+        // For each row, determine the activity type to set labels correctly
+        const headers = [
+            'EMPLOYEE',
+            'JOB INFO',
+            'JOB NO',
+            'ACTIVITY COMPLETE',
+            'DURATION',
+            'SQFT TEMPLATED/INSTALLED',
+            'SQFT NOT TEMPLATED/INSTALLED',
+            'REASON (IF NOT COMPLETE)',
+        ];
 
-        const csvContent = [headers.join(','), ...rows].join('\n');
+        const csvRows = allRows.map((row) => {
+            // Determine if template or installation for labels
+            const isTemplate = row.activity_type === 'Template';
+            const sqft1Label = isTemplate ? 'SQFT TEMPLATED' : 'SQFT INSTALLED';
+            const sqft2Label = isTemplate ? 'SQFT NOT TEMPLATED' : 'SQFT NOT INSTALLED';
+
+            // Build values
+            const values = [
+                row.installer || '',
+                // Job Info
+                (() => {
+                    if (row.type === 'installer' || row.type === 'timer') return '';
+                    const account = row.account_name || '';
+                    const job = row.job_name || '';
+                    const fabId = row.fab_id ? `FAB-${row.fab_id}` : '';
+                    return [account, job, fabId].filter(Boolean).join(' - ');
+                })(),
+                row.job_number || '',
+                (() => {
+                    if (row.type === 'job') return row.activity_complete ? 'Yes' : 'No';
+                    return '';
+                })(),
+                (() => {
+                    if (row.type === 'job') return formatDuration(row.total_work_seconds || 0);
+                    if (row.type === 'timer') return formatDuration(row.total_work_seconds || 0);
+                    return '';
+                })(),
+                (() => {
+                    if (row.type === 'installer') {
+                        const key = isTemplate ? 'total_sqft_templated' : 'total_sqft_installed';
+                        return (row[key] || 0).toFixed(0);
+                    } else if (row.type === 'job') {
+                        const val = isTemplate ? row.sqft_templated : row.sq_ft_installed;
+                        return (val || 0).toFixed(0);
+                    } else if (row.type === 'timer') {
+                        return (row.sqft || 0).toFixed(0);
+                    }
+                    return '';
+                })(),
+                (() => {
+                    if (row.type === 'installer') {
+                        const key = isTemplate ? 'total_sqft_not_templated' : 'total_sqft_incomplete';
+                        return (row[key] || 0).toFixed(0);
+                    } else if (row.type === 'job') {
+                        const val = isTemplate ? row.sqft_not_templated : row.sq_ft_incomplete;
+                        return (val || 0).toFixed(0);
+                    } else if (row.type === 'timer') {
+                        if (isTemplate) return (row.sqft_not_templated || 0).toFixed(0);
+                        else return (row.sqft_not_installed || 0).toFixed(0);
+                    }
+                    return '';
+                })(),
+                (() => {
+                    if (row.type === 'job') return row.reason_if_not_complete || '';
+                    if (row.type === 'timer') return row.note || '';
+                    return '';
+                })(),
+            ];
+
+            return values.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+        });
+
+        const csvContent = '\uFEFF' + [headers.join(','), ...csvRows].join('\n');
+
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -831,21 +992,8 @@ export function InstallationTemplateReport() {
                         )}
                     </div>
                 </div>
-                <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
-                    <SelectTrigger className="w-auto min-w-[150px] h-[34px]"><SelectValue placeholder="Fab Type" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        {fabTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-                {/* <Select value={String(salesPersonId)} onValueChange={(v) => setSalesPersonId(v === 'all' ? 'all' : Number(v))}>
-                    <SelectTrigger className="w-auto min-w-[150px] h-[34px]"><SelectValue placeholder="Sales Person" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Sales Persons</SelectItem>
-                        <SelectItem value="no_sales_person">No Sales Person</SelectItem>
-                        {salesPersons.map(sp => <SelectItem key={sp.id} value={String(sp.id)}>{sp.name}</SelectItem>)}
-                    </SelectContent>
-                </Select> */}
+                
+                {/* Sales Person filter disabled as per original */}
             </div>
 
             {/* ── Summary Cards ── */}
@@ -902,7 +1050,7 @@ export function InstallationTemplateReport() {
                     setIsUpdateModalOpen(false);
                     setSelectedRowData(null);
                 }}
-                rowData={selectedRowData}   // now contains timer session data with `timer_session_id`
+                rowData={selectedRowData}
                 onUpdateSuccess={refetch}
             />
 
@@ -964,19 +1112,7 @@ export function InstallationTemplateReport() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        {/* <div>
-                            <Label>Sales Person</Label>
-                            <Select value={String(pdfSalesPerson)} onValueChange={(v) => setPdfSalesPerson(v === 'all' ? 'all' : Number(v))}>
-                                <SelectTrigger className="h-[34px]">
-                                    <SelectValue placeholder="All Sales Persons" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Sales Persons</SelectItem>
-                                    <SelectItem value="no_sales_person">No Sales Person</SelectItem>
-                                    {salesPersons.map(sp => <SelectItem key={sp.id} value={String(sp.id)}>{sp.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div> */}
+                        {/* Sales Person filter commented out as per original */}
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsPdfDialogOpen(false)}>Cancel</Button>

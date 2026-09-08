@@ -360,6 +360,7 @@ const ShopRevisionDetailsPage = () => {
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{revision.revision_note}</p>
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{revision.shop_revision_type}</p>
                     <p className="text-xs text-gray-400 mt-1">
                       Requested by: {revision.requested_by_name || `Operator ${revision.requested_by}`}
                     </p>
@@ -397,6 +398,12 @@ const ShopRevisionDetailsPage = () => {
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">Revision Feedback</p>
                     <p className="text-sm">{selectedRevision.revision_feedback}</p>
+                  </div>
+                )}
+                {selectedRevision.shop_revision_type && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Shop Revision Type</p>
+                    <p className="text-sm">{selectedRevision.shop_revision_type}</p>
                   </div>
                 )}
                 <div className="space-y-1">

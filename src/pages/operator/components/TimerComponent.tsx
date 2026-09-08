@@ -194,7 +194,7 @@ export function OperatorTimerComponent({
                         {/* Running → On Hold + Pause */}
                         {isRunning && !isPaused && (
                             <>
-                                <button
+                                {/* <button
                                     onClick={onPause}
                                     disabled={disabled}
                                     className="disabled:opacity-50 content-stretch flex gap-[8px] items-center justify-center px-[24px] py-[16px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[#fff5f5] transition-colors"
@@ -204,7 +204,7 @@ export function OperatorTimerComponent({
                                     <p className="font-['Proxima_Nova:Semibold',sans-serif] leading-[16px] not-italic relative shrink-0 text-[#ef4444] text-[16px] tracking-[-0.32px] whitespace-nowrap">
                                         {t('TIMER.ON_HOLD_BUTTON')}
                                     </p>
-                                </button>
+                                </button> */}
                                 
                                 <button
                                     onClick={onPause}
