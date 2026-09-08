@@ -658,6 +658,9 @@ export function OperatorTaskDetails() {
                                             </span>
                                         </div>
                                         <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                            {revision.shop_revision_type}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                                             {revision.revision_note || t('SHOP_REVISION.NO_NOTE')}
                                         </p>
                                         <p className="text-xs text-gray-400 mt-1">
@@ -770,6 +773,12 @@ export function OperatorTaskDetails() {
                                         <div className="space-y-1">
                                             <p className="text-xs text-muted-foreground">{t('SHOP_REVISION.REVISION_FEEDBACK')}</p>
                                             <p className="text-sm">{selectedRevision.revision_feedback}</p>
+                                        </div>
+                                    )}
+                                     {selectedRevision.shop_revision_type && (
+                                        <div className="space-y-1">
+                                            <p className="text-xs text-muted-foreground">{t('SHOP_REVISION.REVISION_TYPE')}</p>
+                                            <p className="text-sm">{selectedRevision.shop_revision_type}</p>
                                         </div>
                                     )}
                                     <div className="space-y-1">

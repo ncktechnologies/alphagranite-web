@@ -238,16 +238,16 @@ const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onS
 
 interface PlanStageCardProps {
     plan: any;
-    workstations: any[];
-    employees: any[];
+    workstations?: any[];
+    employees?: any[];
     totalPlans: number;
-    onSaved: () => void;
+    onSaved?: () => void;
     disabled?: boolean;
     canEdit?: boolean;
 }
 
 // ─── Updated PlanStageCard with auto‑calculated end ────────────────────────
-const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, employees, totalPlans, onSaved, disabled = false, canEdit = false }) => {
+export const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, employees, totalPlans, onSaved, disabled = false, canEdit = false }) => {
     const [updateShopPlan] = useUpdateShopPlanMutation();
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -1371,6 +1371,7 @@ const FabDetailsPage = () => {
                                         />
                                     )}
                                     <InfoRow label="FAB ID" value={selectedRevision.fab_id || '—'} />
+                                    <InfoRow label="Revision Type" value={selectedRevision.shop_revision_type || '—'} />
                                     <InfoRow label="Revision Note" value={selectedRevision.revision_note || '—'} />
                                     <InfoRow label="Requested By" value={selectedRevision.requested_by_name || selectedRevision.requested_by || '—'} />
                                     <InfoRow label="Created At" value={selectedRevision.created_at ? format(new Date(selectedRevision.created_at), 'MMM dd, yyyy h:mm a') : '—'} />
@@ -1425,8 +1426,9 @@ const FabDetailsPage = () => {
                             Enter a note describing the revision request.
                         </p>
                         <div className="space-y-2">
+                            
                             <Label htmlFor="revision-note" className="text-xs uppercase tracking-wide text-muted-foreground">
-                                Revision Note
+                                Revision Type
                             </Label>
                             <Select value={revisionType} onValueChange={(value) => setRevisionType(value)}>
                                 <SelectTrigger>
@@ -1438,6 +1440,9 @@ const FabDetailsPage = () => {
                                     <SelectItem value="Material Issue">Material Issue</SelectItem>
                                 </SelectContent>
                             </Select>
+                            <Label htmlFor="revision-note" className="text-xs uppercase tracking-wide text-muted-foreground">
+                                Revision Note
+                            </Label>
                             <Textarea
                                 id="revision-note"
                                 value={revisionNote}
