@@ -6,16 +6,16 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   base: '/',
-  server: {
-    proxy: {
-      '/api': {
-        // target: 'https://api.staging.odysseytracker.com/',
-        target: 'https://dev.api.ag.easybusiness.ng/',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-    },
-  },
+  // server: {
+  //   proxy: {
+  //     '/api': {
+  //       // target: 'https://api.staging.odysseytracker.com/',
+  //       target: 'https://dev.api.ag.easybusiness.ng/',
+  //       changeOrigin: true,
+  //       rewrite: (path) => path.replace(/^\/api/, ''),
+  //     },
+  //   },
+  // },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
