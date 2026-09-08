@@ -28,7 +28,6 @@ import { CalendarDays, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { IJob } from './job';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { useToggleFabOnHoldMutation } from '@/store/api/job';
 import { Switch } from '@/components/ui/switch';
@@ -42,6 +41,7 @@ import { useTableState } from '@/hooks/use-table-state';
 import ActionsCell from './action';
 import { formatStage } from '@/pages/reports/OwnerReview';
 import { format } from 'date-fns';
+import { IJob } from '@/pages/jobs/components/job';
 
 // ─── Robust date parser ──────────────────────────────────────────────────────
 const parseDateForDisplay = (s: string | undefined): Date | undefined => {
@@ -58,7 +58,7 @@ const parseDateForDisplay = (s: string | undefined): Date | undefined => {
     try {
         const d = new Date(s);
         if (!isNaN(d.getTime())) return d;
-    } catch {}
+    } catch { }
     return undefined;
 };
 
@@ -1137,6 +1137,12 @@ export const JobSalesTable = ({
             accessorKey: 'current_stage',
             header: ({ column }) => <DataGridColumnHeader title="CURRENT STAGE" column={column} />,
             cell: ({ row }) => {
+                // ✅ Check BOTH conditions before overriding
+                if (row.original.install_completed === true && row.original.percent_complete === 100) {
+                    return <span className="text-xs font-medium text-green-600">Install Complete</span>;
+                }
+
+                // Fallback to the original logic for all other cases
                 const currentStage = row.original.current_stage || '-';
                 const shopCurrentStage = row.original.shop_current_stage;
                 const displayText = shopCurrentStage ? `${currentStage} (${shopCurrentStage})` : currentStage;
@@ -1146,6 +1152,10 @@ export const JobSalesTable = ({
             enableSorting: true,
             meta: {
                 format: (value: any, row: IJob) => {
+                    // Also apply the same logic for CSV/export
+                    if (row.install_completed === true && row.percent_complete === 100) {
+                        return 'Install Complete';
+                    }
                     const stage = row.current_stage || '-';
                     const shopStage = row.shop_current_stage;
                     const text = shopStage ? `${stage} (${shopStage})` : stage;

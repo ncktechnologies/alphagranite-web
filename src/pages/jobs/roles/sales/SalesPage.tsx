@@ -63,6 +63,8 @@ const transformFabToJob = (fab: Fab): IJob => {
         status_id: fab.status_id,
         on_hold: fab.on_hold,
         sales_person_name: fab.sales_person_name || '',
+        install_completed: fab.install_details?.is_completed ?? false,
+        percent_complete: fab.percentage_completion ?? 0,
 
     };
 };
@@ -71,7 +73,7 @@ export function SalesPage() {
     const location = useLocation();
     const isNewFabForm = location.pathname.includes('/new-fab-id');
     const isSuperAdmin = useIsSuperAdmin();
-    const permissions = usePermission('View all FABS'); 
+    const permissions = usePermission('View all FABS');
 
     // Determine table action permissions
     const canAddNote = isSuperAdmin || permissions.can_create;
@@ -79,16 +81,16 @@ export function SalesPage() {
     const canExport = isSuperAdmin || permissions.can_read;
 
     // Extract sales persons
-     const { data: salesPersonsData } = useGetEmployeeSalesPersonsQuery();
-         const salesPersons = useMemo(() => {
-            if (!salesPersonsData) return [];
-            return Array.isArray(salesPersonsData)
-              ? salesPersonsData.map((sp: any) => ({
+    const { data: salesPersonsData } = useGetEmployeeSalesPersonsQuery();
+    const salesPersons = useMemo(() => {
+        if (!salesPersonsData) return [];
+        return Array.isArray(salesPersonsData)
+            ? salesPersonsData.map((sp: any) => ({
                 id: sp.id || sp.user_id,
                 name: sp.name || `${sp.first_name} ${sp.last_name}`,
-              }))
-              : [];
-          }, [salesPersonsData]);
+            }))
+            : [];
+    }, [salesPersonsData]);
 
     const tableState = useTableState({
         tableId: 'sct-table',
@@ -200,12 +202,12 @@ export function SalesPage() {
                             </Link>
                         </Can>
                         {/* <Can action="rea" on="View all FABS"> */}
-                            <Link to="/create-jobs">
-                                <Button className="">
-                                    <Eye />
-                                    View Jobs
-                                </Button>
-                            </Link>
+                        <Link to="/create-jobs">
+                            <Button className="">
+                                <Eye />
+                                View Jobs
+                            </Button>
+                        </Link>
                         {/* </Can> */}
                     </ToolbarActions>
                 </Toolbar>

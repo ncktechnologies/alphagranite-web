@@ -354,7 +354,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
         if (isCompleted && !hasEndDate) {
           schedulePayload.scheduled_end_date = formatDate(new Date());
         }
-        schedulePayload.is_completed =  false;
+        schedulePayload.is_completed =  isCompleted || false;
         await updateInstallScheduling({ install_scheduling_id: installId, data: schedulePayload }).unwrap();
         someSuccess = true;
       }
