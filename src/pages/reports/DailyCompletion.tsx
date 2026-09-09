@@ -130,7 +130,11 @@ export function DailyCompletion() {
             cell: ({ row }) => {
                 let val = row.original[key];
                 if (key === 'date' && val) {
-                    try { val = format(new Date(val), 'MMM dd, yyyy'); } catch { }
+                    try {
+                        const [year, month, day] = val.split('-').map(Number);
+                        const localDate = new Date(year, month - 1, day); // local time, no UTC shift
+                        val = format(localDate, 'MMM dd, yyyy');
+                    } catch { }
                 }
                 if (typeof val === 'number') {
                     // Format currency for GP, revenue, etc.
@@ -276,7 +280,7 @@ export function DailyCompletion() {
                     <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(table, 'daily-completion')}>
                         Export CSV
                     </Button>
-                <BackButton/>
+                    <BackButton />
                 </div>
 
             </div>

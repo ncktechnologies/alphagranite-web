@@ -27,7 +27,7 @@ export const JobDetailsView = ({ job, onEdit }: JobDetailsViewProps) => {
           <h1 className="text-2xl font-bold">{job.name}</h1>
           <p className="text-gray-500">Job Number: {job.job_number}</p>
         </div>
-        <Can action="update" on="jobs">
+        <Can action="create" on="jobs">
           <Button variant="outline" size="sm" onClick={() => onEdit(job)}>
             <Pencil className="h-4 w-4 mr-2" />
             Edit

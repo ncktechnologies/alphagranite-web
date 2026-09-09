@@ -210,7 +210,7 @@ export function ReviewChecklistForm() {
                         )}
 
                         {isScheduled && (
-                            <Can action="update" on="Templating">
+                            <Can action="create" on="Templating">
                                 <Button
                                     variant="outline"
                                     className="w-full text-secondary font-bold py-6 text-base"

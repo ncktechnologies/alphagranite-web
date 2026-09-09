@@ -276,7 +276,7 @@ export function InstallSchedulingDetailsPage() {
                     )}
 
                     {/* Install Checklist Form */}
-                    <Can action="update" on="jobs">
+                    <Can action="create" on="jobs">
 
                         <Card>
                             <CardHeader className="border-b pb-4">

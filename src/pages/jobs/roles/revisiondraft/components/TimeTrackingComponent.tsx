@@ -373,14 +373,14 @@ export const TimeTrackingComponent = ({
         <div className="flex gap-2">
 
           {isPaused && !hasEnded ? (
-            <Can action="update" on="Drafting">
+            <Can action="create" on="Drafting">
               <Button onClick={handleResume} variant="inverse" className="bg-[#4B545D] text-white">
                 <Play className="w-4 h-4 mr-2" />
                 Resume
               </Button>
             </Can>
           ) : !isDrafting && !hasEnded && !isPaused ? (
-            <Can action="update" on="Drafting">
+            <Can action="create" on="Drafting">
               <Button onClick={handleStart} disabled={isStarting}>
                 <Play className="w-4 h-4 mr-2" />
                 {isStarting ? 'Starting...' : 'Start Revision'}

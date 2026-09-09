@@ -312,7 +312,7 @@ export const SubmissionModal = ({
                 Cancel
               </Button>
 
-              <Can action="update" on="Drafting">
+              <Can action="create" on="Drafting">
                 <Button 
                   type="submit" 
                   disabled={!isConfirmed || isSubmitting}

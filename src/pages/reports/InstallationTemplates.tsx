@@ -641,209 +641,144 @@ export function InstallationTemplateReport() {
     };
 
     // ─── CSV Export helper (updated to include proper headers and Job Info) ──
-    const exportFlattenedToCSV = (table: any, filename: string) => {
-        // Flatten all rows (installer, job, timer)
-        const flattenRows = (rows: any[]): any[] => {
-            let result: any[] = [];
-            rows.forEach(row => {
-                result.push(row.original);
-                if (row.subRows && row.subRows.length > 0) {
-                    result = result.concat(flattenRows(row.subRows));
-                }
-            });
-            return result;
-        };
-
-        const allRows = flattenRows(table.getPrePaginationRowModel().rows);
-        if (allRows.length === 0) {
-            toast.warning('No data to export');
-            return;
-        }
-
-        // Define export columns with labels and formatters
-        const exportColumns: {
-            key: string;
-            label: string;
-            formatter: (row: any) => string;
-        }[] = [
-            {
-                key: 'installer',
-                label: 'EMPLOYEE',
-                formatter: (row) => row.installer || '',
-            },
-            {
-                key: 'job_info',
-                label: 'JOB INFO',
-                formatter: (row) => {
-                    if (row.type === 'installer' || row.type === 'timer') return '';
-                    const account = row.account_name || '';
-                    const job = row.job_name || '';
-                    const fabId = row.fab_id ? `FAB-${row.fab_id}` : '';
-                    return [account, job, fabId].filter(Boolean).join(' - ');
-                },
-            },
-            {
-                key: 'job_number',
-                label: 'JOB NO',
-                formatter: (row) => row.job_number || '',
-            },
-            {
-                key: 'activity_complete',
-                label: 'ACTIVITY COMPLETE',
-                formatter: (row) => {
-                    if (row.type === 'job') return row.activity_complete ? 'Yes' : 'No';
-                    return '';
-                },
-            },
-            {
-                key: 'duration',
-                label: 'DURATION',
-                formatter: (row) => {
-                    if (row.type === 'job') {
-                        return formatDuration(row.total_work_seconds || 0);
-                    } else if (row.type === 'timer') {
-                        return formatDuration(row.total_work_seconds || 0);
-                    }
-                    return '';
-                },
-            },
-            {
-                key: 'sqft_1',
-                label: (row: any) => {
-                    const isTemplate = row.activity_type === 'Template';
-                    return isTemplate ? 'SQFT TEMPLATED' : 'SQFT INSTALLED';
-                },
-                formatter: (row) => {
-                    if (row.type === 'installer') {
-                        const key = row.activity_type === 'Template' ? 'total_sqft_templated' : 'total_sqft_installed';
-                        return (row[key] || 0).toFixed(0);
-                    } else if (row.type === 'job') {
-                        const val = row.activity_type === 'Template' ? row.sqft_templated : row.sq_ft_installed;
-                        return (val || 0).toFixed(0);
-                    } else if (row.type === 'timer') {
-                        return (row.sqft || 0).toFixed(0);
-                    }
-                    return '';
-                },
-            },
-            {
-                key: 'sqft_2',
-                label: (row: any) => {
-                    const isTemplate = row.activity_type === 'Template';
-                    return isTemplate ? 'SQFT NOT TEMPLATED' : 'SQFT NOT INSTALLED';
-                },
-                formatter: (row) => {
-                    if (row.type === 'installer') {
-                        const key = row.activity_type === 'Template' ? 'total_sqft_not_templated' : 'total_sqft_incomplete';
-                        return (row[key] || 0).toFixed(0);
-                    } else if (row.type === 'job') {
-                        const val = row.activity_type === 'Template' ? row.sqft_not_templated : row.sq_ft_incomplete;
-                        return (val || 0).toFixed(0);
-                    } else if (row.type === 'timer') {
-                        if (row.activity_type === 'Template') return (row.sqft_not_templated || 0).toFixed(0);
-                        if (row.activity_type === 'Installation') return (row.sqft_not_installed || 0).toFixed(0);
-                        return '0';
-                    }
-                    return '';
-                },
-            },
-            {
-                key: 'reason',
-                label: 'REASON (IF NOT COMPLETE)',
-                formatter: (row) => {
-                    if (row.type === 'job') return row.reason_if_not_complete || '';
-                    if (row.type === 'timer') return row.note || '';
-                    return '';
-                },
-            },
-        ];
-
-        // For each row, determine the activity type to set labels correctly
-        const headers = [
-            'EMPLOYEE',
-            'JOB INFO',
-            'JOB NO',
-            'ACTIVITY COMPLETE',
-            'DURATION',
-            'SQFT TEMPLATED/INSTALLED',
-            'SQFT NOT TEMPLATED/INSTALLED',
-            'REASON (IF NOT COMPLETE)',
-        ];
-
-        const csvRows = allRows.map((row) => {
-            // Determine if template or installation for labels
-            const isTemplate = row.activity_type === 'Template';
-            const sqft1Label = isTemplate ? 'SQFT TEMPLATED' : 'SQFT INSTALLED';
-            const sqft2Label = isTemplate ? 'SQFT NOT TEMPLATED' : 'SQFT NOT INSTALLED';
-
-            // Build values
-            const values = [
-                row.installer || '',
-                // Job Info
-                (() => {
-                    if (row.type === 'installer' || row.type === 'timer') return '';
-                    const account = row.account_name || '';
-                    const job = row.job_name || '';
-                    const fabId = row.fab_id ? `FAB-${row.fab_id}` : '';
-                    return [account, job, fabId].filter(Boolean).join(' - ');
-                })(),
-                row.job_number || '',
-                (() => {
-                    if (row.type === 'job') return row.activity_complete ? 'Yes' : 'No';
-                    return '';
-                })(),
-                (() => {
-                    if (row.type === 'job') return formatDuration(row.total_work_seconds || 0);
-                    if (row.type === 'timer') return formatDuration(row.total_work_seconds || 0);
-                    return '';
-                })(),
-                (() => {
-                    if (row.type === 'installer') {
-                        const key = isTemplate ? 'total_sqft_templated' : 'total_sqft_installed';
-                        return (row[key] || 0).toFixed(0);
-                    } else if (row.type === 'job') {
-                        const val = isTemplate ? row.sqft_templated : row.sq_ft_installed;
-                        return (val || 0).toFixed(0);
-                    } else if (row.type === 'timer') {
-                        return (row.sqft || 0).toFixed(0);
-                    }
-                    return '';
-                })(),
-                (() => {
-                    if (row.type === 'installer') {
-                        const key = isTemplate ? 'total_sqft_not_templated' : 'total_sqft_incomplete';
-                        return (row[key] || 0).toFixed(0);
-                    } else if (row.type === 'job') {
-                        const val = isTemplate ? row.sqft_not_templated : row.sq_ft_incomplete;
-                        return (val || 0).toFixed(0);
-                    } else if (row.type === 'timer') {
-                        if (isTemplate) return (row.sqft_not_templated || 0).toFixed(0);
-                        else return (row.sqft_not_installed || 0).toFixed(0);
-                    }
-                    return '';
-                })(),
-                (() => {
-                    if (row.type === 'job') return row.reason_if_not_complete || '';
-                    if (row.type === 'timer') return row.note || '';
-                    return '';
-                })(),
-            ];
-
-            return values.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+    const exportFlattenedToCSV = (table: any, filename: string, activityType?: 'Template' | 'Installation') => {
+    const flattenRows = (rows: any[]): any[] => {
+        let result: any[] = [];
+        rows.forEach(row => {
+            result.push(row.original);
+            if (row.subRows && row.subRows.length > 0) {
+                result = result.concat(flattenRows(row.subRows));
+            }
         });
-
-        const csvContent = '\uFEFF' + [headers.join(','), ...csvRows].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `${filename}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        return result;
     };
+
+    const allRows = flattenRows(table.getPrePaginationRowModel().rows);
+    if (allRows.length === 0) {
+        toast.warning('No data to export');
+        return;
+    }
+
+    // Determine activity type from data or passed parameter
+    let detectedType = activityType;
+    if (!detectedType) {
+        // Try to detect from first row that has activity_type
+        const firstRow = allRows.find(row => row.activity_type);
+        if (firstRow) detectedType = firstRow.activity_type;
+    }
+    const isTemplate = detectedType === 'Template';
+
+    // Define export columns with labels and formatters
+    const exportColumns: {
+        key: string;
+        label: string;
+        formatter: (row: any) => string;
+    }[] = [
+        {
+            key: 'installer',
+            label: 'EMPLOYEE',
+            formatter: (row) => row.installer || '',
+        },
+        {
+            key: 'job_info',
+            label: 'JOB INFO',
+            formatter: (row) => {
+                if (row.type === 'installer' || row.type === 'timer') return '';
+                const account = row.account_name || '';
+                const job = row.job_name || '';
+                const fabId = row.fab_id ? `FAB-${row.fab_id}` : '';
+                return [account, job, fabId].filter(Boolean).join(' - ');
+            },
+        },
+        {
+            key: 'job_number',
+            label: 'JOB NO',
+            formatter: (row) => row.job_number || '',
+        },
+        {
+            key: 'activity_complete',
+            label: 'ACTIVITY COMPLETE',
+            formatter: (row) => {
+                if (row.type === 'job') return row.activity_complete ? 'Yes' : 'No';
+                return '';
+            },
+        },
+        {
+            key: 'duration',
+            label: 'DURATION',
+            formatter: (row) => {
+                if (row.type === 'job' || row.type === 'timer') {
+                    return formatDuration(row.total_work_seconds || 0);
+                }
+                return '';
+            },
+        },
+        {
+            key: 'sqft_1',
+            label: isTemplate ? 'SQFT TEMPLATED' : 'SQFT INSTALLED',
+            formatter: (row) => {
+                if (row.type === 'installer') {
+                    const key = isTemplate ? 'total_sqft_templated' : 'total_sqft_installed';
+                    return (row[key] || 0).toFixed(0);
+                } else if (row.type === 'job') {
+                    const val = isTemplate ? row.sqft_templated : row.sq_ft_installed;
+                    return (val || 0).toFixed(0);
+                } else if (row.type === 'timer') {
+                    return (row.sqft || 0).toFixed(0);
+                }
+                return '';
+            },
+        },
+        {
+            key: 'sqft_2',
+            label: isTemplate ? 'SQFT NOT TEMPLATED' : 'SQFT NOT INSTALLED',
+            formatter: (row) => {
+                if (row.type === 'installer') {
+                    const key = isTemplate ? 'total_sqft_not_templated' : 'total_sqft_incomplete';
+                    return (row[key] || 0).toFixed(0);
+                } else if (row.type === 'job') {
+                    const val = isTemplate ? row.sqft_not_templated : row.sq_ft_incomplete;
+                    return (val || 0).toFixed(0);
+                } else if (row.type === 'timer') {
+                    if (isTemplate) return (row.sqft_not_templated || 0).toFixed(0);
+                    else return (row.sqft_not_installed || 0).toFixed(0);
+                }
+                return '';
+            },
+        },
+        {
+            key: 'reason',
+            label: 'REASON (IF NOT COMPLETE)',
+            formatter: (row) => {
+                if (row.type === 'job') return row.reason_if_not_complete || '';
+                if (row.type === 'timer') return row.note || '';
+                return '';
+            },
+        },
+    ];
+
+    const headers = exportColumns.map(col => col.label);
+    const csvRows = allRows.map((row) => {
+        return exportColumns
+            .map(col => {
+                const value = col.formatter(row);
+                return `"${String(value).replace(/"/g, '""')}"`;
+            })
+            .join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...csvRows].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${filename}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+};
 
     // ─── Render Table helper ────────────────────────────────────────────────
     const renderTable = (
