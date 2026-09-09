@@ -1394,12 +1394,13 @@ export const JobTable = ({
         },
     },
     // ─── Install Confirmed ──────────────────────────────────────────────────
-    {
-        id: 'install_completed',
-        accessorKey: 'install_completed',
-        header: ({ column }) => <DataGridColumnHeader title="INSTALL Completed" column={column} />,
+  
+      {
+        id: 'install_confirmed',
+        accessorKey: 'install_confirmed',
+        header: ({ column }) => <DataGridColumnHeader title="INSTALL CONFIRMED" column={column} />,
         cell: ({ row }) => {
-            const confirmed = (row.original as any).install_completed;
+            const confirmed = (row.original as any).install_confirmed;
             if (confirmed === true || confirmed === 'Yes') return <span className="text-xs font-medium text-green-600">Yes</span>;
             if (confirmed === false || confirmed === 'No') return <span className="text-xs font-medium text-red-500">No</span>;
             return <span className="text-xs text-gray-400">-</span>;
@@ -1415,11 +1416,11 @@ export const JobTable = ({
         },
     },
       {
-        id: 'install_confirmed',
-        accessorKey: 'install_confirmed',
-        header: ({ column }) => <DataGridColumnHeader title="INSTALL CONFIRMED" column={column} />,
+        id: 'install_completed',
+        accessorKey: 'install_completed',
+        header: ({ column }) => <DataGridColumnHeader title="INSTALL COMPLETED" column={column} />,
         cell: ({ row }) => {
-            const confirmed = (row.original as any).install_confirmed;
+            const confirmed = (row.original as any).install_completed;
             if (confirmed === true || confirmed === 'Yes') return <span className="text-xs font-medium text-green-600">Yes</span>;
             if (confirmed === false || confirmed === 'No') return <span className="text-xs font-medium text-red-500">No</span>;
             return <span className="text-xs text-gray-400">-</span>;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -245,9 +245,11 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
   const installCompleted = form.watch("install_completed");
 
   // Reset form – wait for installerOptions to be ready
+  const hasInitialized = useRef(false);
   useEffect(() => {
     if (!fabId) return;
     if (installerOptions.length === 0) return;
+    if (hasInitialized.current) return; // <- prevent repeated resets
 
     const fab = fabData?.data;
     const install = installData?.data ?? installData;
@@ -272,6 +274,8 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
     if (install?.extra_crew_2_id && install.extra_crew_2_id !== 0) crewSet.add(String(install.extra_crew_2_id));
     if (install?.extra_crew_3_id && install.extra_crew_3_id !== 0) crewSet.add(String(install.extra_crew_3_id));
     setSelectedExtraCrewIds(crewSet);
+
+    hasInitialized.current = true;
   }, [fabId, fabData, installData, completionData, installerOptions, form]);
 
   const toggleExtraCrew = useCallback((userId: string, checked: boolean) => {
@@ -354,7 +358,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
         if (isCompleted && !hasEndDate) {
           schedulePayload.scheduled_end_date = formatDate(new Date());
         }
-        schedulePayload.is_completed =  isCompleted || false;
+        schedulePayload.is_completed = isCompleted || false;
         await updateInstallScheduling({ install_scheduling_id: installId, data: schedulePayload }).unwrap();
         someSuccess = true;
       }
@@ -372,7 +376,15 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
 
         let completionId = completionData?.data?.id;
         if (completionId) {
-          await updateInstallCompletion({ fab_id: completionId, data: completionPayload }).unwrap();
+          const updatePayload: any = {
+            fab_id: fabId,
+            installer_id: hasInstaller ? Number(values.installer_id) : undefined,
+            install_date: hasInstallDate ? values.scheduled_install_date : undefined,
+            completion_date: hasEndDate ? values.scheduled_end_date : null,
+            is_completed: isCompleted || false,
+            install_confirm: values.install_confirm || false, // use the actual value
+          };
+          await updateInstallCompletion({ fab_id: completionId, data: updatePayload }).unwrap();
         } else {
           const createCompRes = await createInstallCompletion(completionPayload).unwrap();
           completionId = createCompRes?.data?.id ?? createCompRes?.id;
@@ -445,7 +457,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
                       <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
                     <FormLabel className="text-base font-semibold text-text">
-                      Install confirmation
+                      Install confirmed
                     </FormLabel>
                   </FormItem>
                 )}

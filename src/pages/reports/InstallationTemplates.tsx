@@ -222,7 +222,7 @@ export function InstallationTemplateReport() {
 
                 const installerRow = {
                     type: 'installer',
-                    id: `installer-${group.installer}-${activityType}`,
+                    id: `installer-${group.installer_id}-${activityType}`,   // use ID not name
                     installer: group.installer,
                     installer_id: group.installer_id,
                     total_hours: totalHours,
@@ -230,16 +230,16 @@ export function InstallationTemplateReport() {
                     total_sqft_not_templated: totalSqftNotTemplated,
                     total_sqft_installed: totalSqftInstalled,
                     total_sqft_incomplete: totalSqftIncomplete,
-                    subRows: rows.map((r) => ({
+                    subRows: rows.map((r, idx) => ({
                         ...r,
                         type: 'job',
-                        id: `job-${r.fab_id}-${activityType}`,
-                        // Timer sessions become subRows of the job
+                        // include installer_id AND array index so repeat fab_ids
+                        // (re-installs / multiple sessions on the same fab) can't collide
+                        id: `job-${group.installer_id}-${r.fab_id}-${activityType}-${idx}`,
                         subRows: (r.timer_sessions || []).map((ts) => ({
                             ...ts,
                             type: 'timer',
-                            id: `timer-${ts.id}`,
-                            timer_session_id: ts.id,
+                            id: `timer-${ts.id}`,   // ts.id should already be globally unique
                             job_id: r.job_id,
                             activity_type: r.activity_type,
                             session_start: ts.session_start_at,
@@ -642,143 +642,143 @@ export function InstallationTemplateReport() {
 
     // ─── CSV Export helper (updated to include proper headers and Job Info) ──
     const exportFlattenedToCSV = (table: any, filename: string, activityType?: 'Template' | 'Installation') => {
-    const flattenRows = (rows: any[]): any[] => {
-        let result: any[] = [];
-        rows.forEach(row => {
-            result.push(row.original);
-            if (row.subRows && row.subRows.length > 0) {
-                result = result.concat(flattenRows(row.subRows));
-            }
+        const flattenRows = (rows: any[]): any[] => {
+            let result: any[] = [];
+            rows.forEach(row => {
+                result.push(row.original);
+                if (row.subRows && row.subRows.length > 0) {
+                    result = result.concat(flattenRows(row.subRows));
+                }
+            });
+            return result;
+        };
+
+        const allRows = flattenRows(table.getPrePaginationRowModel().rows);
+        if (allRows.length === 0) {
+            toast.warning('No data to export');
+            return;
+        }
+
+        // Determine activity type from data or passed parameter
+        let detectedType = activityType;
+        if (!detectedType) {
+            // Try to detect from first row that has activity_type
+            const firstRow = allRows.find(row => row.activity_type);
+            if (firstRow) detectedType = firstRow.activity_type;
+        }
+        const isTemplate = detectedType === 'Template';
+
+        // Define export columns with labels and formatters
+        const exportColumns: {
+            key: string;
+            label: string;
+            formatter: (row: any) => string;
+        }[] = [
+                {
+                    key: 'installer',
+                    label: 'EMPLOYEE',
+                    formatter: (row) => row.installer || '',
+                },
+                {
+                    key: 'job_info',
+                    label: 'JOB INFO',
+                    formatter: (row) => {
+                        if (row.type === 'installer' || row.type === 'timer') return '';
+                        const account = row.account_name || '';
+                        const job = row.job_name || '';
+                        const fabId = row.fab_id ? `FAB-${row.fab_id}` : '';
+                        return [account, job, fabId].filter(Boolean).join(' - ');
+                    },
+                },
+                {
+                    key: 'job_number',
+                    label: 'JOB NO',
+                    formatter: (row) => row.job_number || '',
+                },
+                {
+                    key: 'activity_complete',
+                    label: 'ACTIVITY COMPLETE',
+                    formatter: (row) => {
+                        if (row.type === 'job') return row.activity_complete ? 'Yes' : 'No';
+                        return '';
+                    },
+                },
+                {
+                    key: 'duration',
+                    label: 'DURATION',
+                    formatter: (row) => {
+                        if (row.type === 'job' || row.type === 'timer') {
+                            return formatDuration(row.total_work_seconds || 0);
+                        }
+                        return '';
+                    },
+                },
+                {
+                    key: 'sqft_1',
+                    label: isTemplate ? 'SQFT TEMPLATED' : 'SQFT INSTALLED',
+                    formatter: (row) => {
+                        if (row.type === 'installer') {
+                            const key = isTemplate ? 'total_sqft_templated' : 'total_sqft_installed';
+                            return (row[key] || 0).toFixed(0);
+                        } else if (row.type === 'job') {
+                            const val = isTemplate ? row.sqft_templated : row.sq_ft_installed;
+                            return (val || 0).toFixed(0);
+                        } else if (row.type === 'timer') {
+                            return (row.sqft || 0).toFixed(0);
+                        }
+                        return '';
+                    },
+                },
+                {
+                    key: 'sqft_2',
+                    label: isTemplate ? 'SQFT NOT TEMPLATED' : 'SQFT NOT INSTALLED',
+                    formatter: (row) => {
+                        if (row.type === 'installer') {
+                            const key = isTemplate ? 'total_sqft_not_templated' : 'total_sqft_incomplete';
+                            return (row[key] || 0).toFixed(0);
+                        } else if (row.type === 'job') {
+                            const val = isTemplate ? row.sqft_not_templated : row.sq_ft_incomplete;
+                            return (val || 0).toFixed(0);
+                        } else if (row.type === 'timer') {
+                            if (isTemplate) return (row.sqft_not_templated || 0).toFixed(0);
+                            else return (row.sqft_not_installed || 0).toFixed(0);
+                        }
+                        return '';
+                    },
+                },
+                {
+                    key: 'reason',
+                    label: 'REASON (IF NOT COMPLETE)',
+                    formatter: (row) => {
+                        if (row.type === 'job') return row.reason_if_not_complete || '';
+                        if (row.type === 'timer') return row.note || '';
+                        return '';
+                    },
+                },
+            ];
+
+        const headers = exportColumns.map(col => col.label);
+        const csvRows = allRows.map((row) => {
+            return exportColumns
+                .map(col => {
+                    const value = col.formatter(row);
+                    return `"${String(value).replace(/"/g, '""')}"`;
+                })
+                .join(',');
         });
-        return result;
+
+        const csvContent = '\uFEFF' + [headers.join(','), ...csvRows].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${filename}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
     };
-
-    const allRows = flattenRows(table.getPrePaginationRowModel().rows);
-    if (allRows.length === 0) {
-        toast.warning('No data to export');
-        return;
-    }
-
-    // Determine activity type from data or passed parameter
-    let detectedType = activityType;
-    if (!detectedType) {
-        // Try to detect from first row that has activity_type
-        const firstRow = allRows.find(row => row.activity_type);
-        if (firstRow) detectedType = firstRow.activity_type;
-    }
-    const isTemplate = detectedType === 'Template';
-
-    // Define export columns with labels and formatters
-    const exportColumns: {
-        key: string;
-        label: string;
-        formatter: (row: any) => string;
-    }[] = [
-        {
-            key: 'installer',
-            label: 'EMPLOYEE',
-            formatter: (row) => row.installer || '',
-        },
-        {
-            key: 'job_info',
-            label: 'JOB INFO',
-            formatter: (row) => {
-                if (row.type === 'installer' || row.type === 'timer') return '';
-                const account = row.account_name || '';
-                const job = row.job_name || '';
-                const fabId = row.fab_id ? `FAB-${row.fab_id}` : '';
-                return [account, job, fabId].filter(Boolean).join(' - ');
-            },
-        },
-        {
-            key: 'job_number',
-            label: 'JOB NO',
-            formatter: (row) => row.job_number || '',
-        },
-        {
-            key: 'activity_complete',
-            label: 'ACTIVITY COMPLETE',
-            formatter: (row) => {
-                if (row.type === 'job') return row.activity_complete ? 'Yes' : 'No';
-                return '';
-            },
-        },
-        {
-            key: 'duration',
-            label: 'DURATION',
-            formatter: (row) => {
-                if (row.type === 'job' || row.type === 'timer') {
-                    return formatDuration(row.total_work_seconds || 0);
-                }
-                return '';
-            },
-        },
-        {
-            key: 'sqft_1',
-            label: isTemplate ? 'SQFT TEMPLATED' : 'SQFT INSTALLED',
-            formatter: (row) => {
-                if (row.type === 'installer') {
-                    const key = isTemplate ? 'total_sqft_templated' : 'total_sqft_installed';
-                    return (row[key] || 0).toFixed(0);
-                } else if (row.type === 'job') {
-                    const val = isTemplate ? row.sqft_templated : row.sq_ft_installed;
-                    return (val || 0).toFixed(0);
-                } else if (row.type === 'timer') {
-                    return (row.sqft || 0).toFixed(0);
-                }
-                return '';
-            },
-        },
-        {
-            key: 'sqft_2',
-            label: isTemplate ? 'SQFT NOT TEMPLATED' : 'SQFT NOT INSTALLED',
-            formatter: (row) => {
-                if (row.type === 'installer') {
-                    const key = isTemplate ? 'total_sqft_not_templated' : 'total_sqft_incomplete';
-                    return (row[key] || 0).toFixed(0);
-                } else if (row.type === 'job') {
-                    const val = isTemplate ? row.sqft_not_templated : row.sq_ft_incomplete;
-                    return (val || 0).toFixed(0);
-                } else if (row.type === 'timer') {
-                    if (isTemplate) return (row.sqft_not_templated || 0).toFixed(0);
-                    else return (row.sqft_not_installed || 0).toFixed(0);
-                }
-                return '';
-            },
-        },
-        {
-            key: 'reason',
-            label: 'REASON (IF NOT COMPLETE)',
-            formatter: (row) => {
-                if (row.type === 'job') return row.reason_if_not_complete || '';
-                if (row.type === 'timer') return row.note || '';
-                return '';
-            },
-        },
-    ];
-
-    const headers = exportColumns.map(col => col.label);
-    const csvRows = allRows.map((row) => {
-        return exportColumns
-            .map(col => {
-                const value = col.formatter(row);
-                return `"${String(value).replace(/"/g, '""')}"`;
-            })
-            .join(',');
-    });
-
-    const csvContent = '\uFEFF' + [headers.join(','), ...csvRows].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `${filename}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-};
 
     // ─── Render Table helper ────────────────────────────────────────────────
     const renderTable = (
@@ -927,7 +927,7 @@ export function InstallationTemplateReport() {
                         )}
                     </div>
                 </div>
-                
+
                 {/* Sales Person filter disabled as per original */}
             </div>
 

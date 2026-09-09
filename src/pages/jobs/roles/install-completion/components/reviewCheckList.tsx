@@ -445,7 +445,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
                       <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
                     <FormLabel className="text-base font-semibold text-text">
-                      Install confirmation
+                      Install confirmed
                     </FormLabel>
                   </FormItem>
                 )}

@@ -2501,8 +2501,8 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Fab"],
             }),
-            createInstallCompletion: build.mutation<any, { fab_id: number; install_date?: string; completion_date?: string; is_completed?: boolean; installer_id: number }>({
-                query: ({ fab_id, install_date, completion_date, installer_id }) => ({
+            createInstallCompletion: build.mutation<any, { fab_id: number; install_date?: string; completion_date?: string; is_completed?: boolean; installer_id: number, install_confirm?:boolean}>({
+                query: ({ fab_id, install_date, completion_date, installer_id, is_completed, install_confirm }) => ({
                     url: `/install-completion`,
                     method: "POST",
                     data: {
@@ -2510,12 +2510,13 @@ export const jobApi = createApi({
                         install_date,
                         completion_date,
                         installer_id,
-                        is_completed: false
+                        is_completed,
+                        install_confirm,
                     }
                 }),
                 invalidatesTags: ["Fab"],
             }),
-            updateInstallCompletion: build.mutation<any, { fab_id: number; data: { is_completed?: boolean; completion_date?: string; installer_id?: number; install_date?: string } }>({
+            updateInstallCompletion: build.mutation<any, { fab_id: number; data: { is_completed?: boolean; completion_date?: string; installer_id?: number; install_date?: string, install_confirm?: boolean } }>({
                 query: ({ fab_id, data }) => ({
                     url: `/install-completion/${fab_id}`,
                     method: "PUT",
