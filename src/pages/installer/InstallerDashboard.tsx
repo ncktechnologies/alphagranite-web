@@ -237,7 +237,7 @@ export function InstallerScheduleCards() {
                         <SelectContent>
                             <SelectItem value="today">Today</SelectItem>
                             <SelectItem value="next_day">Next Day</SelectItem>
-                            <SelectItem value="previous_job">Previous Job</SelectItem>
+                            <SelectItem value="previous_job">Previous Days</SelectItem>
                             <SelectItem value="all">All Date</SelectItem>
                         </SelectContent>
                     </Select>

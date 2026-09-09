@@ -363,31 +363,22 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
         someSuccess = true;
       }
 
-      // 4. Handle Install Completion – ONLY if install_confirm is checked
-      if (hasConfirm) {
-        const completionPayload: any = {
+      const completionId = completionData?.data?.id ?? completionData?.id;
+
+      if (hasConfirm || completionId) {
+        const commonPayload: any = {
           fab_id: fabId,
           installer_id: hasInstaller ? Number(values.installer_id) : undefined,
           install_date: hasInstallDate ? values.scheduled_install_date : undefined,
           completion_date: hasEndDate ? values.scheduled_end_date : null,
           is_completed: isCompleted || false,
-          install_confirm: true, // always true because we're in hasConfirm block
+          install_confirm: values.install_confirm === true, // always reflect the real checkbox state
         };
 
-        let completionId = completionData?.data?.id;
         if (completionId) {
-          const updatePayload: any = {
-            fab_id: fabId,
-            installer_id: hasInstaller ? Number(values.installer_id) : undefined,
-            install_date: hasInstallDate ? values.scheduled_install_date : undefined,
-            completion_date: hasEndDate ? values.scheduled_end_date : null,
-            is_completed: isCompleted || false,
-            install_confirm: values.install_confirm || false, // use the actual value
-          };
-          await updateInstallCompletion({ fab_id: completionId, data: updatePayload }).unwrap();
+          await updateInstallCompletion({ fab_id: completionId, data: commonPayload }).unwrap();
         } else {
-          const createCompRes = await createInstallCompletion(completionPayload).unwrap();
-          completionId = createCompRes?.data?.id ?? createCompRes?.id;
+          const createCompRes = await createInstallCompletion(commonPayload).unwrap();
         }
         someSuccess = true;
       }
