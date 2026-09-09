@@ -6,7 +6,7 @@ import { Link, useLocation, useParams } from 'react-router';
 import { useGetFabByIdQuery } from '@/store/api/job';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ChevronDown, MessageSquare, Pencil } from 'lucide-react';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { InstallChecklistForm } from './reviewCheckList';
 import { BackButton } from '@/components/common/BackButton';
@@ -14,6 +14,11 @@ import { stageConfig } from '@/utils/note-utils';
 import { Can } from '@/components/permission';
 import { FabFilesGallery } from '../../install-completion/components/FabFiles';
 import { Documents } from '@/pages/shop/components/files';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useState } from 'react';
 
 // Helper function to get all fab notes (unfiltered)
 const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
@@ -31,6 +36,7 @@ export function InstallSchedulingDetailsPage() {
     const { id } = useParams<{ id: string }>();
     const { data: fab, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
     const isCompletionRoute = location.pathname.includes('install-scheduled');
+    const [fabNotesOpen, setFabNotesOpen] = useState(false);
 
     // 👇 Determine which permission menu to use based on the route
     const permissionMenu = isCompletionRoute ? 'Install Scheduled' : 'Install to Schedule';
@@ -217,16 +223,49 @@ export function InstallSchedulingDetailsPage() {
                         </CardContent>
                     </Card>
 
-                    <div className="mt-4">
-                        <GraySidebar sections={sidebarSections as any} className="bg-transparent border-none pl-0" />
-                    </div>
-                    <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
-                        <Documents
-                            fab={fab}
-                            // onFileClick={handleFileClick}
-                            showDeleteButton={false}
-                        />
-                    </CardContent>
+                    <Card className="mt-6">
+                        <CardHeader>
+                            <CardTitle className="text-[#111827] text-xl font-bold">
+                                FAB Files
+                            </CardTitle>
+                         
+                        </CardHeader>
+                        <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
+                            <Documents
+                                fab={fab}
+                                // onFileClick={handleFileClick}
+                                showDeleteButton={false}
+                            />
+                        </CardContent>
+                    </Card>
+                    <Card className="my-6">
+                        <Collapsible open={fabNotesOpen} onOpenChange={setFabNotesOpen}>
+                            <CollapsibleTrigger asChild>
+                                <CardHeader className="cursor-pointer select-none hover:bg-muted/30 transition-colors rounded-t-lg">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="flex items-center gap-2">
+                                            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                                            FAB Notes
+                                            {fab.fab_notes?.length > 0 && (
+                                                <Badge variant="secondary" className="text-xs font-normal ml-1">
+                                                    {fab.fab_notes.length}
+                                                </Badge>
+                                            )}
+                                        </CardTitle>
+                                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${fabNotesOpen ? 'rotate-180' : ''}`} />
+                                    </div>
+                                </CardHeader>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                                <CardContent className="pt-0 pb-5">
+                                    <Separator className="mb-4" />
+                                    <div className="mt-4">
+                                        <GraySidebar sections={sidebarSections as any} className="bg-transparent border-none pl-0" />
+                                    </div>
+                                </CardContent>
+                            </CollapsibleContent>
+                        </Collapsible>
+                    </Card>
                 </div>
 
                 {/* RIGHT: Review checklist – permission based on current route */}

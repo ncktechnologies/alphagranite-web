@@ -78,12 +78,19 @@ export function OperatorDashboard() {
     const [searchParams, setSearchParams] = useSearchParams();
     const currentUser = useSelector((s: any) => s.user.user);
     const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
-
+    
+    const parseLocalDateString = (dateString: string): Date | null => {
+        const parts = dateString.split('-').map(Number);
+        if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
+        const [year, month, day] = parts;
+        const date = new Date(year, month - 1, day);
+        return Number.isNaN(date.getTime()) ? null : date;
+    };
     const getInitialDate = () => {
         const dateParam = searchParams.get('date');
         if (dateParam) {
-            const parsed = new Date(dateParam);
-            if (!Number.isNaN(parsed.getTime())) return parsed;
+            const parsed = parseLocalDateString(dateParam);
+            if (parsed) return parsed;
         }
         return new Date();
     };
@@ -248,16 +255,16 @@ export function OperatorDashboard() {
         else setCurrentDate(addMonths(currentDate, 1));
     };
 
-   const handleEventClick = useCallback((task: any) => {
-    const params = new URLSearchParams();
-    if (task.task_id) params.set('task_id', String(task.task_id));
-    if (task.workstation_id) params.set('workstation_id', String(task.workstation_id));
-    if (task.scheduled_start_date) params.set('scheduled_start_date', task.scheduled_start_date);
-    // ── Remember exactly what the calendar was showing so Back can restore it ──
-    params.set('return_view', viewMode);
-    params.set('return_date', format(currentDate, 'yyyy-MM-dd'));
-    navigate(`/operator/task/${task.job_id}?${params.toString()}`);
-}, [navigate, viewMode, currentDate]);
+    const handleEventClick = useCallback((task: any) => {
+        const params = new URLSearchParams();
+        if (task.task_id) params.set('task_id', String(task.task_id));
+        if (task.workstation_id) params.set('workstation_id', String(task.workstation_id));
+        if (task.scheduled_start_date) params.set('scheduled_start_date', task.scheduled_start_date);
+        // ── Remember exactly what the calendar was showing so Back can restore it ──
+        params.set('return_view', viewMode);
+        params.set('return_date', format(currentDate, 'yyyy-MM-dd'));
+        navigate(`/operator/task/${task.job_id}?${params.toString()}`);
+    }, [navigate, viewMode, currentDate]);
 
     // ─── Event positioning with dynamic row height ──────────────────────────
     const getEventsWithXPositions = useCallback((events: any[]) => {
