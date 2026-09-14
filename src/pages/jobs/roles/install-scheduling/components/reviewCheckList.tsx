@@ -425,10 +425,17 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
     setPendingValues(null);
   }, []);
 
+  const parseLocalDateString = (dateString: string): Date | null => {
+    const parts = dateString.split('-').map(Number);
+    if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
+    const [year, month, day] = parts;
+    const date = new Date(year, month - 1, day);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
   const getEndDateDisplay = useCallback(() => {
     if (!pendingValues) return "";
     const endDate = pendingValues.scheduled_end_date;
-    if (endDate) return new Date(endDate).toLocaleDateString();
+    if (endDate) return parseLocalDateString(endDate)?.toLocaleDateString();
     return "No end date provided";
   }, [pendingValues]);
 

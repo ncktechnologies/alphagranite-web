@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface BackButtonProps {
   fallbackUrl?: string;
@@ -11,9 +12,10 @@ interface BackButtonProps {
 export const BackButton = ({
   fallbackUrl = '/',
   className = '',
-  label = 'Back'
+  label,
 }: BackButtonProps) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleClick = () => {
     if (window.history.length > 1) {
@@ -31,7 +33,7 @@ export const BackButton = ({
       type="button"
     >
       <ArrowLeft className="mr-2 h-4 w-4" />
-      {label}
+      {label ?? t('COMMON.BACK')}
     </Button>
   );
 };
