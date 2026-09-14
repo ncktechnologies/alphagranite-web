@@ -11,6 +11,8 @@ export interface TableState {
   fabTypeFilter: string;
   scheduleFilter?: string;
   salesPersonFilter?: string;
+  currentStageFilter?: string;
+  installStatusFilter?: string;
   dateRange?: DateRange;
 }
 
@@ -79,6 +81,8 @@ export function useTableState(options: UseTableStateOptions) {
       fabTypeFilter: 'all',
       scheduleFilter: defaultScheduleFilter,
       salesPersonFilter: 'all',
+      currentStageFilter: 'all',
+      installStatusFilter: 'all',
       dateRange: undefined,
     };
   };
@@ -173,6 +177,22 @@ export function useTableState(options: UseTableStateOptions) {
     }));
   }, []);
 
+  const setCurrentStageFilter = useCallback((value: string) => {
+    setState((prev) => ({
+      ...prev,
+      currentStageFilter: value,
+      pagination: { ...prev.pagination, pageIndex: 0 },
+    }));
+  }, []);
+
+  const setInstallStatusFilter = useCallback((value: string) => {
+    setState((prev) => ({
+      ...prev,
+      installStatusFilter: value,
+      pagination: { ...prev.pagination, pageIndex: 0 },
+    }));
+  }, []);
+
   const setDateRange = useCallback((value: DateRange | undefined) => {
     setState((prev) => ({
       ...prev,
@@ -192,6 +212,8 @@ export function useTableState(options: UseTableStateOptions) {
       dateFilter: defaultDateFilter,
       fabTypeFilter: 'all',
       scheduleFilter: defaultScheduleFilter,
+      currentStageFilter: 'all',
+      installStatusFilter: 'all',
       dateRange: undefined,
     };
     setState(freshState);
@@ -214,6 +236,8 @@ export function useTableState(options: UseTableStateOptions) {
     fabTypeFilter: state.fabTypeFilter,
     scheduleFilter: state.scheduleFilter,
     salesPersonFilter: state.salesPersonFilter,
+    currentStageFilter: state.currentStageFilter,
+    installStatusFilter: state.installStatusFilter,
     dateRange: state.dateRange,
 
     // Setters
@@ -225,6 +249,8 @@ export function useTableState(options: UseTableStateOptions) {
     setFabTypeFilter,
     setScheduleFilter,
     setSalesPersonFilter,
+    setCurrentStageFilter,
+    setInstallStatusFilter,
     setDateRange,
 
     // Utility functions

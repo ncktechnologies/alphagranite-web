@@ -52,6 +52,10 @@ interface JobTableProps {
     showSalesPersonFilter?: boolean;
     salesPersons?: string[] | any[];
     salesPersonFilterLabel?: string;
+    showInstallerFilter?: boolean;
+    installers?: Array<{ id: string | number; name: string }>;
+    installerFilter?: string;
+    setInstallerFilter?: (value: string) => void;
     showTemplaterFilter?: boolean;
     templaters?: string[];
     templaterFilter?: string;
@@ -114,6 +118,10 @@ export const JobTable = ({
     showSalesPersonFilter = false,
     salesPersons = [],
     salesPersonFilterLabel = "Sales Person",
+    showInstallerFilter = false,
+    installers = [],
+    installerFilter = "all",
+    setInstallerFilter = () => { },
     showTemplaterFilter = false,
     templaters = [],
     templaterFilter = "all",
@@ -1864,6 +1872,21 @@ export const JobTable = ({
                                     </SelectItem>
                                     {uniqueSalesPersons.map(person => (
                                         <SelectItem key={person || 'N/A'} value={person || ''}>{person || 'N/A'}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+
+                        {/* Installer filter */}
+                        {showInstallerFilter && installers.length > 0 && (
+                            <Select value={installerFilter} onValueChange={setInstallerFilter}>
+                                <SelectTrigger className="w-[180px] h-[34px]">
+                                    <SelectValue placeholder="Installer" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
+                                    <SelectItem value="all">All Installers</SelectItem>
+                                    {installers.map((installer) => (
+                                        <SelectItem key={String(installer.id)} value={String(installer.id)}>{installer.name}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>

@@ -90,7 +90,7 @@
   "COMMON.FILE_DELETE_FAILED": "Error al eliminar el archivo",
   "COMMON.DELETE_FILE_TITLE": "Eliminar Archivo",
   "COMMON.DELETE_FILE_CONFIRMATION": "¿Está seguro de que desea eliminar \"{name}\"? Esta acción no se puede deshacer.",
-  
+  "COMMON.GO_TO_TODAY": "Ir a Hoy",
   "JOB.DETAILS": "Detalles del Trabajo",
   "JOB.NAME": "Nombre del Trabajo",
   "JOB.NUMBER": "Número de Trabajo",

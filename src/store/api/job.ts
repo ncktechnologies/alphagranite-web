@@ -381,6 +381,7 @@ export interface FabListParams {
     sales_person_id?: number;
     sales_person_name?: string;
     templater_id?: number;
+    installer_id?: number;
     status_id?: number;
     current_stage?: string;
     next_stage?: string;
@@ -390,6 +391,7 @@ export interface FabListParams {
     schedule_due_date?: string;
     date_filter?: string; // Add date filter for backend filtering
     schedule_status?: 'scheduled' | 'unscheduled' | 'all'; // Add schedule status filter
+    install_status?: 'complete' | 'incomplete';
     shop_date_start?: string | null;
     shop_date_end?: string | null;
     template_completed_start?: string | null;
@@ -959,6 +961,7 @@ export const jobApi = createApi({
                             ...(queryParams.templater_id !== undefined && { templater_id: queryParams.templater_id }),
                             ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
                             ...(queryParams.current_stage && { current_stage: queryParams.current_stage }),
+                            ...(queryParams.install_status && { install_status: queryParams.install_status }),
                             // New stage filter
                             ...(queryParams.next_stage && { next_stage: queryParams.next_stage }),
                             // Search filter
@@ -1191,6 +1194,7 @@ export const jobApi = createApi({
                             ...(queryParams.fab_type && { fab_type: queryParams.fab_type }),
                             ...(queryParams.sales_person_id !== undefined && { sales_person_id: queryParams.sales_person_id }),
                             ...(queryParams.templater_id !== undefined && { templater_id: queryParams.templater_id }),
+                            ...(queryParams.installer_id !== undefined && { installer_id: queryParams.installer_id }),
                             ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
                             ...(queryParams.current_stage && { current_stage: queryParams.current_stage }),
                             // New stage filter

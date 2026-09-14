@@ -32,7 +32,7 @@ import { exportTableToCSV } from '@/lib/exportToCsv';
 import { useToggleFabOnHoldMutation } from '@/store/api/job';
 import { Switch } from '@/components/ui/switch';
 import { useNavigate, Link } from 'react-router-dom';
-import { JOB_STAGES } from '@/hooks/use-job-stage';
+import { JOB_STAGES, STAGE_DISPLAY_MAP, STAGE_ORDER, getStageDisplayName } from '@/hooks/use-job-stage';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DateRange } from 'react-day-picker';
@@ -144,6 +144,8 @@ export const JobSalesTable = ({
     const [localDateFilter, setLocalDateFilter] = useState<string>('all');
     const [localFabTypeFilter, setLocalFabTypeFilter] = useState<string>('all');
     const [localSalesPersonFilter, setLocalSalesPersonFilter] = useState<string>('all');
+    const [localCurrentStageFilter, setLocalCurrentStageFilter] = useState<string>('all');
+    const [localInstallStatusFilter, setLocalInstallStatusFilter] = useState<string>('all');
     const [localDateRange, setLocalDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -169,6 +171,10 @@ export const JobSalesTable = ({
     const setFabTypeFilter = tableState?.setFabTypeFilter ?? setLocalFabTypeFilter;
     const salesPersonFilter = (tableState as any)?.salesPersonFilter ?? localSalesPersonFilter;
     const setSalesPersonFilter = (tableState as any)?.setSalesPersonFilter ?? setLocalSalesPersonFilter;
+    const currentStageFilter = (tableState as any)?.currentStageFilter ?? localCurrentStageFilter;
+    const setCurrentStageFilter = (tableState as any)?.setCurrentStageFilter ?? setLocalCurrentStageFilter;
+    const installStatusFilter = (tableState as any)?.installStatusFilter ?? localInstallStatusFilter;
+    const setInstallStatusFilter = (tableState as any)?.setInstallStatusFilter ?? setLocalInstallStatusFilter;
     const dateRange = tableState?.dateRange ?? localDateRange;
     const setDateRange = tableState?.setDateRange ?? setLocalDateRange;
     const scheduleFilter = tableState?.scheduleFilter ?? 'all';
@@ -212,6 +218,23 @@ export const JobSalesTable = ({
         return Array.from(new Set(jobs.map(job => job.sales_person_name).filter(Boolean))).sort();
     }, [jobs, salesPersons]);
 
+    const stageFilterOptions = useMemo(
+        () => STAGE_ORDER.map((stage) => ({
+            value: stage,
+            label: STAGE_DISPLAY_MAP[stage] || getStageDisplayName(stage),
+        })),
+        []
+    );
+
+    const isInstallComplete = (job: IJob) => {
+        const explicitStatus = (job as any).install_status ?? (job as any).install_completed ?? (job as any).install_details?.is_completed ?? job.is_complete;
+        if (typeof explicitStatus === 'boolean') return explicitStatus;
+        if (typeof explicitStatus === 'string') {
+            return ['complete', 'completed', 'yes', 'true'].includes(explicitStatus.toLowerCase());
+        }
+        return Boolean(job.percent_complete && Number(job.percent_complete) >= 100) || Boolean((job as any).install_date);
+    };
+
     const filteredData = useMemo(() => {
         if (useBackendPagination) return jobs;
 
@@ -252,6 +275,15 @@ export const JobSalesTable = ({
             result = result.filter((job) => job.fab_type === fabTypeFilter);
         }
 
+        if (currentStageFilter !== 'all') {
+            result = result.filter((job) => (job.current_stage || '').toLowerCase() === currentStageFilter.toLowerCase());
+        }
+
+        if (installStatusFilter !== 'all') {
+            const targetComplete = installStatusFilter === 'complete';
+            result = result.filter((job) => isInstallComplete(job) === targetComplete);
+        }
+
         if (scheduleFilter !== 'all') {
             if (scheduleFilter === 'scheduled') {
                 result = result.filter((job) => job.date && job.date !== '');
@@ -277,6 +309,8 @@ export const JobSalesTable = ({
         dateFilter,
         dateRange,
         fabTypeFilter,
+        currentStageFilter,
+        installStatusFilter,
         scheduleFilter,
         salesPersonFilter,
         showSalesPersonFilter,
@@ -1470,6 +1504,31 @@ export const JobSalesTable = ({
                                     {fabTypes.map(type => (
                                         <SelectItem key={type} value={type} className="uppercase">{type}</SelectItem>
                                     ))}
+                                </SelectContent>
+                            </Select>
+
+                            {/* Current stage filter */}
+                            <Select value={currentStageFilter} onValueChange={setCurrentStageFilter}>
+                                <SelectTrigger className="w-[200px] h-[34px]">
+                                    <SelectValue placeholder="Current Stage" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[220px] overflow-y-auto">
+                                    <SelectItem value="all">All Current Stages</SelectItem>
+                                    {stageFilterOptions.map(option => (
+                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            {/* Install status filter */}
+                            <Select value={installStatusFilter} onValueChange={setInstallStatusFilter}>
+                                <SelectTrigger className="w-[170px] h-[34px]">
+                                    <SelectValue placeholder="Install Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Install Status</SelectItem>
+                                    <SelectItem value="complete">Complete</SelectItem>
+                                    <SelectItem value="incomplete">Incomplete</SelectItem>
                                 </SelectContent>
                             </Select>
 

@@ -1,9 +1,9 @@
 // pages/reports/RedosReport.tsx
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { flexRender, ColumnDef, getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, Search, X } from 'lucide-react';
 import { useGetReportRedosQuery } from '@/store/api/report';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { DataGrid } from '@/components/ui/data-grid';
@@ -20,6 +20,8 @@ import { FabInfoCell } from '@/components/common/fabInfo';
 import { cn } from '@/lib/utils';
 import { BackButton } from '@/components/common/BackButton';
 import { usePermission } from '@/hooks/use-permission';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
 interface RedoItem {
     fab_created_date: string;
@@ -84,6 +86,8 @@ export function RedosReport() {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [updateModalOpen, setUpdateModalOpen] = useState(false);
     const [selectedRow, setSelectedRow] = useState<RedoItem | null>(null);
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
+    const [searchQuery, setSearchQuery] = useState('');
 
     const queryParams = useMemo(() => {
         const params: { from_date?: string; to_date?: string } = {};
@@ -98,20 +102,41 @@ export function RedosReport() {
     const rawRows: RedoItem[] = useMemo(() => data?.data?.rows ?? [], [data]);
     const summary = useMemo(() => data?.data?.summary ?? null, [data]);
 
+    const filteredRows = useMemo(() => {
+        if (!searchQuery.trim()) return rawRows;
+        const q = searchQuery.toLowerCase().trim();
+        return rawRows.filter((row) => {
+            if (searchType === 'fab_id') {
+                return String(row.fab_id ?? '').toLowerCase().includes(q);
+            }
+            if (searchType === 'job_number') {
+                return String(row.job_number ?? '').toLowerCase().includes(q);
+            }
+            if (searchType === 'job_name') {
+                return String(row.job_name ?? '').toLowerCase().includes(q);
+            }
+            return true;
+        });
+    }, [rawRows, searchQuery, searchType]);
+
     const totals = useMemo(() => {
-        if (!rawRows.length) return null;
+        if (!filteredRows.length) return null;
         return {
-            sqft: rawRows.reduce((sum, r) => sum + r.sqft, 0),
-            total_cost: rawRows.reduce((sum, r) => sum + (r.total_cost || 0), 0),
-            cost_of_stone: rawRows.reduce((sum, r) => sum + r.cost_of_stone, 0),
+            sqft: filteredRows.reduce((sum, r) => sum + r.sqft, 0),
+            total_cost: filteredRows.reduce((sum, r) => sum + (r.total_cost || 0), 0),
+            cost_of_stone: filteredRows.reduce((sum, r) => sum + r.cost_of_stone, 0),
         };
-    }, [rawRows]);
+    }, [filteredRows]);
 
     const slicedData = useMemo(() => {
         const start = pagination.pageIndex * pagination.pageSize;
         const end = start + pagination.pageSize;
-        return rawRows.slice(start, end);
-    }, [rawRows, pagination.pageIndex, pagination.pageSize]);
+        return filteredRows.slice(start, end);
+    }, [filteredRows, pagination.pageIndex, pagination.pageSize]);
+
+    useEffect(() => {
+        setPagination((p) => ({ ...p, pageIndex: 0 }));
+    }, [searchQuery, searchType]);
 
     const displayRows = useMemo(() => {
         if (!totals) return slicedData;
@@ -302,7 +327,7 @@ export function RedosReport() {
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         manualPagination: true,
-        pageCount: Math.ceil(rawRows.length / pagination.pageSize),
+        pageCount: Math.ceil(filteredRows.length / pagination.pageSize),
         enableColumnResizing: true,
         columnResizeMode: 'onEnd',
         meta: {
@@ -342,6 +367,38 @@ export function RedosReport() {
                             </div>
                         </PopoverContent>
                     </Popover>
+                    {/* Search with type selector */}
+                    <div className="relative flex items-center">
+                        <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number' | 'job_name')}>
+                            <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
+                                <SelectValue placeholder="Search by" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="fab_id">Fab ID</SelectItem>
+                                <SelectItem value="job_number">Job Number</SelectItem>
+                                <SelectItem value="job_name">Job Name</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <div className="relative">
+                            <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                            <Input
+                                placeholder={`Search by ${searchType.replace('_', ' ')}`}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="ps-9 w-[230px] h-[34px] rounded-s-none"
+                            />
+                            {searchQuery && (
+                                <Button
+                                    mode="icon"
+                                    variant="ghost"
+                                    className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                    onClick={() => setSearchQuery('')}
+                                >
+                                    <X />
+                                </Button>
+                            )}
+                        </div>
+                    </div>
                     {dateRange && <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>Clear</Button>}
                     <Button variant="outline" onClick={() => exportTableToCSV(table, 'redos-report')} className="h-[34px]">
                         Export CSV
@@ -367,7 +424,7 @@ export function RedosReport() {
                 </div>
             )}
 
-            <DataGrid table={table} recordCount={rawRows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
+            <DataGrid table={table} recordCount={filteredRows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                     <CardHeader className="py-3 px-5 border-b bg-white" />
                     <CardTable>
@@ -418,7 +475,7 @@ export function RedosReport() {
                                                 </tr>
                                             );
                                         })}
-                                        {rawRows.length === 0 && (
+                                        {filteredRows.length === 0 && (
                                             <tr>
                                                 <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
                                                     No data available.

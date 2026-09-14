@@ -376,6 +376,7 @@
   "COMMON.SAVE_CHANGES": "Save Changes",
   "COMMON.DISCARD_CHANGES": "Discard Changes",
   "COMMON.UNSAVED_CHANGES": "You have unsaved changes",
+  "COMMON.GO_TO_TODAY": "Go to Today",
   "FORM.SELECT_PLACEHOLDER": "Select...",
   "FORM.ENTER_VALUE": "Enter value",
   "FORM.TYPE_TO_SEARCH": "Type to search...",
@@ -632,4 +633,5 @@
   "TOOLTIP.ACCOUNT_NAME": "Account Name",
   "TOOLTIP.PLAN": "Plan",
   "TOOLTIP.NOTES": "Notes"
+  
 }

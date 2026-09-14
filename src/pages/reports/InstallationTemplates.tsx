@@ -101,6 +101,8 @@ interface ReportData {
         sqft_not_templated: number;
         sqft_installed: number;
         sqft_not_installed: number;
+        ave_sqft_templated?: number;
+        ave_sqft_installed?: number;
         row_count: number;
         group_count: number;
     };
@@ -947,6 +949,10 @@ export function InstallationTemplateReport() {
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sqft_not_templated?.toFixed(0) ?? '0'}</p>
                     </div>
                     <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Average SQFT Templated </p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.ave_sqft_templated?.toFixed(0) ?? '0'}</p>
+                    </div>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Install Hours</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_hours_installed ?? '0:00'}</p>
                     </div>
@@ -957,6 +963,10 @@ export function InstallationTemplateReport() {
                     <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SQFT Not Installed</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sqft_not_installed?.toFixed(0) ?? '0'}</p>
+                    </div>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Average SQFT Installed</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.ave_sqft_installed?.toFixed(0) ?? '0'}</p>
                     </div>
                 </div>
             )}

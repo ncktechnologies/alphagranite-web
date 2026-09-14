@@ -78,7 +78,7 @@ export function OperatorDashboard() {
     const [searchParams, setSearchParams] = useSearchParams();
     const currentUser = useSelector((s: any) => s.user.user);
     const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
-    
+
     const parseLocalDateString = (dateString: string): Date | null => {
         const parts = dateString.split('-').map(Number);
         if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
@@ -531,15 +531,27 @@ export function OperatorDashboard() {
                             <ChevronRight className="h-4 w-4" />
                         </button>
 
-                        {shouldShowToday && (
-                            <button
-                                onClick={() => setCurrentDate(new Date())}
-                                className="h-[44px] px-6 rounded-[8px] text-[14px] font-semibold text-white"
-                                style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
-                            >
-                                {t('COMMON.TODAY')}
-                            </button>
-                        )}
+                        {!shouldShowToday ?
+                            (
+                                <button onClick={() => setCurrentDate(new Date())}
+                                    className="h-[44px] px-6 rounded-[8px] text-[14px] font-semibold text-white cursor-pointer transition-all hover:opacity-90"
+                                    style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+
+                                >
+                                    {t('COMMON.GO_TO_TODAY')}
+                                </button>)
+                            :
+                            (
+                                <button
+                                    onClick={() => setCurrentDate(new Date())}
+                                    className="h-[44px] px-6 rounded-[8px] text-[14px] font-semibold text-white"
+                                    style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+
+                                >
+                                    {t('COMMON.TODAY')}
+                                </button>
+                            )
+                        }
                     </div>
 
                     {/* ─── Calendar Grid ───────────────────────────────────── */}

@@ -3,7 +3,8 @@ import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { useGetFabsCompletionQuery, Fab, useGetFabsQuery } from '@/store/api/job';
-import { useGetEmployeeSalesPersonsQuery, useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetEmployeesQuery, useGetEmployeeSalesPersonsQuery, useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetRolesQuery } from '@/store/api/role';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
@@ -102,20 +103,48 @@ export function InstallCompletionPage() {
 
     // Fetch sales persons data for filter dropdown
     const { data: salesPersonsData } = useGetEmployeeSalesPersonsQuery();
-         const salesPersons = useMemo(() => {
-            if (!salesPersonsData) return [];
-            return Array.isArray(salesPersonsData)
-              ? salesPersonsData.map((sp: any) => ({
+    const salesPersons = useMemo(() => {
+        if (!salesPersonsData) return [];
+        return Array.isArray(salesPersonsData)
+            ? salesPersonsData.map((sp: any) => ({
                 id: sp.id || sp.user_id,
                 name: sp.name || `${sp.first_name} ${sp.last_name}`,
-              }))
-              : [];
-          }, [salesPersonsData]);
+            }))
+            : [];
+    }, [salesPersonsData]);
 
-    // Extract just names for display
-    const salesPersonNames = useMemo(() => {
-        return salesPersons.map((sp: any) => sp.name || String(sp));
-    }, [salesPersons]);
+    const { data: rolesData } = useGetRolesQuery();
+    const installerRoleId = useMemo(() => {
+        if (!rolesData) return null;
+        const roles = rolesData?.data?.data ?? rolesData?.data ?? rolesData;
+        if (!Array.isArray(roles)) return null;
+        const installerRole = roles.find((role: any) => (role.name || '').toLowerCase().trim() === 'installer');
+        return installerRole?.id ?? null;
+    }, [rolesData]);
+
+    const { data: installersData } = useGetEmployeesQuery(
+        {
+            role_id: installerRoleId ?? undefined,
+            sort_by: 'first_name',
+            sort_order: 'asc',
+            limit: 500,
+        },
+        {
+            skip: !installerRoleId,
+        }
+    );
+
+    const installers = useMemo(() => {
+        if (!installersData) return [];
+        const employees = installersData?.data ?? installersData;
+        if (!Array.isArray(employees)) return [];
+        return employees.map((installer: any) => ({
+            id: String(installer.id),
+            name: `${installer.first_name || ''} ${installer.last_name || ''}`.trim() || installer.email || 'Unknown Installer',
+        }));
+    }, [installersData]);
+
+    const [installerFilter, setInstallerFilter] = useState('all');
 
     // Use independent table state
     const tableState = useTableState({
@@ -148,6 +177,10 @@ export function InstallCompletionPage() {
                 if (selectedSalesPerson?.id) params.sales_person_id = selectedSalesPerson.id;
             }
         }
+        if (installerFilter && installerFilter !== 'all') {
+            const selectedInstaller = installers.find((installer) => String(installer.id) === String(installerFilter));
+            if (selectedInstaller?.id) params.installer_id = Number(selectedInstaller.id);
+        }
         if (tableState.dateFilter && tableState.dateFilter !== 'all') {
             if (tableState.dateFilter === 'custom') {
                 if (tableState.dateRange?.from)
@@ -167,6 +200,8 @@ export function InstallCompletionPage() {
         tableState.searchType,
         tableState.fabTypeFilter,
         tableState.salesPersonFilter,
+        installerFilter,
+        installers,
         tableState.dateFilter,
         tableState.dateRange,
         salesPersons,
@@ -219,6 +254,10 @@ export function InstallCompletionPage() {
                 tableState={tableState}
                 showSalesPersonFilter={true}
                 showScheduleFilter={false}
+                showInstallerFilter={true}
+                installers={installers}
+                installerFilter={installerFilter}
+                setInstallerFilter={setInstallerFilter}
                 salesPersons={salesPersons}
                 dateGrouping={dateGrouping}
                 onDateGroupingChange={setDateGrouping}

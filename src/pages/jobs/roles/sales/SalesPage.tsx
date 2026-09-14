@@ -113,6 +113,10 @@ export function SalesPage() {
         if (tableState.searchType) params.type = tableState.searchType;
         if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all')
             params.fab_type = tableState.fabTypeFilter;
+        if (tableState.currentStageFilter && tableState.currentStageFilter !== 'all')
+            params.current_stage = tableState.currentStageFilter;
+        if (tableState.installStatusFilter && tableState.installStatusFilter !== 'all')
+            params.install_status = tableState.installStatusFilter;
         if (tableState.salesPersonFilter && tableState.salesPersonFilter !== 'all') {
             if (tableState.salesPersonFilter === 'no_sales_person') params.sales_person_name = '';
             else {
@@ -137,6 +141,8 @@ export function SalesPage() {
         tableState.searchQuery,
         tableState.searchType,
         tableState.fabTypeFilter,
+        tableState.currentStageFilter,
+        tableState.installStatusFilter,
         tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,

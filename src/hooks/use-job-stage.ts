@@ -37,6 +37,41 @@ import type { RootState } from '@/store';
  */
 
 /**
+ * Canonical stage ordering used for dropdowns and filters across all pages.
+ * These values match the backend stage ids and the UI should use this list
+ * instead of whichever stages happen to exist in the current table data.
+ */
+export const STAGE_ORDER = [
+    'templating',
+    'pre_draft_review',
+    'resurface_scheduling',
+    'drafting',
+    // 'slab_smith_request',
+    // 'slabsmith',
+    'sales_ct',
+    'revision',
+    'cut_list',
+    'final_programming',
+    // 'cnc',
+    // 'install_scheduling',
+    'install_completion',
+] as const;
+
+export const STAGE_DISPLAY_MAP: Record<string, string> = {
+    cnc: 'CNC Programming',
+    pre_draft_review: 'Pre-Draft Review',
+    install_scheduling: 'Install To Schedule',
+    install_completion: 'Install Scheduled',
+    sales_ct: 'SCT',
+    
+};
+
+export const getStageDisplayName = (stage?: string) => {
+    if (!stage) return 'Unknown';
+    return STAGE_DISPLAY_MAP[stage] || stage.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+/**
  * Job stages mapped to routes and roles
  */
 export const JOB_STAGES = {
