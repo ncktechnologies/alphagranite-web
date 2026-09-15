@@ -962,6 +962,7 @@ export const jobApi = createApi({
                             ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
                             ...(queryParams.current_stage && { current_stage: queryParams.current_stage }),
                             ...(queryParams.install_status && { install_status: queryParams.install_status }),
+                            ...(queryParams.installer_id !== undefined && { installer_id: queryParams.installer_id }),
                             // New stage filter
                             ...(queryParams.next_stage && { next_stage: queryParams.next_stage }),
                             // Search filter

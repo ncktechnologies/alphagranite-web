@@ -1385,6 +1385,16 @@ export const JobTable = ({
         enableSorting: true,
         meta: { format: (value: string) => value || '-' },
     },
+    // ─── Extra Crew ───────────────────────────────────────────────────────
+    {
+        id: 'extra_crew',
+        accessorKey: 'extra_crew',
+        header: ({ column }) => <DataGridColumnHeader title="EXTRA CREW" column={column} />,
+        cell: ({ row }) => <span className="text-xs">{(row.original as any).extra_crew || '-'}</span>,
+        size: 180,
+        enableSorting: true,
+        meta: { format: (value: string) => value || '-' },
+    },
     // ─── Install Date ──────────────────────────────────────────────────────
     {
         id: 'install_date',

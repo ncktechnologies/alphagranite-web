@@ -79,6 +79,13 @@ const transformFabToJob = (fab: Fab): IJob => {
             ? formatDate((fab as any).completion_date)
             : undefined,
         installer: (fab as any).install_details?.installer_name || (fab as any).installer || undefined,
+        extra_crew: [
+            (fab as any).install_details?.extra_crew_1,
+            (fab as any).install_details?.extra_crew_2,
+            (fab as any).install_details?.extra_crew_3,
+        ]
+            .filter((value): value is string => !!value && value !== '0' && value !== 0)
+            .join(', ') || '-',
         install_date: (fab as any).install_details?.scheduled_install_date
             ? formatDate((fab as any).install_details?.scheduled_install_date)
             : undefined,
@@ -255,7 +262,7 @@ export function InstallSchedulingPage() {
                 totalRecords={data?.total || 0}
                 tableState={tableState}
                 showSalesPersonFilter={true}
-                showInstallerFilter={true}
+                showInstallerFilter={false}
                 installers={installerOptions}
                 installerFilter={installerFilter}
                 setInstallerFilter={setInstallerFilter}
@@ -272,8 +279,8 @@ export function InstallSchedulingPage() {
                     'revenue',
                     'gp',
                     'est_completion_date',
-                    // 'completion_date',\
                     'percent_complete',
+                    // 'extra_crew',
                     'install_scheduling_notes',
                     'shop_status',
                     'shop_est_completion_date'
