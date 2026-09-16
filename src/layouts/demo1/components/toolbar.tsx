@@ -94,16 +94,16 @@ function ToolbarHeading({ title = '', description }: ToolbarHeadingProps) {
   const { pathname } = useLocation();
   const { getCurrentItem } = useMenu(pathname);
   const item = getCurrentItem(MENU_SIDEBAR);
-  const resolvedTitle = typeof title === 'string' ? title : (typeof item?.title === 'string' ? item.title : 'Untitled');
+  const resolvedTitle = (typeof title === 'string' ? title.trim() : title) || item?.title || 'Untitled';
 
   useEffect(() => {
-    const nextTitle = resolvedTitle?.trim() || 'Alpha Granite';
-    document.title = `${nextTitle} | Alpha Granite`;
+    const nextTitle = typeof resolvedTitle === 'string' ? resolvedTitle.trim() || item?.title || 'Alpha Granite' : 'Alpha Granite';
+    document.title = `${nextTitle} | The Odyssey Tracker`;
 
     return () => {
       document.title = 'Alpha Granite';
     };
-  }, [resolvedTitle]);
+  }, [resolvedTitle, item?.title]);
 
   return (
     <div className="flex flex-col justify-center gap-2">
