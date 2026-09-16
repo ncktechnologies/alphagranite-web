@@ -46,7 +46,7 @@ import {
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetDepartmentsQuery } from '@/store/api/department';
 import { useAuth } from '@/auth/context/auth-context';
-import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetEmployeeSalesPersonsQuery } from '@/store/api/employee';
 import Popup from '@/components/ui/popup';
 import DialogContent, { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -64,7 +64,7 @@ const fabIdFormSchema = z.object({
   edge: z.string().min(1, 'Edge is required'),
   totalSqFt: z.string().min(1, 'Total Sq Ft is required'),
   revenue: z.string().optional(),
-    // .refine((val) => !isNaN(parseFloat(val)), { message: 'Revenue must be a number' }),
+  // .refine((val) => !isNaN(parseFloat(val)), { message: 'Revenue must be a number' }),
   cost_of_stone: z.string().optional()
     .refine((val) => val === '' || !isNaN(parseFloat(val)), { message: 'Cost of Stone must be a number' }),
   cost_per_sqft: z.string().optional()
@@ -409,10 +409,14 @@ const NewFabIdForm = () => {
     data: salesPersonsData,
     isLoading: isLoadingSalesPersons,
     isError: isSalesPersonsError
-  } = useGetSalesPersonsQuery();
+  } = useGetEmployeeSalesPersonsQuery();
 
-  const salesPersons = Array.isArray(salesPersonsData) ? salesPersonsData : [];
-
+  const salesPersons = Array.isArray(salesPersonsData)
+    ? salesPersonsData.map((person: any) => ({
+      ...person,
+      name: person.name || `${person.first_name || ''} ${person.last_name || ''}`.trim(),
+    }))
+    : [];
   // Filter jobs for job dropdowns
   const jobNames = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).map((job: any) => job.name);
   const jobNumbers = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).map((job: any) => job.job_number);
@@ -570,7 +574,7 @@ const NewFabIdForm = () => {
     form.setValue('cost_per_sqft', costPerSqft);
     form.setValue('redo_department', redoDepartment);
     form.setValue('redo_requested_by', redoRequestedBy);
-    
+
     // Calculate revenue based on cost_per_sqft and total_sqft
     if (costPerSqft) {
       const costPerSqftNum = parseFloat(costPerSqft);
@@ -581,7 +585,7 @@ const NewFabIdForm = () => {
         form.setValue('revenue', calculatedRevenue.toString());
       }
     }
-    
+
     setShowAgRedoModal(false);
   };
 
@@ -1833,7 +1837,7 @@ const NewFabIdForm = () => {
             </div>
             <div className=" ">
               <Label htmlFor="redoRequestedBy" className="text-right">
-                 Employee
+                Employee
               </Label>
               <Select value={redoRequestedBy} onValueChange={setRedoRequestedBy}>
                 <SelectTrigger className="">

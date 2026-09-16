@@ -44,7 +44,7 @@ import {
 } from '@/store/api/job';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetDepartmentsQuery } from '@/store/api/department';
-import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetEmployeeSalesPersonsQuery } from '@/store/api/employee';
 import { getCheckboxRuleError, isCurrentStateImpossible } from './NewFabIdForm';
 import DialogContent, { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
@@ -230,7 +230,7 @@ const EditFabIdForm = () => {
     const { data: edgesData = [], isLoading: isLoadingEdges } = useGetEdgesQuery({ limit: 1000 });
     const { data: jobsData = [], isLoading: isLoadingJobs } = useGetJobsQuery({ limit: 1000 });
     const { data: existingFab, isLoading: isLoadingFab, isError: isFabError, error: fabError } = useGetFabByIdQuery(Number(id));
-    const { data: salesPersonsData = [], isLoading: isLoadingSalesPersons } = useGetSalesPersonsQuery();
+    const { data: salesPersonsData = [], isLoading: isLoadingSalesPersons } = useGetEmployeeSalesPersonsQuery();
     const { data: employeesData, isLoading: isLoadingEmployees } = useGetEmployeesQuery();
     const { data: departmentsData, isLoading: isLoadingDepartments } = useGetDepartmentsQuery();
 
@@ -344,9 +344,15 @@ const EditFabIdForm = () => {
     const isEffectiveJobsLoading = selectedAccountId ? isAccountJobsLoading : isLoadingJobs;
 
     const salesPersons = Array.isArray(salesPersonsData)
-        ? salesPersonsData.filter((person: any, index: number, self: any[]) =>
-            index === self.findIndex((p: any) => p.name === person.name)
-        )
+        ? salesPersonsData
+            .map((person: any) => {
+                const normalizedName =
+                    person?.name ||
+                    [person?.first_name, person?.last_name].filter(Boolean).join(' ').trim();
+                if (!normalizedName) return null;
+                return { ...person, name: normalizedName };
+            })
+            .filter(Boolean)
         : [];
 
     const filteredFabTypes = (Array.isArray(fabTypesData) ? fabTypesData.map((type: any) => type.name) : []).filter((type: string) =>
@@ -679,6 +685,7 @@ const EditFabIdForm = () => {
             const selectedStoneThickness = stoneThicknessesData.find((thickness: any) => thickness.thickness === values.stoneThickness);
             const selectedEdge = edgesData.find((edge: any) => edge.name === values.edge);
             const selectedSalesPerson = salesPersons.find((person: any) => person.name === values.selectedSalesPerson);
+
             let selectedJob;
             if (values.jobName) {
                 selectedJob = effectiveJobsData.find((job: any) => job.name === values.jobName);

@@ -1,7 +1,7 @@
-import { Fragment, ReactNode } from 'react';
+import { Fragment, ReactNode, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { MENU_SIDEBAR, SETTINGS_NAV } from '@/config/menu.config';
+import { MENU_SIDEBAR } from '@/config/menu.config';
 import { MenuItem } from '@/config/types';
 import { cn } from '@/lib/utils';
 import { useMenu } from '@/hooks/use-menu';
@@ -94,11 +94,21 @@ function ToolbarHeading({ title = '', description }: ToolbarHeadingProps) {
   const { pathname } = useLocation();
   const { getCurrentItem } = useMenu(pathname);
   const item = getCurrentItem(MENU_SIDEBAR);
+  const resolvedTitle = typeof title === 'string' ? title : (typeof item?.title === 'string' ? item.title : 'Untitled');
+
+  useEffect(() => {
+    const nextTitle = resolvedTitle?.trim() || 'Alpha Granite';
+    document.title = `${nextTitle} | Alpha Granite`;
+
+    return () => {
+      document.title = 'Alpha Granite';
+    };
+  }, [resolvedTitle]);
 
   return (
     <div className="flex flex-col justify-center gap-2">
       <h1 className="text-[28px] font-normal leading-[32px] text-black">
-        {title || item?.title || 'Untitled'}
+        {resolvedTitle}
       </h1>
       {description && (
         <div className="flex items-center gap-2 text-sm font-normal text-text-foreground">
