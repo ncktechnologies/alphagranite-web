@@ -1222,6 +1222,22 @@ export const JobTable = ({
             },
         },
     },
+    {
+        id: 'cnc_notes',
+        header: ({ column }) => <DataGridColumnHeader title="CNC Notes" column={column} />,
+        cell: ({ row }) => renderNotes(row, 'cnc'),
+        enableSorting: false,
+        size: 180,
+        meta: {
+            format: (value: any, row: IJob) => {
+                const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
+                const stageNotes = notes.filter((n: any) => n.stage === 'cnc');
+                if (stageNotes.length === 0) return 'No notes';
+                const latest = stageNotes[0];
+                return latest.note || 'No notes';
+            },
+        },
+    },
     // ─── File ──────────────────────────────────────────────────────────────
     {
         id: 'file',
@@ -1463,6 +1479,13 @@ export const JobTable = ({
         enableSorting: true,
         meta: { format: (value: string) => value || '-' },
     },
+    {id: 'cnc_ln_ft', 
+        accessorKey: 'cnc_ln_ft', 
+        header: ({ column }) => <DataGridColumnHeader title="CNC LIN FT" column={column} />, 
+        cell: ({ row }) => <span className="text-xs">{(row.original as any).cnc_ln_ft || '-'}</span>, size: 120, 
+        enableSorting: true, 
+        meta: { format: (value: string) => value || '-' },
+    },
     // ─── On Hold ────────────────────────────────────────────────────────────
     {
         id: "on_hold",
@@ -1476,17 +1499,18 @@ export const JobTable = ({
         cell: ({ row }) => {
             const fabId = parseInt(row.original.fab_id);
             const isLoading = loadingStates[fabId] || false;
+            const isDisabled = isLoading || !canToggleOnHold;
             const isChecked = optimisticUpdates[row.original.fab_id] !== undefined
                 ? optimisticUpdates[row.original.fab_id] === 0
                 : row.original.status_id === 0;
             return (
                 <div className="flex justify-center items-center">
                     <Switch
-                        className={`data-[state=checked]:bg-red-600 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`data-[state=checked]:bg-red-600 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                         checked={isChecked}
-                        disabled={isLoading}
+                        disabled={isDisabled}
                         onCheckedChange={async (checked) => {
-                            if (isLoading) return;
+                            if (isDisabled) return;
                             const newStatusId = checked ? 0 : 1;
                             const fabIdStr = row.original.fab_id;
                             setOptimisticUpdates(prev => ({ ...prev, [fabIdStr]: newStatusId }));
@@ -1544,6 +1568,9 @@ export const JobTable = ({
                 return showDrafterColumn;
             }
 
+            // On Hold is always visible for every user/view.
+            if (column.id === 'on_hold') return true;
+
             // If a whitelist (visibleColumns) is provided, only include columns whose id is in that list
             if (visibleColumns?.length && column.id) return visibleColumns.includes(column.id);
 
@@ -1594,64 +1621,6 @@ export const JobTable = ({
                 },
                 size: 100,
                 enableSorting: true,
-            });
-        }
-
-        // 3. Conditionally add the On Hold toggle column
-        if (canToggleOnHold) {
-            result.push({
-                id: "on_hold",
-                accessorKey: "status_id",
-                accessorFn: (row) => {
-                    const fabId = row.fab_id;
-                    if (optimisticUpdates[fabId] !== undefined) return optimisticUpdates[fabId] === 0;
-                    return row.status_id === 0;
-                },
-                header: ({ column }) => <DataGridColumnHeader title="ON HOLD" column={column} />,
-                cell: ({ row }) => {
-                    const fabId = parseInt(row.original.fab_id);
-                    const isLoading = loadingStates[fabId] || false;
-                    const isChecked = optimisticUpdates[row.original.fab_id] !== undefined
-                        ? optimisticUpdates[row.original.fab_id] === 0
-                        : row.original.status_id === 0;
-                    return (
-                        <div className="flex justify-center items-center">
-                            <Switch
-                                className={`data-[state=checked]:bg-red-600 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                checked={isChecked}
-                                disabled={isLoading}
-                                onCheckedChange={async (checked) => {
-                                    if (isLoading) return;
-                                    const newStatusId = checked ? 0 : 1;
-                                    const fabIdStr = row.original.fab_id;
-                                    setOptimisticUpdates(prev => ({ ...prev, [fabIdStr]: newStatusId }));
-                                    setLoadingStates(prev => ({ ...prev, [fabId]: true }));
-                                    setSuppressParentRefresh(true);
-                                    try {
-                                        await toggleFabOnHold({ fab_id: fabId, on_hold: checked }).unwrap();
-                                        setTimeout(() => {
-                                            setSuppressParentRefresh(false);
-                                            setOptimisticUpdates(prev => { const s = { ...prev }; delete s[fabIdStr]; return s; });
-                                        }, 2000);
-                                    } catch {
-                                        setOptimisticUpdates(prev => { const s = { ...prev }; delete s[row.original.fab_id]; return s; });
-                                        setSuppressParentRefresh(false);
-                                    } finally {
-                                        setLoadingStates(prev => { const s = { ...prev }; delete s[fabId]; return s; });
-                                    }
-                                }}
-                                aria-label="Toggle on hold"
-                            />
-                            {isLoading && (
-                                <div className="ml-2">
-                                    <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-                                </div>
-                            )}
-                        </div>
-                    );
-                },
-                enableSorting: false,
-                size: 80,
             });
         }
 

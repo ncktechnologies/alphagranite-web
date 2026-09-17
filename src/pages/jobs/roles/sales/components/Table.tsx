@@ -1340,17 +1340,18 @@ export const JobSalesTable = ({
             cell: ({ row }) => {
                 const fabId = parseInt(row.original.fab_id);
                 const isLoading = loadingStates[fabId] || false;
+                const isDisabled = isLoading || !canToggleOnHold;
                 const isChecked = optimisticUpdates[row.original.fab_id] !== undefined
                     ? optimisticUpdates[row.original.fab_id] === 0
                     : row.original.status_id === 0;
                 return (
                     <div className="flex justify-center items-center">
                         <Switch
-                            className={`data-[state=checked]:bg-red-600 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`data-[state=checked]:bg-red-600 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                             checked={isChecked}
-                            disabled={isLoading}
+                            disabled={isDisabled}
                             onCheckedChange={async (checked) => {
-                                if (isLoading) return;
+                                if (isDisabled) return;
                                 const newStatusId = checked ? 0 : 1;
                                 const fabIdStr = row.original.fab_id;
                                 setOptimisticUpdates(prev => ({ ...prev, [fabIdStr]: newStatusId }));
@@ -1401,7 +1402,7 @@ export const JobSalesTable = ({
                 if (visibleColumns?.length) return visibleColumns.includes('drafter') && showDrafterColumn;
                 return showDrafterColumn;
             }
-            if (column.id === 'on_hold') return canToggleOnHold;
+            if (column.id === 'on_hold') return true;
             if (visibleColumns?.length && column.id) return visibleColumns.includes(column.id);
             const accessor = (column as any).accessorKey;
             if (accessor && accessor !== 'id') {

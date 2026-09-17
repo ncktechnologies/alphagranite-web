@@ -138,9 +138,10 @@ export function SignInPage() {
 
         const nextPath = searchParams.get('next') || '/';
         navigate(nextPath);
-      } else {
-        setError('Login failed. Please try again.');
-      }
+      } 
+      // else {
+      //   setError('Login failed. Please try again.');
+      // }
     } catch (err: any) {
       console.error('Unexpected sign-in error:', err);
       setError(getErrorMessage(err));

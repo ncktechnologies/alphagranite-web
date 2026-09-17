@@ -41,6 +41,7 @@ export const transformFabToJob = (fab: Fab): IJob => {
         job_id: fab.job_id,
         on_hold: fab.on_hold,
         status_id: fab.status_id,
+        cnc_ln_ft: fab.cnc_linft || '-',
     };
 };
 
@@ -197,12 +198,9 @@ const CNCPage = () => {
                     'fab_id',
                     'job_no',
                     'fab_info',
-                    'no_of_pieces',
-                    'total_sq_ft',
-                    'revenue',
-                    'gp',
                     'cnc_notes',
-                    'cnc_operator'
+                    'cnc_operator',
+                    'cnc_ln_ft'
                 ]}
                 
                 canAddNote={canAddNote}

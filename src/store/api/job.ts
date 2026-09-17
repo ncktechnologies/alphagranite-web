@@ -869,6 +869,7 @@ export const jobApi = createApi({
                             skip: queryParams.skip || 0,
                             limit: queryParams.limit || 100,
                             ...(queryParams.account_id !== undefined && { account_id: queryParams.account_id }),
+                            ...(queryParams.account_name !== undefined && { account_name: queryParams.account_name }),
                             ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
                             ...(queryParams.priority && { priority: queryParams.priority }),
                             ...(queryParams.search && { search: queryParams.search }),

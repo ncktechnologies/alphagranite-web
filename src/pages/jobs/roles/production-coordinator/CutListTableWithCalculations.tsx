@@ -530,64 +530,62 @@ export const CutListTableWithCalculations = ({
             },
         ];
 
-        // Conditionally add the On Hold column if user has permission
-        if (canToggleOnHold) {
-            cols.push({
-                id: 'on_hold',
-                accessorKey: 'status_id',
-                accessorFn: (row: CalculatedCutListData) => {
-                    if (optimisticUpdates[row.fab_id] !== undefined) return optimisticUpdates[row.fab_id];
-                    return row.status_id === 0;
-                },
-                header: ({ column }) => <DataGridColumnHeader title="ON HOLD" column={column} />,
-                cell: ({ row }) => {
-                    const fabId = parseInt(row.original.fab_id);
-                    const isLoadingRow = loadingStates[fabId] || false;
-                    const isChecked = optimisticUpdates[row.original.fab_id] !== undefined
-                        ? optimisticUpdates[row.original.fab_id]
-                        : row.original.status_id === 0;
-                    return (
-                        <div className="flex justify-center items-center">
-                            <Switch
-                                className={`data-[state=checked]:bg-red-600 ${isLoadingRow ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                checked={isChecked}
-                                disabled={isLoadingRow}
-                                onCheckedChange={async (checked) => {
-                                    if (isLoadingRow) return;
-                                    const fabIdStr = row.original.fab_id;
-                                    setOptimisticUpdates(prev => ({ ...prev, [fabIdStr]: checked }));
-                                    setLoadingStates(prev => ({ ...prev, [fabId]: true }));
-                                    try {
-                                        await toggleFabOnHold({ fab_id: fabId, on_hold: checked }).unwrap();
-                                        if (onToggleSuccess) onToggleSuccess();
-                                        setTimeout(() => {
-                                            setOptimisticUpdates(prev => { const s = { ...prev }; delete s[fabIdStr]; return s; });
-                                        }, 500);
-                                    } catch (error) {
-                                        console.error('Failed to toggle on hold status:', error);
+        cols.push({
+            id: 'on_hold',
+            accessorKey: 'status_id',
+            accessorFn: (row: CalculatedCutListData) => {
+                if (optimisticUpdates[row.fab_id] !== undefined) return optimisticUpdates[row.fab_id];
+                return row.status_id === 0;
+            },
+            header: ({ column }) => <DataGridColumnHeader title="ON HOLD" column={column} />,
+            cell: ({ row }) => {
+                const fabId = parseInt(row.original.fab_id);
+                const isLoadingRow = loadingStates[fabId] || false;
+                const isDisabled = isLoadingRow || !canToggleOnHold;
+                const isChecked = optimisticUpdates[row.original.fab_id] !== undefined
+                    ? optimisticUpdates[row.original.fab_id]
+                    : row.original.status_id === 0;
+                return (
+                    <div className="flex justify-center items-center">
+                        <Switch
+                            className={`data-[state=checked]:bg-red-600 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            checked={isChecked}
+                            disabled={isDisabled}
+                            onCheckedChange={async (checked) => {
+                                if (isDisabled) return;
+                                const fabIdStr = row.original.fab_id;
+                                setOptimisticUpdates(prev => ({ ...prev, [fabIdStr]: checked }));
+                                setLoadingStates(prev => ({ ...prev, [fabId]: true }));
+                                try {
+                                    await toggleFabOnHold({ fab_id: fabId, on_hold: checked }).unwrap();
+                                    if (onToggleSuccess) onToggleSuccess();
+                                    setTimeout(() => {
                                         setOptimisticUpdates(prev => { const s = { ...prev }; delete s[fabIdStr]; return s; });
-                                    } finally {
-                                        setLoadingStates(prev => { const s = { ...prev }; delete s[fabId]; return s; });
-                                    }
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                                aria-label="Toggle on hold"
-                            />
-                            {isLoadingRow && (
-                                <div className="ml-2">
-                                    <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-                                </div>
-                            )}
-                        </div>
-                    );
-                },
-                enableSorting: false,
-                size: 80,
-                meta: {
-                    format: (value: boolean) => value ? 'On Hold' : 'Active',
-                },
-            });
-        }
+                                    }, 500);
+                                } catch (error) {
+                                    console.error('Failed to toggle on hold status:', error);
+                                    setOptimisticUpdates(prev => { const s = { ...prev }; delete s[fabIdStr]; return s; });
+                                } finally {
+                                    setLoadingStates(prev => { const s = { ...prev }; delete s[fabId]; return s; });
+                                }
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Toggle on hold"
+                        />
+                        {isLoadingRow && (
+                            <div className="ml-2">
+                                <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                            </div>
+                        )}
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 80,
+            meta: {
+                format: (value: boolean) => value ? 'On Hold' : 'Active',
+            },
+        });
 
         return cols;
     }, [path, optimisticUpdates, loadingStates, canAddNote, canToggleOnHold, handleView, handleAddNote, toggleFabOnHold, onToggleSuccess]);

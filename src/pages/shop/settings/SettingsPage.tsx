@@ -57,9 +57,6 @@ function SettingsPage() {
     const [editingStoneColorId, setEditingStoneColorId] = useState<number | null>(null);
     const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
 
-
-
-
     // Fetch workstations from API
     const { data: workstationsData, isLoading, isError, refetch } = useGetWorkstationsQuery();
 
@@ -480,6 +477,8 @@ function SettingsPage() {
                                                         <Input
                                                             value={editingName}
                                                             onChange={(e) => setEditingName(e.target.value)}
+                                                            disabled
+                                                            className="disabled:cursor-not-allowed disabled:opacity-60"
                                                         />
                                                         <Label>Description</Label>
                                                         <Textarea

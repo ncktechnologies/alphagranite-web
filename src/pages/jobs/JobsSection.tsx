@@ -94,6 +94,8 @@ interface JobsSectionProps {
   canToggleInvoice?: boolean;
 }
 
+type SearchType = 'job_name' | 'job_number' | 'account_name';
+
 export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -102,6 +104,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchType, setSearchType] = useState<SearchType>('job_name');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -118,14 +121,35 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
   const [confirmAction, setConfirmAction] = useState<'unmark' | 'invoice' | null>(null);
   const [jobForAction, setJobForAction] = useState<ExtendedJob | null>(null);
 
-  // API hooks
-  const { data: jobsData, isLoading, refetch } = useGetJobsQuery({
-    skip: pagination.pageIndex * pagination.pageSize,
-    limit: pagination.pageSize,
-    ...(searchQuery && { search: searchQuery }),
-    ...(selectedStatus !== 'all' && { status_id: parseInt(selectedStatus) }),
-    include_notes: true,
-  });
+  // API hooks — build query params dynamically
+  const queryParams = useMemo(() => {
+    const params: any = {
+      skip: pagination.pageIndex * pagination.pageSize,
+      limit: pagination.pageSize,
+      include_notes: true,
+    };
+
+    if (searchQuery) {
+      if (searchType === 'account_name') {
+        // Backend expects account_name directly
+        params.account_name = searchQuery;
+      } else if (searchType === 'job_name') {
+        params.search = searchQuery;
+        params.type = 'job_name';
+      } else if (searchType === 'job_number') {
+        params.search = searchQuery;
+        params.type = 'job_number';
+      }
+    }
+
+    if (selectedStatus !== 'all') {
+      params.status_id = parseInt(selectedStatus);
+    }
+
+    return params;
+  }, [searchQuery, searchType, selectedStatus, pagination.pageIndex, pagination.pageSize]);
+
+  const { data: jobsData, isLoading, refetch } = useGetJobsQuery(queryParams);
   const { data: accountsData } = useGetAccountsQuery({ limit: 1000 });
 
   const [deleteJob] = useDeleteJobMutation();
@@ -225,7 +249,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
 
   useEffect(() => {
     setPagination(prev => ({ ...prev, pageIndex: 0 }));
-  }, [searchQuery, selectedStatus]);
+  }, [searchQuery, searchType, selectedStatus]);
 
   // ─── Columns with meta.format ──────────────────────────────────────────────
   const columns = useMemo<ColumnDef<ExtendedJob>[]>(
@@ -274,9 +298,9 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           },
           enableSorting: false,
           size: 60,
-          meta: { format: () => '' }, // skip export
+          meta: { format: () => '' },
         },
-          {
+        {
           id: 'account_name',
           accessorFn: (row) => row.account_name,
           header: ({ column }) => <DataGridColumnHeader title="ACCOUNT NAME" column={column} />,
@@ -364,7 +388,6 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           size: 120,
           meta: { format: (value: string) => value || 'N/A' },
         },
-        // ─── Invoice status columns ────────────────────────────────────────
         {
           id: 'need_to_invoice',
           accessorFn: (row) => row.need_to_invoice,
@@ -397,7 +420,6 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           enableSorting: true,
           meta: { format: (value: any) => (value ? 'Invoiced' : '-') },
         },
-        // ─── Accounting Notes ──────────────────────────────────────────────
         {
           id: 'notes',
           accessorKey: 'notes',
@@ -542,25 +564,43 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
             <CardHeader className="py-3.5 border-b">
               <CardHeading>
                 <div className="flex items-center gap-2.5">
-                  <div className="relative">
-                    <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                    <Input
-                      placeholder="Search Jobs..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="ps-9 w-[230px] h-[34px]"
-                    />
-                    {searchQuery.length > 0 && (
-                      <Button
-                        mode="icon"
-                        variant="ghost"
-                        className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                        onClick={() => setSearchQuery('')}
-                      >
-                        <X />
-                      </Button>
-                    )}
+
+                  {/* ── Search with type selector ──────────────────────── */}
+                  <div className="relative flex items-center">
+                    <Select
+                      value={searchType}
+                      onValueChange={(v) => setSearchType(v as SearchType)}
+                    >
+                      <SelectTrigger className="w-[150px] h-[34px] rounded-e-none border-r-0">
+                        <SelectValue placeholder="Search by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="job_name">Job Name</SelectItem>
+                        <SelectItem value="job_number">Job Number</SelectItem>
+                        <SelectItem value="account_name">Account Name</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="relative">
+                      <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                      <Input
+                        placeholder={`Search by ${searchType.replace(/_/g, ' ')}...`}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="ps-9 w-[230px] h-[34px] rounded-s-none"
+                      />
+                      {searchQuery.length > 0 && (
+                        <Button
+                          mode="icon"
+                          variant="ghost"
+                          className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                          onClick={() => setSearchQuery('')}
+                        >
+                          <X />
+                        </Button>
+                      )}
+                    </div>
                   </div>
+
                   <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                     <SelectTrigger className="w-[120px] h-[34px]">
                       <SelectValue placeholder="Status" />

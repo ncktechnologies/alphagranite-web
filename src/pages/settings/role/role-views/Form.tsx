@@ -178,6 +178,8 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
                         value={roleName}
                         onChange={(e) => setRoleName(e.target.value)}
                         placeholder="ADMIN/EXECUTIVES"
+                        disabled
+                        className="disabled:cursor-not-allowed disabled:opacity-60"
                     />
                 </div>
 
