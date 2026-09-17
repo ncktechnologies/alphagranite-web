@@ -79,11 +79,12 @@ const getMimeType = (name: string, rawType?: string): string => {
     xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     zip: 'application/zip', rar: 'application/x-rar-compressed',
     mp3: 'audio/mpeg',  wav: 'audio/wav',
+    gltf: 'model/gltf+json', glb: 'model/gltf-binary',
   };
   return map[ext] ?? 'application/octet-stream';
 };
 
-const getCategory = (mimeType: string): 'image' | 'video' | 'audio' | 'pdf' | 'doc' | 'sheet' | 'archive' | 'other' => {
+const getCategory = (mimeType: string): 'image' | 'video' | 'audio' | 'pdf' | 'doc' | 'sheet' | 'archive' | 'model' | 'other' => {
   if (mimeType.startsWith('image/'))  return 'image';
   if (mimeType.startsWith('video/'))  return 'video';
   if (mimeType.startsWith('audio/'))  return 'audio';
@@ -91,6 +92,7 @@ const getCategory = (mimeType: string): 'image' | 'video' | 'audio' | 'pdf' | 'd
   if (mimeType.includes('word') || mimeType.includes('doc')) return 'doc';
   if (mimeType.includes('excel') || mimeType.includes('sheet')) return 'sheet';
   if (mimeType.includes('zip') || mimeType.includes('rar'))    return 'archive';
+  if (mimeType.startsWith('model/'))   return 'model';
   return 'other';
 };
 
@@ -213,6 +215,7 @@ function FileIcon({ mimeType, className }: { mimeType: string; className?: strin
   if (cat === 'audio')   return <HeadphonesIcon      className={cn('text-purple-500', cls)} />;
   if (cat === 'sheet')   return <FileSpreadsheetIcon className={cn('text-green-600',  cls)} />;
   if (cat === 'archive') return <FileArchiveIcon     className={cn('text-amber-500',  cls)} />;
+  if (cat === 'model')   return <LayoutGrid className={cn('text-indigo-600', cls)} />;
   return <FileTextIcon className={cn('text-gray-500', cls)} />;
 }
 
@@ -232,7 +235,6 @@ function FileCard({
   const { label: stageLabel, className: stageCls } = resolveStage(file);
 
   const raw        = (file._raw ?? {}) as any;
-  const fileType   = raw.file_type   ?? '';
   const fileDesign = raw.file_design ?? file.file_design ?? '';
 
   // Format date with both date and time
@@ -322,8 +324,8 @@ function FileCard({
       </div>
 
       {/* View button */}
-      <Button
-        onClick={() => onView?.(file)}
+          <Button
+            onClick={() => onView?.(file)}
         variant="ghost"
         size="sm"
         className="h-8 w-8 p-0"
@@ -515,8 +517,77 @@ export function FileGallery({
   const handleView   = useCallback((file: UnifiedFile) => { onFileClick?.(file);  }, [onFileClick]);
   const handleDelete = useCallback((file: UnifiedFile) => { onDeleteFile?.(file); }, [onDeleteFile]);
 
+  // Viewer state for 3D models
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerFile, setViewerFile] = useState<UnifiedFile | null>(null);
+
+  // Ensure model-viewer script is loaded when needed
+  const ensureModelViewerLoaded = () => {
+    if ((window as any).customElements && (window as any).customElements.get('model-viewer')) return;
+    if (document.getElementById('model-viewer-script')) return;
+    const s = document.createElement('script');
+    s.id = 'model-viewer-script';
+    s.src = 'https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js';
+    s.async = true;
+    document.head.appendChild(s);
+  };
+
+  const openViewer = (file: UnifiedFile) => {
+    ensureModelViewerLoaded();
+    setViewerFile(file);
+    setViewerOpen(true);
+  };
+
+  const closeViewer = () => {
+    setViewerOpen(false);
+    setViewerFile(null);
+  };
+
+  // intercept view action for 3D files
+  const handleViewIntercept = useCallback((file: UnifiedFile) => {
+    const isModel = String(file.type || '').startsWith('model/');
+    if (isModel) {
+      openViewer(file);
+      return;
+    }
+    onFileClick?.(file);
+  }, [onFileClick]);
+
   return (
     <div className={cn('space-y-4', className)}>
+      {/* Model viewer modal */}
+      {viewerOpen && viewerFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="relative w-full max-w-4xl h-[80vh] bg-white rounded-md shadow-lg overflow-hidden">
+            <button
+              onClick={closeViewer}
+              className="absolute top-3 end-3 z-50 bg-white rounded-full p-2 shadow"
+              aria-label="Close viewer"
+            >
+              <X />
+            </button>
+            <div className="w-full h-full flex items-center justify-center bg-gray-50">
+              {
+                // Render model-viewer dynamically to avoid TS JSX typing issues
+              }
+              {(() => {
+                const ModelViewer: any = 'model-viewer';
+                return (
+                  <ModelViewer
+                    src={viewerFile.url}
+                    alt={viewerFile.name}
+                    style={{ width: '100%', height: '100%' }}
+                    camera-controls
+                    auto-rotate
+                    exposure="1"
+                    ar
+                  />
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toolbar */}
       {showToolbar && (
@@ -634,7 +705,7 @@ export function FileGallery({
             <FileCard
               key={String(file.id)}
               file={file}
-              onView={onFileClick   ? handleView   : undefined}
+              onView={onFileClick   ? handleViewIntercept   : undefined}
               onDelete={onDeleteFile ? handleDelete : undefined}
               deletePermissionSubject={deletePermissionSubject}
             />
@@ -663,7 +734,7 @@ export function FileGallery({
                 <FileRow
                   key={String(file.id)}
                   file={file}
-                  onView={onFileClick   ? handleView   : undefined}
+                  onView={onFileClick   ? handleViewIntercept   : undefined}
                   onDelete={onDeleteFile ? handleDelete : undefined}
                   deletePermissionSubject={deletePermissionSubject}
                 />

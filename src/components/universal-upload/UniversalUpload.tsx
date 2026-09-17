@@ -1,10 +1,10 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { X, Upload, File, Image, Video, AlertCircle } from 'lucide-react';
+import { X, Upload, File, Image, Video, AlertCircle, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
@@ -142,6 +142,7 @@ export function UniversalUpload({
   const getFileIcon = (file: File) => {
     if (file.type.startsWith('image/')) return <Image className="h-8 w-8 text-blue-500" />;
     if (file.type.startsWith('video/')) return <Video className="h-8 w-8 text-red-500" />;
+    if (file.type.startsWith('model/')) return <LayoutGrid className="h-8 w-8 text-indigo-600" />;
     return <File className="h-8 w-8 text-gray-500" />;
   };
 
