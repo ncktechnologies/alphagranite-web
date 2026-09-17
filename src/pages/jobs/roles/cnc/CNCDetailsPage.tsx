@@ -653,7 +653,7 @@ export function CNCDetailsPage() {
 
                             <Card>
                                 <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
-                                    <Can action="create" on="CNC">
+                                    <Can action="create" on="CNC Programming">
                                         <TimeTrackingComponent
                                             isDrafting={isDrafting}
                                             isPaused={isPaused}
@@ -681,7 +681,7 @@ export function CNCDetailsPage() {
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
                                                     <h3 className="font-semibold text-sm">Uploaded files</h3>
-                                                    <Can action="create" on="CNC">
+                                                    <Can action="create" on="CNC Programming">
                                                         <Button
                                                             variant="dashed"
                                                             size="sm"
@@ -715,7 +715,7 @@ export function CNCDetailsPage() {
                                     {viewMode === 'activity' && (
                                         <div className="flex justify-end gap-2 pt-2">
                                             <BackButton fallbackUrl="/job/cnc" label="Cancel" />
-                                            <Can action="create" on="CNC">
+                                            <Can action="create" on="CNC Programming">
                                                 <Button
                                                     onClick={handleOpenSubmissionModal}
                                                     className="bg-green-600 hover:bg-green-700"
