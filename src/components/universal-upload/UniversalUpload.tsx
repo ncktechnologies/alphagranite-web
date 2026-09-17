@@ -72,6 +72,8 @@ export function UniversalUpload({
     'application/pdf': ['.pdf'],
     'application/msword': ['.doc'],
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'model/gltf+json': ['.gltf'],
+      'model/gltf-binary': ['.glb'],
   },
   maxSizeMB = 50,
   multiple = true,
