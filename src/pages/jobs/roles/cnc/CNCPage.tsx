@@ -192,6 +192,7 @@ const CNCPage = () => {
                 showAssignCNCButton
                 onAssignCNCClick={handleAssignCNCClick}
                 onReassignCNCClick={handleReassignCNCClick}
+                noteStage='cnc'
                 visibleColumns={[
                     'date',
                     'fab_type',

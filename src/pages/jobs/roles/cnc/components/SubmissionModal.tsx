@@ -312,7 +312,7 @@ export const SubmissionModal = ({
                 Cancel
               </Button>
 
-              <Can action="create" on="CNC">
+              <Can action="create" on="CNC Programming">
                 <Button 
                   type="submit" 
                   disabled={!isConfirmed || isSubmitting}
