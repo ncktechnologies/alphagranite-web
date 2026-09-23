@@ -51,7 +51,7 @@ export const useFirstTimeLogin = () => {
         })
       );
 
-      toast.success('User login successfully');
+      toast.success('User login successfull');
       navigate('/');
       return { isFirstTime: false };
     } catch (error) {

@@ -134,7 +134,7 @@ export function SignInPage() {
           })
         );
 
-        toast.success('User login successfully');
+        toast.success('User login successfull');
 
         const nextPath = searchParams.get('next') || '/';
         navigate(nextPath);
