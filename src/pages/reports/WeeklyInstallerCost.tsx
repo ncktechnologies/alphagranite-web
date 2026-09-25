@@ -16,9 +16,48 @@ import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
 import { BackButton } from '@/components/common/BackButton';
 
-const $ = (v: number) => `$${v.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-const num = (v: number, d = 2) => v.toFixed(d);
-const pct = (v: number) => num(v, 2) + '%';
+// ─── Null-safe formatters ─────────────────────────────────────────────────
+const $ = (v: number | null | undefined): string =>
+    v === null || v === undefined || Number.isNaN(Number(v))
+        ? '-'
+        : `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
+const num = (v: number | null | undefined, d = 2): string =>
+    v === null || v === undefined || Number.isNaN(Number(v))
+        ? '-'
+        : Number(v).toFixed(d);
+
+const pct = (v: number | null | undefined): string =>
+    v === null || v === undefined || Number.isNaN(Number(v))
+        ? '-'
+        : num(v, 2) + '%';
+
+// ─── Timezone-safe date parsing ───────────────────────────────────────────
+// JS parses "YYYY-MM-DD" as UTC midnight, which shifts the visible calendar
+// day backwards for any user in a negative-offset timezone (US, Canada, etc.).
+// This parses the date portion as a *local* date so the day shown is always
+// the day the API intended, regardless of the viewer's timezone.
+const parseLocalDate = (value: string | Date | null | undefined): Date | null => {
+    if (!value) return null;
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+
+    // Date-only string: "2024-01-15"
+    const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (dateOnly) {
+        return new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]));
+    }
+
+    // ISO datetime: "2024-01-15T00:00:00Z" (or with offset). Take the date
+    // portion so the user sees the calendar day the API intended rather than
+    // a timezone-shifted neighbor.
+    const iso = /^(\d{4})-(\d{2})-(\d{2})[T ]/.exec(value);
+    if (iso) {
+        return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+    }
+
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
 
 // ─── Helper: get metric labels for installer ──────────────────────────────
 const getMetricLabel = (key: string): string => {
@@ -86,11 +125,19 @@ const formatValue = (key: string, val: any): string => {
 // ─── Pivot transformation ───────────────────────────────────────────────────
 const pivotWeeklyData = (weeklyData: any[]) => {
     if (!weeklyData.length) return { rows: [], weeks: [] };
-    const weeks = weeklyData.map(w => format(new Date(w.week_ending), 'MMM dd'));
+
+    // Timezone-safe week labels. `parseLocalDate` keeps the calendar day the
+    // API intended regardless of where the user is browsing from.
+    const weeks = weeklyData.map(w => {
+        const d = parseLocalDate(w.week_ending);
+        return d ? format(d, 'MMM dd') : '-';
+    });
+
     const sample = weeklyData[0];
     const metricKeys = Object.keys(sample).filter(
         key => key !== 'week_ending' && typeof sample[key] === 'number'
     );
+
     const avgMetrics = new Set([
         'average_sqft_per_day',
         'labor_cost_per_sq_ft',
@@ -113,25 +160,32 @@ const pivotWeeklyData = (weeklyData: any[]) => {
     const rows = metricKeys.map(key => {
         const row: any = { metric: key };
         let sum = 0;
+        let count = 0;
         weeklyData.forEach((w, idx) => {
             const val = w[key];
             row[`week_${idx}`] = val;
-            if (typeof val === 'number') sum += val;
+            if (typeof val === 'number' && !Number.isNaN(val)) {
+                sum += val;
+                count += 1;
+            }
         });
         if (avgMetrics.has(key)) {
-            row.total = sum / weeklyData.length;
+            row.total = count > 0 ? sum / count : null;
         } else {
-            row.total = sum;
+            row.total = count > 0 ? sum : null;
         }
         return row;
     });
+
     return { rows, weeks };
 };
 
 export function WeeklyInstallerCostReport() {
     // ─── Month/Year filter ────────────────────────────────────────────────
-    const now = new Date();
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date(now.getFullYear(), now.getMonth(), 1));
+    const now = useMemo(() => new Date(), []);
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+        new Date(now.getFullYear(), now.getMonth(), 1)
+    );
     const [tempDate, setTempDate] = useState<Date | undefined>(selectedDate);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [calendarMonth, setCalendarMonth] = useState<Date>(selectedDate || now);
@@ -153,17 +207,15 @@ export function WeeklyInstallerCostReport() {
             params.start_date = format(start, 'yyyy-MM-dd');
             params.end_date = format(end, 'yyyy-MM-dd');
         } else {
-            const now = new Date();
             params.year = now.getFullYear();
             params.month = now.getMonth() + 1;
         }
         return params;
-    }, [selectedDate]);
+    }, [selectedDate, now]);
 
     const { data, isLoading, isError } = useGetWeeklyInstallerLaborCostQuery(queryParams);
 
     const weeklyData: any[] = useMemo(() => data?.data?.monthly_report?.weekly_breakdown ?? [], [data]);
-    const totals = useMemo(() => data?.data?.monthly_report?.totals ?? null, [data]);
     const annualData: any[] = useMemo(() => data?.data?.annual_monthly_summary ?? [], [data]);
     const display = useMemo(() => data?.data?.display ?? null, [data]);
 
@@ -253,7 +305,7 @@ export function WeeklyInstallerCostReport() {
         {
             accessorKey: 'month',
             header: ({ column }) => <DataGridColumnHeader title="MONTH" column={column} />,
-            cell: ({ row }) => <span className="font-medium">{row.original.month}</span>,
+            cell: ({ row }) => <span className="font-medium">{row.original.month ?? '-'}</span>,
             size: 120,
             enableSorting: true,
             meta: { format: (value: string) => value || '' },
@@ -261,9 +313,10 @@ export function WeeklyInstallerCostReport() {
         {
             accessorKey: 'number_of_weeks',
             header: ({ column }) => <DataGridColumnHeader title="WEEKS" column={column} />,
+            cell: ({ row }) => num(row.original.number_of_weeks, 0),
             size: 80,
             enableSorting: true,
-            meta: { format: (value: number) => String(value) },
+            meta: { format: (value: number) => num(value, 0) },
         },
         {
             accessorKey: 'completed_sqft',
@@ -310,7 +363,14 @@ export function WeeklyInstallerCostReport() {
             header: ({ column }) => <DataGridColumnHeader title="GP LESS COST/SQFT" column={column} />,
             cell: ({ row }) => {
                 const v = row.original.gross_profit_less_installer_total_cost_psf;
-                return <span className={v < 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>{$(v)}</span>;
+                if (v === null || v === undefined || Number.isNaN(Number(v))) {
+                    return <span className="text-sm">-</span>;
+                }
+                return (
+                    <span className={v < 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
+                        {$(v)}
+                    </span>
+                );
             },
             size: 160,
             enableSorting: true,
@@ -330,11 +390,13 @@ export function WeeklyInstallerCostReport() {
     });
 
     const getTitle = () => {
-        if (selectedDate) {
-            return format(selectedDate, 'MMMM yyyy');
-        }
+        if (selectedDate) return format(selectedDate, 'MMMM yyyy');
         return format(now, 'MMMM yyyy');
     };
+
+    // Year used for the annual summary header — follows the picker so the
+    // label matches the data the user is actually looking at.
+    const annualYear = selectedDate ? selectedDate.getFullYear() : now.getFullYear();
 
     if (isLoading) return <div className="p-5 text-[#7c8689]">Loading installer cost report...</div>;
     if (isError) return <div className="p-5 text-red-500">Error loading report.</div>;
@@ -395,10 +457,14 @@ export function WeeklyInstallerCostReport() {
                             Clear
                         </Button>
                     )}
-                    <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(pivotedTable, `installer-cost-${getTitle()}`)}>
+                    <Button
+                        variant="outline"
+                        className="h-[34px]"
+                        onClick={() => exportTableToCSV(pivotedTable, `installer-cost-${getTitle()}`)}
+                    >
                         Export CSV
                     </Button>
-                <BackButton/>
+                    <BackButton />
                 </div>
             </div>
 
@@ -406,11 +472,15 @@ export function WeeklyInstallerCostReport() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total Employees</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{display.total_employee}</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">
+                            {display.total_employee ?? '-'}
+                        </p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Default Overhead / Week</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{$(display.default_overhead_per_week)}</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">
+                            {$(display.default_overhead_per_week)}
+                        </p>
                     </Card>
                 </div>
             )}
@@ -484,7 +554,7 @@ export function WeeklyInstallerCostReport() {
             <DataGrid table={annualTable} recordCount={annualData.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                     <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
-                        <CardTitle className="text-base font-semibold text-[#4b545d]">Annual Monthly Summary – {new Date().getFullYear()}</CardTitle>
+                        <CardTitle className="text-base font-semibold text-[#4b545d]">Annual Monthly Summary – {annualYear}</CardTitle>
                         <CardToolbar />
                     </CardHeader>
                     <CardTable>
