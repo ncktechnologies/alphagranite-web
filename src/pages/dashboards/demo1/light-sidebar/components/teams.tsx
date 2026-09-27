@@ -14,12 +14,15 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import { Search, X } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { StagePill } from './stage-pill';
 import { Button } from '@/components/ui/button';
 import {
   Card,
+  CardDescription,
   CardFooter,
   CardHeader,
+  CardHeading,
   CardTable,
   CardTitle,
   CardToolbar,
@@ -60,29 +63,18 @@ interface ITeamsProps {
 const BooleanPill = ({ value }: { value: boolean }) => {
   return (
     <span
-      className={`px-2 py-0.5 text-xs font-semibold rounded-full 
-        }`}
+      className={
+        value
+          ? 'inline-flex items-center rounded-full bg-primary-soft px-2 py-0.5 text-xs font-medium text-primary-accent'
+          : 'inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground'
+      }
     >
       {value ? 'Yes' : 'No'}
     </span>
   );
 };
 
-const StageBadge = ({ stage }: { stage: IData['stage'] }) => {
-  const colors: Record<IData['stage'], string> = {
-    Completed: 'bg-green-100 text-green-700',
-    Drafting: 'bg-purple-100 text-purple-700',
-    Programming: 'bg-gray-100 text-gray-700',
-  };
-
-  return (
-    <span
-      className={`px-2 py-0.5 text-xs font-medium rounded-full ${colors[stage]}`}
-    >
-      {stage}
-    </span>
-  );
-};
+const StageBadge = ({ stage }: { stage: IData['stage'] }) => <StagePill stage={stage} />;
 
 const Teams = ({ recentJobs }: ITeamsProps) => {
   const [pagination, setPagination] = useState<PaginationState>({
@@ -309,19 +301,19 @@ const Teams = ({ recentJobs }: ITeamsProps) => {
         cellBorder: true,
       }}
     >
-      <Card>
-        <CardHeader className="py-3.5 border-b">
-          <CardTitle>Recent Jobs</CardTitle>
-          <CardToolbar className="flex items-center gap-3">
-            <Link to="/create-jobs">
-            <Button
-              variant="inverse"
-              size="lg"
-              className="text-primary font-semibold text-[16px] font-[24px] underline ml-auto"
-            >
-              See all
+      <Card className="overflow-hidden">
+        <CardHeader className="py-4">
+          <CardHeading>
+            <CardTitle>Recent jobs</CardTitle>
+            <CardDescription>The latest FABs created across the business</CardDescription>
+          </CardHeading>
+          <CardToolbar>
+            <Button variant="outline" size="md" asChild>
+              <Link to="/create-jobs">
+                View all jobs
+                <ArrowRight />
+              </Link>
             </Button>
-            </Link>
           </CardToolbar>
         </CardHeader>
         <CardTable>

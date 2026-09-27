@@ -5,8 +5,8 @@ import { cva, type VariantProps } from 'class-variance-authority';
 // Define input size variants
 const inputVariants = cva(
   `
-    flex w-full bg-background border border-input shadow-xs shadow-black/5 transition-[color,box-shadow] text-foreground placeholder:text-placeholder
-    focus-visible:ring-ring/30  focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px]     
+    flex w-full bg-background border border-input shadow-xs shadow-black/[0.03] transition-[color,box-shadow,border-color] text-foreground placeholder:text-placeholder
+    hover:border-[#CDD2C6] focus-visible:ring-ring/25 focus-visible:border-primary-light focus-visible:outline-none focus-visible:ring-[3px]     
     disabled:cursor-not-allowed disabled:opacity-60 
     [&[readonly]]:bg-muted/80 [&[readonly]]:cursor-not-allowed
     file:h-full [&[type=file]]:py-0 file:border-solid file:border-input file:bg-transparent 
@@ -16,7 +16,7 @@ const inputVariants = cva(
   {
     variants: {
       variant: {
-        lg: 'h-[48px] px-4 text-sm rounded-[4px] file:pe-4 file:me-4',
+        lg: 'h-11 px-3.5 text-sm rounded-lg file:pe-4 file:me-4',
         md: 'h-8.5 px-3 text-[0.8125rem] leading-(--text-sm--line-height) rounded-md file:pe-3 file:me-3',
         sm: 'h-7 px-2.5 text-xs rounded-md file:pe-2.5 file:me-2.5',
       },
@@ -34,7 +34,7 @@ const inputAddonVariants = cva(
       variant: {
         sm: 'rounded-md h-7 min-w-7 text-xs px-2.5 [&_svg:not([class*=size-])]:size-3.5',
         md: 'rounded-md h-8.5 min-w-8.5 px-3 text-[0.8125rem] leading-(--text-sm--line-height) [&_svg:not([class*=size-])]:size-4.5',
-        lg: 'rounded-md h-10 min-w-10 px-4 text-sm [&_svg:not([class*=size-])]:size-4.5',
+        lg: 'rounded-lg h-11 min-w-11 px-4 text-sm [&_svg:not([class*=size-])]:size-4.5',
       },
       mode: {
         default: '',
@@ -75,8 +75,8 @@ const inputGroupVariants = cva(
 const inputWrapperVariants = cva(
   `
     flex items-center gap-1.5
-    has-[:focus-visible]:ring-ring/30 
-    has-[:focus-visible]:border-ring
+    has-[:focus-visible]:ring-ring/25 
+    has-[:focus-visible]:border-primary-light
     has-[:focus-visible]:outline-none 
     has-[:focus-visible]:ring-[3px]
 

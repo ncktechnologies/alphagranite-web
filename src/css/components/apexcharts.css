@@ -19,7 +19,7 @@
 
   .apexcharts-menu {
     border: 1px solid var(--color-border) !important;
-    box-shadow: var(--box-shadow-sm) !important;
+    box-shadow: var(--shadow-popover) !important;
     background-color: var(--color-background) !important;
     border-radius: 0.625rem !important;
     padding: 0.5rem 0 !important;
@@ -32,12 +32,12 @@
   }
 
   .apexcharts-menu .apexcharts-menu-item:hover {
-    background-color: var(--gray-100) !important;
+    background-color: var(--color-accent) !important;
   }
 
   .apexcharts-tooltip {
     border: 1px solid var(--color-border) !important;
-    box-shadow: var(--box-shadow-sm) !important;
+    box-shadow: var(--shadow-popover) !important;
     background-color: var(--color-background) !important;
     border-radius: 0.625rem !important;
     color: var(--color-secondary-foreground) !important;
@@ -52,7 +52,7 @@
 
   .apexcharts-xaxistooltip {
     border: 1px solid var(--color-border) !important;
-    box-shadow: var(--box-shadow-sm) !important;
+    box-shadow: var(--shadow-popover) !important;
     background-color: var(--color-background) !important;
     border-radius: 0.625rem;
     color: var(--color-mono);

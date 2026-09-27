@@ -1,51 +1,45 @@
 import { useEffect, useState } from 'react';
-// import { StoreClientTopbar } from '@/pages/store-client/components/common/topbar';
-import { SearchDialog } from '@/partials/dialogs/search/search-dialog';
-import { AppsDropdownMenu } from '@/partials/topbar/apps-dropdown-menu';
-import { ChatSheet } from '@/partials/topbar/chat-sheet';
-import { NotificationsSheet } from '@/partials/topbar/notifications-sheet';
 import { UserDropdownMenu } from '@/partials/topbar/user-dropdown-menu';
-import {
-  Bell,
-  LayoutGrid,
-  Menu,
-  MessageCircleMore,
-  Search,
-  SquareChevronRight,
-} from 'lucide-react';
+import { ChevronDown, Keyboard, Menu, Search } from 'lucide-react';
 import { useLocation } from 'react-router';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { toAbsoluteUrl } from '@/lib/helpers';
+import { MOD_KEY, openCommandPalette, openShortcuts } from '@/lib/keyboard';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useScrollPosition } from '@/hooks/use-scroll-position';
+import { getUserInitials } from '@/utils/userUtils';
+import { TemplaterTimerWidget } from '@/pages/templater/TemplaterTimerWidget';
 import { Button } from '@/components/ui/button';
+import { Kbd } from '@/components/ui/kbd';
 import {
   Sheet,
   SheetBody,
   SheetContent,
   SheetHeader,
+  SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Container } from '@/components/common/container';
 import { Breadcrumb } from './breadcrumb';
-import { MegaMenu } from './mega-menu';
-import { MegaMenuMobile } from './mega-menu-mobile';
+import { SIDEBAR_GRADIENT } from './sidebar';
 import { SidebarMenu } from './sidebar-menu';
-import { Input } from '@/components/ui/input';
-import { useSelector } from 'react-redux';
-import { getUserInitials } from '@/utils/userUtils';
-import { TemplaterTimerWidget } from '@/pages/templater/TemplaterTimerWidget';
 
 export function Header() {
   const [isSidebarSheetOpen, setIsSidebarSheetOpen] = useState(false);
-  const [isMegaMenuSheetOpen, setIsMegaMenuSheetOpen] = useState(false);
 
   const { pathname } = useLocation();
   const mobileMode = useIsMobile();
-  
-  // Get user data from Redux store
+
   const user = useSelector((state: any) => state.user.user);
+  const displayName =
+    user?.fullname ||
+    (user?.first_name && user?.last_name
+      ? `${user.first_name} ${user.last_name}`
+      : user?.username || 'User');
+  const roleLabel = user?.role || user?.roles?.[0]?.name;
 
   const scrollPosition = useScrollPosition();
   const headerSticky: boolean = scrollPosition > 0;
@@ -53,149 +47,132 @@ export function Header() {
   // Close sheet when route changes
   useEffect(() => {
     setIsSidebarSheetOpen(false);
-    setIsMegaMenuSheetOpen(false);
   }, [pathname]);
 
-
-  // Build the trigger dynamically based on user's profile image
-  const triggerNode = user?.profile_image_url ? (
+  const avatar = user?.profile_image_url ? (
     <img
       src={user.profile_image_url}
-      alt={user?.fullname || 'User'}
-      className="size-9 rounded-full border-2 border-green-500 object-cover cursor-pointer shrink-0"
+      alt={displayName}
+      className="size-9 rounded-full object-cover ring-2 ring-primary-light/50 ring-offset-2 ring-offset-background shrink-0"
     />
   ) : (
-    <div className="size-9 rounded-full border-2 border-green-500 shrink-0 cursor-pointer flex items-center justify-center bg-green-100 text-green-800 font-semibold">
+    <span className="size-9 rounded-full shrink-0 flex items-center justify-center bg-primary-soft text-primary-accent text-sm font-semibold ring-2 ring-primary-light/50 ring-offset-2 ring-offset-background">
       {getUserInitials(user)}
-    </div>
+    </span>
+  );
+
+  const triggerNode = (
+    <button
+      type="button"
+      className="flex items-center gap-2.5 rounded-full p-0.5 xl:pe-2.5 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      aria-label="Account menu"
+    >
+      {avatar}
+      <span className="hidden xl:flex flex-col items-start leading-tight max-w-[160px]">
+        <span className="truncate text-sm font-semibold text-foreground">{displayName}</span>
+        {roleLabel && <span className="truncate text-xs text-muted-foreground">{roleLabel}</span>}
+      </span>
+      <ChevronDown className="hidden xl:block size-3.5 text-muted-foreground" />
+    </button>
   );
 
   return (
     <header
       className={cn(
-        'header fixed top-0 z-10 start-0 flex items-stretch shrink-0 border-b border-border bg-background end-0 pe-[var(--removed-body-scroll-bar-size,0px)]',
-        headerSticky && 'border-b border-[#E2E4ED]',
+        'header fixed top-0 z-20 start-0 end-0 flex items-stretch shrink-0 border-b bg-background/75 backdrop-blur-xl backdrop-saturate-150 pe-[var(--removed-body-scroll-bar-size,0px)] transition-[border-color,box-shadow]',
+        headerSticky ? 'border-border shadow-[0_1px_12px_-6px_rgb(20_28_12/0.12)]' : 'border-transparent',
       )}
     >
-      <Container className="flex justify-between items-stretch lg:gap-4">
-        {/* HeaderLogo */}
-        <div className="flex gap-1 lg:hidden items-center">
-          <Link to="/" className="shrink-0">
-            <img
-              src={toAbsoluteUrl('/images/logo/ody-logo.png')}
-              className="h-[25px] w-full"
-              alt="mini-logo"
-            />
-          </Link>
-          <div className="flex items-center">
-            {mobileMode && (
-              <Sheet
-                open={isSidebarSheetOpen}
-                onOpenChange={setIsSidebarSheetOpen}
-                
+      <Container className="flex items-center justify-between gap-3">
+        {/* Left: mobile brand + menu, desktop breadcrumbs */}
+        <div className="flex min-w-0 items-center gap-2">
+          {mobileMode && (
+            <Sheet open={isSidebarSheetOpen} onOpenChange={setIsSidebarSheetOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" mode="icon" aria-label="Open navigation">
+                  <Menu className="size-5! text-foreground/70" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                className={cn('p-0 gap-0 w-[280px] border-0 text-white', SIDEBAR_GRADIENT)}
+                side="left"
+                close={false}
               >
-                <SheetTrigger asChild>
-                  <Button variant="ghost" mode="icon">
-                    <Menu className="text-muted-foreground/70" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent
-                  className="p-0 gap-0 w-[275px] bg-primary"
-                  side="left"
-                  close={false}
-                >
-                  <SheetHeader className="p-0 space-y-0" />
-                  <SheetBody className="p-0 overflow-y-auto">
-                    <SidebarMenu />
-                  </SheetBody>
-                </SheetContent>
-              </Sheet>
-            )}
-            {/* {mobileMode && (
-              <Sheet
-                open={isMegaMenuSheetOpen}
-                onOpenChange={setIsMegaMenuSheetOpen}
-              >
-                <SheetTrigger asChild>
-                  <Button variant="ghost" mode="icon">
-                    <SquareChevronRight className="text-muted-foreground/70" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent
-                  className="p-0 gap-0 w-[275px]"
-                  side="left"
-                  close={false}
-                >
-                  <SheetHeader className="p-0 space-y-0" />
-                  <SheetBody className="p-0 overflow-y-auto">
-                    <MegaMenuMobile />
-                  </SheetBody>
-                </SheetContent>
-              </Sheet>
-            )} */}
-          </div>
+                <SheetHeader className="p-0 space-y-0">
+                  <SheetTitle className="sr-only">Navigation</SheetTitle>
+                  <div className="flex h-16 items-center border-b border-white/10 px-5">
+                    <img
+                      src={toAbsoluteUrl('/images/logo/ody/white-odyssey-logo.png')}
+                      className="h-[56px] w-auto -ms-2"
+                      alt="The Odyssey Tracker"
+                    />
+                  </div>
+                </SheetHeader>
+                <SheetBody className="p-0 overflow-y-auto">
+                  <SidebarMenu />
+                </SheetBody>
+              </SheetContent>
+            </Sheet>
+          )}
+          {mobileMode ? (
+            <Link to="/" className="shrink-0">
+              <img
+                src={toAbsoluteUrl('/images/logo/ody-logo.png')}
+                className="h-[44px] w-auto"
+                alt="The Odyssey Tracker"
+              />
+            </Link>
+          ) : (
+            <Breadcrumb />
+          )}
         </div>
 
-        {/* Main Content (MegaMenu or Breadcrumbs) */}
-        {pathname.startsWith('/account') ? (
-          <Breadcrumb />
-        ) : (
-          !mobileMode && <div></div>
-        )}
+        {/* Right: search, live widgets, help, account */}
+        <div className="flex shrink-0 items-center gap-2 lg:gap-3">
+          <button
+            type="button"
+            onClick={openCommandPalette}
+            className="group hidden md:flex h-9 w-[240px] lg:w-[300px] items-center gap-2 rounded-lg border border-input bg-muted/70 ps-3 pe-1.5 text-sm text-muted-foreground transition-colors hover:border-[#CDD2C6] hover:bg-background focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/25"
+          >
+            <Search className="size-4" />
+            <span className="truncate">Search or jump to…</span>
+            <Kbd size="xs" className="ms-auto bg-background font-sans text-muted-foreground">
+              {MOD_KEY} K
+            </Kbd>
+          </button>
+          <Button
+            variant="ghost"
+            mode="icon"
+            className="md:hidden"
+            onClick={openCommandPalette}
+            aria-label="Search"
+          >
+            <Search className="size-[18px]!" />
+          </Button>
 
-        {/* HeaderTopbar */}
-        <div className="flex items-center gap-3">
-          {pathname.startsWith('/store-client') ? (
-            // <StoreClientTopbar />
-            <div></div>
-          ) : (
-            <>
-              {/* {!mobileMode && (
-                <div className="pt-2.5 px-3.5 mb-1">
-                  <div className="relative">
-                    <Search className="text-muted-foreground absolute top-1/2 start-3.5 -translate-y-1/2 size-4" />
-                    <Input
-                      placeholder="Search for anything"
-                      onChange={() => {}}
-                      className="px-9 min-w-0 h-10 w-[250px] border border-[#E9ECEC]  focus:border-primary focus:ring-0"
-                      value=""
-                    />
-                    <div className="border border-[#F9F9F9] absolute p-2 rounded-md end-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                      <img src="/images/icons/c.svg" alt="" />
-                      <img src="/images/icons/k.svg" alt="" />
+          <TemplaterTimerWidget />
 
-                    </div>
-                  </div>
-                </div>
-              )} */}
-              {/* <NotificationsSheet
-                trigger={ */}
-                  {/* <Button
-                    variant="ghost"
-                    mode="icon"
-                    shape="circle"
-                    className="size-9 border-foreground hover:bg-primary/10 hover:[&_svg]:text-primary"
-                  >
-                    <Bell className="size-5!" />
-                  </Button> */}
-                {/* }
-              /> */}
-              {/* <ChatSheet
-                trigger={
-                  <Button
-                    variant="ghost"
-                    mode="icon"
-                    shape="circle"
-                    className="size-9 border-foreground hover:bg-primary/10 hover:[&_svg]:text-primary"
-                  >
-                    <img src="/images/icons/messages.svg" alt="" />
-                  </Button>
-                }
-              /> */}
-              <TemplaterTimerWidget />
-             <UserDropdownMenu trigger={triggerNode} />
-            </>
+          {!mobileMode && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  mode="icon"
+                  shape="circle"
+                  onClick={openShortcuts}
+                  aria-label="Keyboard shortcuts"
+                  className="size-9"
+                >
+                  <Keyboard className="size-[18px]! text-muted-foreground" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Keyboard shortcuts (?)</TooltipContent>
+            </Tooltip>
           )}
+
+          <span className="hidden lg:block h-6 w-px bg-border" aria-hidden />
+
+          <UserDropdownMenu trigger={triggerNode} />
         </div>
       </Container>
     </header>

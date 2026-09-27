@@ -1,141 +1,105 @@
-import { Fragment } from 'react';
+import { ReactNode } from 'react';
 import { toAbsoluteUrl } from '@/lib/helpers';
-import { Card, CardContent } from '@/components/ui/card';
-import { TrendingDown, TrendingUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Card } from '@/components/ui/card';
 import { DashboardKPIs } from '@/store/api/job';
 
-interface IChannelStatsItem {
-  logo: string;
-  logoDark?: string;
-  info: string | number;
-  desc: string;
-  path: string;
-  title: string;
-  bgColor?: string;
+interface IKpiTileProps {
+  icon: string;
+  iconBg: string;
+  label: string;
+  value: ReactNode;
+  footer?: ReactNode;
+  className?: string;
+  interactive?: boolean;
 }
-type IChannelStatsItems = Array<IChannelStatsItem>;
+
+/** Stat tile: label, headline value, optional real context line. */
+export function KpiTile({ icon, iconBg, label, value, footer, className, interactive }: IKpiTileProps) {
+  return (
+    <Card
+      className={cn(
+        'relative overflow-hidden p-5 gap-4 h-full transition-[box-shadow,transform,border-color] duration-200',
+        interactive && 'group hover:-translate-y-0.5 hover:shadow-card-hover hover:border-primary-light/50',
+        className,
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-sm font-medium text-text-foreground leading-5">{label}</span>
+        <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-xl shadow-sm', iconBg)}>
+          <img src={toAbsoluteUrl(`/images/icons/${icon}`)} className="size-5" alt="" />
+        </span>
+      </div>
+      <div className="mt-auto flex flex-col gap-2">
+        <span className="text-[30px] leading-none font-semibold tracking-tight text-foreground tabular-nums">
+          {value}
+        </span>
+        {footer && <div className="text-xs text-muted-foreground">{footer}</div>}
+      </div>
+    </Card>
+  );
+}
 
 interface IChannelStatsProps {
   dashboardData?: DashboardKPIs;
 }
 
+const numberFmt = new Intl.NumberFormat('en-US');
+
 const ChannelStats = ({ dashboardData }: IChannelStatsProps) => {
-  const items: IChannelStatsItems = dashboardData ? [
-    { 
-      logo: 'h119.svg', 
-      info: dashboardData.total_jobs, 
-      title: 'Total Jobs', 
-      path: '', 
-      desc: '+1', 
-      bgColor: 'bg-[#9CC15E]' 
-    },
-    { 
-      logo: 'h131.svg', 
-      info: dashboardData.pending_installations, 
-      title: 'Pending Installations', 
-      path: '', 
-      desc: '+4', 
-      bgColor: 'bg-[#EA3DB1]' 
-    },
-    {
-      logo: 'h143.svg',
-      info: dashboardData.average_revisions.toFixed(1),
-      title: 'Average Revisions',
-      path: '',
-      desc: '+4',
-      bgColor: 'bg-[#51BCF4]'
-    },
-    {
-      logo: 'h156.svg',
-      logoDark: 'h156.svg',
-      info: `${dashboardData.completion_rate}%`,
-      title: 'Completion Rate',
-      path: '',
-      desc: '-1',
-      bgColor: 'bg-[#0BC33F]'
-    },
-  ] : [
-    { logo: 'h119.svg', info: '240', title: 'Total Jobs', path: '', desc: '+1', bgColor: 'bg-[#9CC15E]' },
-    { logo: 'h131.svg', info: '24%', title: 'Pending Installations', path: '', desc: '+4', bgColor: 'bg-[#EA3DB1]' },
-    {
-      logo: 'h143.svg',
-      info: '24%',
-      title: 'Average Revisions',
-      path: '',
-      desc: '+4',
-      bgColor: 'bg-[#51BCF4]'
-    },
-    {
-      logo: 'h156.svg',
-      logoDark: 'h156.svg',
-      info: '96%',
-      title: 'Completion Rate',
-      path: '',
-      desc: '-1',
-      bgColor: 'bg-[#0BC33F]'
-    },
-  ];
+  if (!dashboardData) return null;
 
-  const renderItem = (item: IChannelStatsItem, index: number) => {
-    return (
-      <Card key={index} className='shadow-[#00000008] shadow-sm rounded-lg hover:shadow-lg transition-shadow duration-300 ease-in-out'>
-        <CardContent className="p-0 pt-6 pb-8 flex  justify-between items-start gap-6 h-full bg-cover rtl:bg-[left_top_-1.7rem] bg-[right_top_-1.7rem] bg-no-repeat channel-stats-bg">
-          <div className={`${item.bgColor} size-[44px] order-2 flex items-center justify-center mr-5  rounded-[8px]`}>
-            <img
-              src={toAbsoluteUrl(`/images/icons/${item.logo}`)}
-              className={`   `}
-              alt="image w-6 h-full max-h-5"
-            />
-          </div>
-
-
-          <div className="flex flex-col gap-1  px-5 space-y-1  order-1">
-            <span className="text-[14px] leading-[14px] font-semibold text-text-foreground">
-              {item.title}
-            </span>
-            <span className="text-[32px] leading-[32px] pt-3 font-semibold text-black">
-              {item.info}
-            </span>
-            <p className="flex items-center text-[12px] leading-[16px] font-normal text-[#6B7280]">
-              <span>
-                {item.desc.startsWith('+') ? (
-                  <span className="text-[#10B981]"><TrendingUp className='w-4 h-3'/></span>
-                ) : item.desc.startsWith('-') ? (
-                  <span className="text-[#EF4444]"><TrendingDown className='w-4 h-3'/></span>
-                ) : (
-                  <span className="text-[#6B7280]">■</span>
-                )}
-              </span>
-              <span className="">
-                <span className={`${item.desc.startsWith('-') ? 'text-[#FF5F57]' : ''}`}>{item.desc}</span>
-               this week
-            </span>
-            </p>
-            
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
+  const completion = Math.max(0, Math.min(100, Number(dashboardData.completion_rate) || 0));
 
   return (
-    <Fragment>
-      <style>
-        {`
-          .channel-stats-bg {
-            background-image: url('${toAbsoluteUrl('/media/images/2600x1600/bg-3.png')}');
-          }
-          .dark .channel-stats-bg {
-            background-image: url('${toAbsoluteUrl('/media/images/2600x1600/bg-3-dark.png')}');
-          }
-        `}
-      </style>
-
-      {items.map((item, index) => {
-        return renderItem(item, index);
-      })}
-    </Fragment>
+    <>
+      <KpiTile
+        icon="h119.svg"
+        iconBg="bg-[#9CC15E]"
+        label="Total jobs"
+        value={numberFmt.format(dashboardData.total_jobs)}
+        footer={
+          dashboardData.total_fabs != null && (
+            <span>
+              <span className="font-semibold text-text tabular-nums">{numberFmt.format(dashboardData.total_fabs)}</span> FABs across all jobs
+            </span>
+          )
+        }
+      />
+      <KpiTile
+        icon="h131.svg"
+        iconBg="bg-[#EA3DB1]"
+        label="Pending installations"
+        value={numberFmt.format(dashboardData.pending_installations)}
+        footer="Awaiting install scheduling or completion"
+      />
+      <KpiTile
+        icon="h143.svg"
+        iconBg="bg-[#51BCF4]"
+        label="Average revisions"
+        value={(Number(dashboardData.average_revisions) || 0).toFixed(1)}
+        footer="Revisions per job"
+      />
+      <KpiTile
+        icon="h156.svg"
+        iconBg="bg-[#0BC33F]"
+        label="Completion rate"
+        value={`${completion}%`}
+        footer={
+          <div
+            className="h-1.5 w-full overflow-hidden rounded-full bg-[#0BC33F]/15"
+            role="meter"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={completion}
+            aria-label="Completion rate"
+          >
+            <div className="h-full rounded-full bg-[#0BC33F]" style={{ width: `${completion}%` }} />
+          </div>
+        }
+      />
+    </>
   );
 };
 
-export { ChannelStats, type IChannelStatsItem, type IChannelStatsItems };
+export { ChannelStats };

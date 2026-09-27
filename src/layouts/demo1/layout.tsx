@@ -5,6 +5,11 @@ import { MENU_SIDEBAR } from '@/config/menu.config';
 import { useMenu } from '@/hooks/use-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSettings } from '@/providers/settings-provider';
+import { useUiPreferences } from '@/hooks/use-ui-preferences';
+import { titleForPath } from '@/lib/breadcrumbs';
+import { OfflineBanner } from '@/components/common/offline-banner';
+import { CommandPalette } from '@/partials/command-palette/command-palette';
+import { ShortcutsDialog } from '@/partials/command-palette/shortcuts-dialog';
 import { Header } from './components/header';
 import { Sidebar } from './components/sidebar';
 
@@ -14,6 +19,12 @@ export function Demo1Layout() {
   const { getCurrentItem } = useMenu(pathname);
   const item = getCurrentItem(MENU_SIDEBAR);
   const { settings, setOption } = useSettings();
+  const { addRecentPage } = useUiPreferences();
+
+  // Remember visited pages for the command menu's "Recent" group
+  useEffect(() => {
+    addRecentPage({ path: pathname, title: titleForPath(pathname) });
+  }, [pathname, addRecentPage]);
 
   useEffect(() => {
     const bodyClass = document.body.classList;
@@ -61,15 +72,17 @@ export function Demo1Layout() {
 
       {!isMobile && <Sidebar />}
 
-      <div className="wrapper flex grow flex-col">
+      <div className="wrapper flex grow flex-col min-w-0">
         <Header />
+        <OfflineBanner />
 
-        <main className="grow pt-5" role="content">
+        <main className="grow pt-6 pb-10 animate-fade-up" role="main">
           <Outlet />
         </main>
-
-        
       </div>
+
+      <CommandPalette />
+      <ShortcutsDialog />
     </>
   );
 }

@@ -34,13 +34,13 @@ const tabsListVariants = cva('flex items-center shrink-0', {
       variant: 'default',
       shape: 'default',
       size: 'lg',
-      className: 'rounded-lg',
+      className: 'rounded-xl',
     },
     {
       variant: 'default',
       shape: 'default',
       size: 'md',
-      className: 'rounded-lg',
+      className: 'rounded-xl',
     },
     {
       variant: 'default',
@@ -79,15 +79,15 @@ const tabsListVariants = cva('flex items-center shrink-0', {
 
 // Variants for TabsTrigger
 const tabsTriggerVariants = cva(
-  'shrink-0 cursor-pointer whitespace-nowrap inline-flex justify-center items-center font-medium ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:shrink-0 [&_svg]:text-muted-foreground [&:hover_svg]:text-primary [&[data-state=active]_svg]:text-primary',
+  'shrink-0 cursor-pointer whitespace-nowrap inline-flex justify-center items-center font-medium ring-offset-background transition-[color,background-color,box-shadow] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:shrink-0 [&_svg]:text-muted-foreground [&:hover_svg]:text-primary [&[data-state=active]_svg]:text-primary',
   {
     variants: {
       variant: {
         default:
-          'text-muted-foreground data-[state=active]:bg-primary hover:text-foreground data-[state=active]:text-white data-[state=active]:shadow-xs data-[state=active]:shadow-black/5',
+          'text-muted-foreground data-[state=active]:bg-primary hover:text-foreground hover:bg-background/70 data-[state=active]:text-white data-[state=active]:shadow-primary [&[data-state=active]_svg]:text-white!',
         button:
           'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg text-accent-foreground hover:text-foreground data-[state=active]:bg-accent data-[state=active]:text-foreground',
-        line: 'border-b-2 text-muted-foreground border-transparent data-[state=active]:border-primary hover:text-primary data-[state=active]:text-primary data-[state=active]:border-primary data-[state=active]:text-primary',
+        line: 'border-b-2 -mb-px text-muted-foreground border-transparent data-[state=active]:border-primary hover:text-primary data-[state=active]:text-primary data-[state=active]:border-primary data-[state=active]:text-primary',
       },
       size: {
         lg: 'gap-2.5 [&_svg]:size-5 text-sm',
@@ -97,8 +97,8 @@ const tabsTriggerVariants = cva(
       },
     },
     compoundVariants: [
-      { variant: 'default', size: 'lg', className: 'py-2.5 px-4 rounded-md' },
-      { variant: 'default', size: 'md', className: 'py-1.5 px-3 rounded-md' },
+      { variant: 'default', size: 'lg', className: 'py-2.5 px-4 rounded-lg' },
+      { variant: 'default', size: 'md', className: 'py-1.5 px-3 rounded-lg' },
       { variant: 'default', size: 'sm', className: 'py-1.5 px-2.5 rounded-sm' },
       { variant: 'default', size: 'xs', className: 'py-1 px-2 rounded-sm' },
 

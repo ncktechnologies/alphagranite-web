@@ -1,62 +1,21 @@
-import { ChevronFirst } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toAbsoluteUrl } from '@/lib/helpers';
-import { cn } from '@/lib/utils';
-import { useSettings } from '@/providers/settings-provider';
-import { Button } from '@/components/ui/button';
 
 export function SidebarHeader() {
-  const { settings, storeOption } = useSettings();
-
-  const handleToggleClick = () => {
-    storeOption(
-      'layouts.demo1.sidebarCollapse',
-      !settings.layouts.demo1.sidebarCollapse,
-    );
-  };
-
   return (
-    <div className="sidebar-header hidden lg:flex items-center relative justify-between px-3 lg:px-6 shrink-0 bg-white">
-      <Link to="/">
-        <div className="dark:hidden">
-          <img
-            src={toAbsoluteUrl('/images/logo/ody-logo.png')}
-            className="default-logo w-[140px] h-auto max-w-none object-cover"
-            alt="Default Logo"
-          />
-          <img
-            src={toAbsoluteUrl('/images/logo/mini-logo.png')}
-            className="small-logo h-[40px] max-w-none"
-            alt="Mini Logo"
-          />
-        </div>
-        <div className="hidden dark:block">
-          <img
-            src={toAbsoluteUrl('/images/logo/ody-logo.png')}
-            className="default-logo h-[22px] max-w-none"
-            alt="Default Dark Logo"
-          />
-          <img
-            src={toAbsoluteUrl('/images/logo/mini-logo.png')}
-            className="small-logo h-[22px] max-w-none"
-            alt="Mini Logo"
-          />
-        </div>
+    <div className="sidebar-header hidden lg:flex items-center relative px-5 shrink-0 border-b border-white/10">
+      <Link to="/" className="flex items-center" aria-label="The Odyssey Tracker — Dashboard">
+        <img
+          src={toAbsoluteUrl('/images/logo/ody/white-odyssey-logo.png')}
+          className="default-logo h-[60px] w-auto max-w-none -ms-2"
+          alt="The Odyssey Tracker"
+        />
+        <img
+          src={toAbsoluteUrl('/images/logo/ody/Odyssey_LogoIconWhite.png')}
+          className="small-logo size-9 max-w-none"
+          alt="The Odyssey Tracker"
+        />
       </Link>
-      <Button
-        onClick={handleToggleClick}
-        size="sm"
-        mode="icon"
-        variant="outline"
-        className={cn(
-          'size-7 absolute start-full top-2/4 rtl:translate-x-2/4 -translate-x-2/4 -translate-y-2/4',
-          settings.layouts.demo1.sidebarCollapse
-            ? 'ltr:rotate-180'
-            : 'rtl:rotate-180',
-        )}
-      >
-        <ChevronFirst className="size-4!" />
-      </Button>
     </div>
   );
 }

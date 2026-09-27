@@ -3,15 +3,15 @@
   .demo1 {
     --sidebar-transition-duration: 0.3s;
     --sidebar-transition-timing: ease;
-    --sidebar-width: 280px;
-    --sidebar-width-collapse: 80px;
-    --sidebar-default-width: 280px;
-    --header-height: 70px;
+    --sidebar-width: 264px;
+    --sidebar-width-collapse: 72px;
+    --sidebar-default-width: 264px;
+    --header-height: 64px;
   }
 
   @media (max-width: theme(--breakpoint-lg)) {
     .demo1 {
-      --sidebar-width: 280px;
+      --sidebar-width: 264px;
       --header-height: 60px;
     }
   }
@@ -76,6 +76,12 @@
 
     .demo1.sidebar-collapse .sidebar:hover {
       width: var(--sidebar-default-width);
+      box-shadow: 8px 0 32px -12px rgb(20 28 12 / 0.35);
+    }
+
+    /* !important: must beat utility-layer display classes on the same elements */
+    .demo1.sidebar-collapse .sidebar:not(:hover) .sidebar-footer-label {
+      display: none !important;
     }
 
     .demo1.sidebar-collapse .sidebar:not(:hover) .default-logo {

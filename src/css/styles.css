@@ -82,3 +82,33 @@
 @custom-variant dark (&:is(.dark *));
 @custom-variant light (&:not(.dark *));
 
+/** Data grid polish **/
+[data-slot='data-grid-table'] tbody tr:not([data-fab-type]) > td {
+  transition: background-color 0.15s ease;
+}
+
+[data-slot='data-grid-table'] tbody tr:not([data-fab-type]):hover > td {
+  background-color: color-mix(in oklab, var(--accent) 70%, transparent);
+}
+
+[data-slot='data-grid-table'] tbody tr[data-state='selected']:not([data-fab-type]) > td {
+  background-color: color-mix(in oklab, var(--primary-soft) 70%, transparent);
+}
+
+[data-slot='data-grid-table'] td {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Table density — "comfortable" (default) adds breathing room; "compact" keeps the original tight rows */
+html:not([data-density='compact']) [data-slot='data-grid-table']:not([data-dense]) > tbody > tr > td {
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+}
+
+html:not([data-density='compact']) [data-slot='data-grid-table']:not([data-dense]) > thead > tr > th {
+  height: 2.75rem;
+}
+
+html[data-density='compact'] [data-slot='data-grid-table'] > thead > tr > th {
+  height: 2.25rem;
+}

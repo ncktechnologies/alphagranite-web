@@ -25,12 +25,12 @@
   /* --color-zinc-100 */
   --secondary-foreground: oklch(44.6% 0.03 256.802);
   /* --color-zinc-600 */
-  --muted: #F9F9F9;
-  /* --color-zinc-100 */
-  --muted-foreground: oklch(70.5% 0.015 286.067);
-  /* --color-zinc-400 */
-  --accent: oklch(96.7% 0.003 264.542);
-  /* --color-zinc-100 */
+  --muted: #F6F7F4;
+  /* neutral with a hint of the brand green */
+  --muted-foreground: #6F777B;
+  /* darkened from zinc-400 to clear 4.5:1 on white */
+  --accent: #F2F4EE;
+  /* green-tinted hover / selected surface */
   --accent-foreground: oklch(21% 0.006 285.885);
   /* --color-zinc-900 */
   --destructive: oklch(57.7% 0.245 27.325);
@@ -43,21 +43,59 @@
   /* --color-white */
   --placeholder: #9C9BAB;
   /** Base Styles **/
-  --border: oklch(94% 0.004 286.32);
-  /* between --color-zinc-100 and --color-zinc-200 */
+  --border: #E6E8EC;
+  /* aligned with the #E2E4ED borders used across pages */
   --input: #DFDFDF;
   /* --color-zinc-200 */
   --ring: #9CC15E;
   /* --color-zinc-400 */
-  --radius: 0.5rem;
+  --radius: 0.625rem;
   --sidbar-muted: #667F01;
+
+  /** Brand extensions (derived from the existing greens) **/
+  --canvas: #F5F6F2;
+  /* app background behind cards */
+  --primary-light: #9CC15E;
+  --primary-dark: #5E7504;
+  --primary-soft: #EEF3E0;
+  /* light badge / chip backgrounds */
+  --primary-accent: #5E7504;
+  /* text on --primary-soft */
+  --sidebar: #7A9705;
+  --sidebar-deep: #667F01;
+}
+
+/** Proxima Nova (brand font) — Regular, Semibold, Bold, Extrabold **/
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/ProximaNova-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'Proxima Nova';
-  src: url('/fonts/ProximaNova-Regular.otf') format('otf');
-  font-weight: normal;
+  src: url('/fonts/Proxima%20Nova%20Full%20Download/Proxima%20Nova%20Semibold.otf') format('opentype');
+  font-weight: 500 600;
   font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/Proxima%20Nova%20Full%20Download/Proxima%20Nova%20Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/Proxima%20Nova%20Full%20Download/Proxima%20Nova%20Extrabold.otf') format('opentype');
+  font-weight: 800 900;
+  font-style: normal;
+  font-display: swap;
 }
 
 .dark {
@@ -150,6 +188,23 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-sidbar-muted: var(--sidbar-muted);
+  --color-canvas: var(--canvas);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-accent: var(--primary-accent);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-deep: var(--sidebar-deep);
+  --color-success: #16A34A;
+  --color-warning: #D97706;
+  --color-info: #0284C7;
+
+  --shadow-card: 0 1px 2px 0 rgb(20 28 12 / 0.04), 0 1px 3px 0 rgb(20 28 12 / 0.03);
+  --shadow-card-hover: 0 4px 12px -2px rgb(20 28 12 / 0.08), 0 2px 4px -2px rgb(20 28 12 / 0.04);
+  --shadow-popover: 0 12px 32px -8px rgb(20 28 12 / 0.16), 0 4px 8px -4px rgb(20 28 12 / 0.06);
+  --shadow-primary: 0 1px 2px 0 rgb(94 117 4 / 0.25), inset 0 1px 0 0 rgb(255 255 255 / 0.18);
+
+  --radius-2xl: calc(var(--radius) + 8px);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
@@ -160,6 +215,30 @@
   --animate-collapsible-down: collapsible-down 0.2s ease-out;
   --animate-collapsible-up: collapsible-up 0.2s ease-out;
   --animate-caret-blink: caret-blink 1.25s ease-out infinite;
+  --animate-fade-up: fade-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+
+    to {
+      background-position: -200% 0;
+    }
+  }
 
   @keyframes accordion-down {
     from {
@@ -259,21 +338,38 @@
 }
 
 @theme {
-  --font-proxima: "Proxima Nova", sans-serif;
-  /* For local or Google Fonts */
-  /* Or for Google Fonts directly: */
-  /* --font-heading: "Roboto", sans-serif; */
+  --font-proxima: "Proxima Nova", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: var(--font-proxima);
 }
- 
+
 body {
   font-family: var(--font-proxima);
-  /* --font-sans */
-  background-color: white;
-  /* color: var(--color-text); */
+  background-color: var(--canvas);
   line-height: 1.5;
   font-weight: 400;
-  /* font-size: 1rem; */
-  /* 16px */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background-color: color-mix(in oklab, var(--primary-light) 35%, transparent);
+}
+
+/* Slim, unobtrusive scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--text-foreground) 35%, transparent) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 /* Hide number input spinners */
 input[type="number"]::-webkit-inner-spin-button,

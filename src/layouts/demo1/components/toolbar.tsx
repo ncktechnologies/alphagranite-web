@@ -18,14 +18,14 @@ interface ToolbarBreadcrumbsProps {
 }
 function Toolbar({ children, className }: { children?: ReactNode, className?: string }) {
   return (
-    <div className={cn("flex flex-wrap items-center justify-between gap-5 pb-7.5", className)}>
+    <div className={cn("flex flex-wrap items-end justify-between gap-x-5 gap-y-4 pb-6", className)}>
       {children}
     </div>
   );
 }
 
 function ToolbarActions({ children }: { children?: ReactNode }) {
-  return <div className="flex items-center gap-2.5">{children}</div>;
+  return <div className="flex flex-wrap items-center gap-2.5">{children}</div>;
 }
 
 function ToolbarBreadcrumbs({
@@ -106,12 +106,12 @@ function ToolbarHeading({ title = '', description }: ToolbarHeadingProps) {
   }, [resolvedTitle, item?.title]);
 
   return (
-    <div className="flex flex-col justify-center gap-2">
-      <h1 className="text-[28px] font-normal leading-[32px] text-black">
+    <div className="flex flex-col justify-center gap-1.5 min-w-0">
+      <h1 className="text-2xl lg:text-[28px] font-semibold leading-tight tracking-[-0.015em] text-foreground">
         {resolvedTitle}
       </h1>
       {description && (
-        <div className="flex items-center gap-2 text-sm font-normal text-text-foreground">
+        <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
           {description}
         </div>
       )}

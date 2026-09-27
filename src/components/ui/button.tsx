@@ -5,16 +5,16 @@ import { Slot as SlotPrimitive } from 'radix-ui';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'cursor-pointer group whitespace-nowrap focus-visible:outline-hidden inline-flex items-center justify-center has-data-[arrow=true]:justify-between whitespace-nowrap text-sm font-medium ring-offset-background transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-60 [&_svg]:shrink-0',
+  'cursor-pointer group whitespace-nowrap focus-visible:outline-hidden inline-flex items-center justify-center has-data-[arrow=true]:justify-between whitespace-nowrap text-sm font-medium ring-offset-background transition-[color,background-color,border-color,box-shadow,filter,transform] duration-150 active:translate-y-px disabled:pointer-events-none disabled:opacity-60 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        primary: 'bg-[linear-gradient(90deg,_#7A9705_0%,_#7A9705_10.2%,_#9CC15E_96.86%,_#9CC15E_100%)] text-primary-foreground hover:bg-primary/90 data-[state=open]:bg-primary/90',
+        primary: 'bg-[linear-gradient(90deg,_#7A9705_0%,_#7A9705_10.2%,_#9CC15E_96.86%,_#9CC15E_100%)] text-primary-foreground hover:brightness-[1.06] hover:saturate-[1.1] data-[state=open]:brightness-[1.06]',
         mono: 'bg-zinc-950 text-white dark:bg-zinc-300 dark:text-black hover:bg-zinc-950/90 dark:hover:bg-zinc-300/90 data-[state=open]:bg-zinc-950/90 dark:data-[state=open]:bg-zinc-300/90',
         destructive:
           'bg-destructive text-destructive-foreground hover:bg-destructive/90 data-[state=open]:bg-destructive/90',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/90 data-[state=open]:bg-secondary/90',
-        outline: 'bg-background text-accent-foreground border border-input hover:bg-accent data-[state=open]:bg-accent',
+        outline: 'bg-background text-accent-foreground border border-input hover:bg-accent hover:border-[#D2D6CC] data-[state=open]:bg-accent',
         dashed:
           'text-accent-foreground border border-input border-dashed bg-background hover:bg-accent hover:text-accent-foreground data-[state=open]:text-accent-foreground',
         ghost:
@@ -36,12 +36,12 @@ const buttonVariants = cva(
         dashed: '',
       },
       size: {
-        xl: 'h-10 w-20 rounded-md px-4 text-sm gap-1.5 [&_svg:not([class*=size-])]:size-10',
-        lg: 'h-10 rounded-md px-4 text-sm gap-1.5 [&_svg:not([class*=size-])]:size-4',
-        md: 'h-8.5 rounded-md px-3 gap-1.5 text-[0.8125rem] leading-(--text-sm--line-height) [&_svg:not([class*=size-])]:size-4',
+        xl: 'h-10 w-20 rounded-lg px-4 text-sm gap-1.5 [&_svg:not([class*=size-])]:size-10',
+        lg: 'h-10 rounded-lg px-4 text-sm gap-1.5 [&_svg:not([class*=size-])]:size-4',
+        md: 'h-8.5 rounded-lg px-3 gap-1.5 text-[0.8125rem] leading-(--text-sm--line-height) [&_svg:not([class*=size-])]:size-4',
         sm: 'h-7 rounded-md px-2.5 gap-1.25 text-xs [&_svg:not([class*=size-])]:size-3.5',
         xs: 'h-0 rounded-md px-2.5 gap-x-1.25 text-xs [&_svg:not([class*=size-])]:size-1',
-        icon: 'size-8.5 rounded-md [&_svg:not([class*=size-])]:size-4 shrink-0',
+        icon: 'size-8.5 rounded-lg [&_svg:not([class*=size-])]:size-4 shrink-0',
       },
       autoHeight: {
         true: '',
@@ -126,7 +126,7 @@ const buttonVariants = cva(
         variant: 'primary',
         mode: 'default',
         appearance: 'default',
-        className: 'shadow-xs shadow-black/5',
+        className: 'shadow-primary',
       },
       {
         variant: 'mono',
@@ -289,7 +289,7 @@ const buttonVariants = cva(
       {
         variant: 'primary',
         appearance: 'ghost',
-        className: 'bg-transparent text-primary/90 hover:bg-primary/5 data-[state=open]:bg-primary/5',
+        className: 'bg-transparent bg-none shadow-none text-primary/90 hover:bg-primary/5 data-[state=open]:bg-primary/5',
       },
       {
         variant: 'destructive',

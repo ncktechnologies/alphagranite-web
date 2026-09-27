@@ -1,43 +1,66 @@
-import { Fragment } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { useLocation } from 'react-router';
-import { MENU_SIDEBAR } from '@/config/menu.config';
-import { MenuItem } from '@/config/types';
+import { Fragment, useMemo } from 'react';
+import { ChevronRight, House } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { buildBreadcrumbs } from '@/lib/breadcrumbs';
 import { cn } from '@/lib/utils';
-import { useMenu } from '@/hooks/use-menu';
 
-export function Breadcrumb() {
+export function Breadcrumb({ className }: { className?: string }) {
   const { pathname } = useLocation();
-  const { getBreadcrumb, isActive } = useMenu(pathname);
-  const items: MenuItem[] = getBreadcrumb(MENU_SIDEBAR);
-
-  if (items.length === 0) {
-    return null;
-  }
+  const items = useMemo(() => buildBreadcrumbs(pathname), [pathname]);
+  const isHome = pathname === '/';
 
   return (
-    <div className="flex items-center gap-1.25 text-xs lg:text-sm font-medium mb-2.5 lg:mb-0">
-      {items.map((item, index) => {
-        const last = index === items.length - 1;
-        const active = item.path ? isActive(item.path) : false;
-
-        return (
-          <Fragment key={`root-${index}`}>
-            <span
-              className={cn(active ? 'text-mono' : 'text-secondary-foreground')}
-              key={`item-${index}`}
-            >
-              {item.title}
-            </span>
-            {!last && (
-              <ChevronRight
-                className="size-3.5 text-muted-foreground"
-                key={`separator-${index}`}
-              />
+    <nav aria-label="Breadcrumb" className={cn('flex min-w-0 items-center', className)}>
+      <ol className="flex min-w-0 items-center gap-1 text-sm">
+        <li className="shrink-0">
+          <Link
+            to="/"
+            className={cn(
+              'inline-flex size-7 items-center justify-center rounded-md transition-colors hover:bg-accent',
+              isHome ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
             )}
-          </Fragment>
-        );
-      })}
-    </div>
+            aria-label="Dashboard"
+          >
+            <House className="size-4" />
+          </Link>
+        </li>
+        {isHome && (
+          <li className="px-1 font-semibold text-foreground" aria-current="page">
+            Dashboard
+          </li>
+        )}
+        {!isHome &&
+          items.map((item, index) => {
+            const last = index === items.length - 1;
+            return (
+              <Fragment key={`${item.title}-${index}`}>
+                <li aria-hidden className="shrink-0 text-muted-foreground/60">
+                  <ChevronRight className="size-3.5" />
+                </li>
+                <li className={cn('min-w-0', !last && 'hidden md:block')}>
+                  {last || !item.path ? (
+                    <span
+                      className={cn(
+                        'block truncate px-1',
+                        last ? 'font-semibold text-foreground' : 'text-muted-foreground',
+                      )}
+                      aria-current={last ? 'page' : undefined}
+                    >
+                      {item.title}
+                    </span>
+                  ) : (
+                    <Link
+                      to={item.path}
+                      className="block truncate rounded-md px-1 text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {item.title}
+                    </Link>
+                  )}
+                </li>
+              </Fragment>
+            );
+          })}
+      </ol>
+    </nav>
   );
 }

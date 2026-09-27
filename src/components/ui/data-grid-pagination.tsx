@@ -35,7 +35,7 @@ function DataGridPagination(props: DataGridPaginationProps) {
 
   const mergedProps: DataGridPaginationProps = { ...defaultProps, ...props };
 
-  const btnBaseClasses = 'size-7 p-0 text-sm';
+  const btnBaseClasses = 'size-8 p-0 text-sm rounded-lg tabular-nums';
   const btnArrowClasses = btnBaseClasses + ' rtl:transform rtl:rotate-180';
   const pageIndex = table.getState().pagination.pageIndex;
   const pageSize = table.getState().pagination.pageSize;
@@ -69,7 +69,7 @@ function DataGridPagination(props: DataGridPaginationProps) {
           mode="icon"
           variant="ghost"
           className={cn(btnBaseClasses, 'text-muted-foreground', {
-            'bg-accent text-accent-foreground': pageIndex === i,
+            'bg-primary-soft text-primary-accent font-semibold hover:bg-primary-soft hover:text-primary-accent ring-1 ring-inset ring-primary-light/40': pageIndex === i,
           })}
           onClick={() => {
             if (pageIndex !== i) {
@@ -162,7 +162,7 @@ function DataGridPagination(props: DataGridPaginationProps) {
           mergedProps?.infoSkeleton
         ) : (
           <>
-            <div className="text-sm text-muted-foreground text-nowrap order-2 sm:order-1">{paginationInfo}</div>
+            <div className="text-sm text-muted-foreground text-nowrap tabular-nums order-2 sm:order-1">{paginationInfo}</div>
             {pageCount > 1 && (
               <div className="flex items-center space-x-1 order-1 sm:order-2">
                 <Button

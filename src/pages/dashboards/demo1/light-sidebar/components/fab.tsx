@@ -1,75 +1,79 @@
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Inbox } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardHeading, CardTitle } from '@/components/ui/card';
 import { NewlyAssignedFab } from '@/store/api/job';
-
-interface ICommunityBadge {
-  title: string;
-  subtitle: string;
-  status: 'Drafting' | 'SCT' | 'Programming' | string;
-  statusColor: string; // Tailwind classes like 'text-purple-600 bg-purple-100'
-}
+import { StagePill } from './stage-pill';
 
 interface IFABProps {
   cardTitle: string;
+  description?: string;
+  emptyMessage?: string;
   newlyAssignedFabs?: NewlyAssignedFab[];
   pausedJobs?: any[];
+  limit?: number;
 }
 
-const CommunityBadges = ({ cardTitle, newlyAssignedFabs, pausedJobs }: IFABProps) => {
-  // Function to get status color based on stage
-  const getStatusColor = (stage: string) => {
-    const stageColors: Record<string, string> = {
-      'drafting': 'text-purple-600 bg-purple-100',
-      'slab_smith_request': 'text-orange-600 bg-orange-100',
-      'cut_list': 'text-blue-600 bg-blue-100',
-      'templating': 'text-green-600 bg-green-100',
-      'cost_of_stones': 'text-yellow-600 bg-yellow-100',
-      'default': 'bg-[#E2E4ED] text-[#4B5675]'
-    };
-    
-    return stageColors[stage] || stageColors.default;
-  };
+const initials = (name?: string) =>
+  (name ?? '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join('') || '—';
 
-  // Transform dashboard data to badge items
-  const items: ICommunityBadge[] = newlyAssignedFabs ? 
-    newlyAssignedFabs.slice(0, 4).map(fab => ({
-      title: fab.job_name,
-      subtitle: `FAB ID: ${fab.fab_id}`,
-      status: fab.stage.replace('_', ' ').replace(/w/g, l => l.toUpperCase()),
-      statusColor: getStatusColor(fab.stage)
-    })) : [];
+const CommunityBadges = ({
+  cardTitle,
+  description,
+  emptyMessage = 'Nothing here right now',
+  newlyAssignedFabs,
+  pausedJobs,
+  limit = 5,
+}: IFABProps) => {
+  const source: NewlyAssignedFab[] = newlyAssignedFabs ?? pausedJobs ?? [];
+  const items = source.slice(0, limit);
 
   return (
-    <Card className='h-full'>
-      <CardHeader className="flex flex-row items-center justify-between ">
-        <CardTitle className="text-[20px] leading-[24px]">{cardTitle}</CardTitle>
-        {/* <Button
-          variant="inverse"
-          size="lg"
-          className="text-primary font-semibold text-[16px] font-[24px] underline"
-        >
-          See all
-        </Button> */}
+    <Card className="h-full">
+      <CardHeader className="pt-4 pb-1 min-h-0">
+        <CardHeading>
+          <CardTitle>{cardTitle}</CardTitle>
+          {description && <CardDescription>{description}</CardDescription>}
+        </CardHeading>
+        {source.length > 0 && (
+          <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground tabular-nums">
+            {source.length}
+          </span>
+        )}
       </CardHeader>
-      <CardContent className="space-y-3">
-        {items.map((item, index) => (
-          <div
-            key={index}
-            className="flex justify-between items-center py-3 px-4 border-0 rounded-lg bg-gradient-to-b from-[#EEEEEE] to-[#FCFCFC]"
-          >
-            <div className="space-y-1">
-              <h3 className="font-medium text-base text-[#111827]">{item.title}</h3>
-              <p className="text-xs text-text-foreground">{item.subtitle}</p>
-            </div>
-            <Badge 
-              variant="secondary" 
-              className={`text-xs px-2 py-1 rounded-full font-medium ${item.statusColor}`}
-            >
-              {item.status}
-            </Badge>
+      <CardContent className="pt-2">
+        {items.length === 0 ? (
+          <div className="flex h-full min-h-[180px] flex-col items-center justify-center gap-2 text-center">
+            <span className="flex size-10 items-center justify-center rounded-full bg-muted ring-1 ring-border">
+              <Inbox className="size-5 text-muted-foreground" />
+            </span>
+            <span className="text-sm text-muted-foreground">{emptyMessage}</span>
           </div>
-        ))}
+        ) : (
+          <ul className="-mx-2 divide-y divide-border/70">
+            {items.map((fab, index) => (
+              <li
+                key={`${fab.fab_id}-${index}`}
+                className="flex items-center gap-3 rounded-lg px-2 py-3 transition-colors hover:bg-muted/70"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-xs font-semibold text-primary-accent">
+                  {initials(fab.job_name)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{fab.job_name || 'Untitled job'}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    FAB <span className="tabular-nums">#{fab.fab_id}</span>
+                    {fab.assigned_to && <> · {fab.assigned_to}</>}
+                  </p>
+                </div>
+                <StagePill stage={fab.stage} />
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );

@@ -61,32 +61,40 @@ import {
   StoreIcon,
   Diamond,
 } from 'lucide-react';
+import {
+  BriefcaseBusiness,
+  ChartColumnBig,
+  Factory,
+  Gauge,
+  LayoutDashboard,
+  UsersRound,
+} from 'lucide-react';
 import { Role, Station, type MenuConfig } from './types';
 import { RiBuilding2Line, RiBuildingLine, RiNodeTree, RiNotification3Line, RiShieldKeyholeLine, RiStoreLine, RiUser3Line } from '@remixicon/react';
 
 export const MENU_SIDEBAR: MenuConfig = [
   {
     title: 'Dashboard',
-    icon: 'dashboard.svg',
+    icon: LayoutDashboard,
     path: '/',
     permissionKey: 'dashboard',
   },
-  { heading: 'Menu' },
+  { heading: 'Workspace' },
   {
     title: 'Employees',
-    icon: 'user-profile.svg',
+    icon: UsersRound,
     path: '/employees',
     permissionKey: 'employees',
   },
   {
     title: 'Department',
-    icon: 'profile.svg',
+    icon: Network,
     path: '/departments',
     permissionKey: 'department',
   },
   {
     title: 'Jobs',
-    icon: 'building.svg',
+    icon: BriefcaseBusiness,
     path: '/job', // Changed from '/job/sales' to '/job' for dashboard
     permissionKey: 'jobs',
     children: [
@@ -99,13 +107,13 @@ export const MENU_SIDEBAR: MenuConfig = [
   },
    {
     title: 'Performance',
-    icon: "building.svg",
+    icon: Gauge,
     path: '/performance',
     permissionKey: 'performance'
   },
   {
     title: 'Shop',
-    icon: 'shop.svg',
+    icon: Factory,
     path: '/shop',
     permissionKey: 'shop',
     children: [
@@ -118,7 +126,7 @@ export const MENU_SIDEBAR: MenuConfig = [
  
   {
     title: 'Reports',
-    icon: 'building.svg',
+    icon: ChartColumnBig,
     path: '/report',
     permissionKey: 'reports',
     // children: [
@@ -145,14 +153,14 @@ export const MENU_SIDEBAR: MenuConfig = [
   },
   {
     title: 'Audit Logs',
-    icon: 'shop.svg',
+    icon: ScrollText,
     path: '/audit',
     superAdminOnly: true,
   },
 
   {
     title: 'Settings',
-    icon: 'settings.svg',
+    icon: Settings,
     path: '/settings/profile',
     // permissionKey: 'settings',
   },

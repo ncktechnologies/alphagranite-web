@@ -1,119 +1,104 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  ChannelStats,
-  EarningsChart,
-  EntryCallout,
-  Highlights,
-  TeamMeeting,
-  Teams,
-} from './components';
+import { AlertTriangle, RotateCw } from 'lucide-react';
+import { ChannelStats, EarningsChart, Teams } from './components';
 import { Contributions } from './components/chart';
 import { CommunityBadges } from './components/fab';
 import { FinanceStats } from './components/finance';
 import { useGetAdminDashboardQuery } from '@/store/api/job';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useState } from 'react';
 
 interface IDemo1LightSidebarContentProps {
   timePeriod: string;
 }
 
-export function Demo1LightSidebarContent({ timePeriod: initialTimePeriod }: IDemo1LightSidebarContentProps) {
-  const [timePeriod, setTimePeriod] = useState(initialTimePeriod || 'all');
-  const { data: dashboardData, isLoading, isError, refetch } = useGetAdminDashboardQuery(
-    { time_period: timePeriod },
-    { skip: false }
+function DashboardSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-5 lg:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 lg:gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-[138px] w-full rounded-xl" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 lg:gap-6">
+        <Skeleton className="h-[380px] w-full rounded-xl xl:col-span-2" />
+        <Skeleton className="h-[380px] w-full rounded-xl" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-[340px] w-full rounded-xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function Demo1LightSidebarContent({ timePeriod }: IDemo1LightSidebarContentProps) {
+  const { data: dashboardData, isLoading, isFetching, isError, refetch } = useGetAdminDashboardQuery(
+    { time_period: timePeriod || 'all' },
+    { skip: false },
   );
 
-  const handlePeriodChange = (newPeriod: string) => {
-    setTimePeriod(newPeriod);
-    // The query will automatically refetch when timePeriod changes
-  };
-  const performanceData = dashboardData?.performance_overview;
-  
-  if (isLoading) {
-    return (
-      <div className="grid gap-5 lg:gap-7.5">
-        <div className="grid lg:grid-cols-3 gap-y-5 lg:gap-7.5 items-stretch">
-          <div className="lg:col-span-3">
-            <div className="grid grid-cols-4 gap-5 lg:gap-7.5 h-full items-stretch">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-32 w-full rounded-lg" />
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-64 w-full rounded-lg" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <DashboardSkeleton />;
 
   if (isError || !dashboardData) {
     return (
-      <div className="text-center py-10">
-        <p className="text-red-500">Failed to load dashboard data</p>
-      </div>
+      <Card className="items-center justify-center gap-3 py-16 text-center">
+        <span className="flex size-11 items-center justify-center rounded-full bg-destructive/10">
+          <AlertTriangle className="size-5 text-destructive" />
+        </span>
+        <div>
+          <p className="text-sm font-semibold text-foreground">We couldn't load the dashboard</p>
+          <p className="mt-1 text-sm text-muted-foreground">Check your connection and try again.</p>
+        </div>
+        <Button variant="outline" size="md" onClick={() => refetch()}>
+          <RotateCw />
+          Try again
+        </Button>
+      </Card>
     );
   }
 
+  const performanceData = dashboardData.performance_overview;
+
   return (
-    <div className="grid gap-5 lg:gap-7.5">
-      <div className="grid lg:grid-cols-3 gap-y-5 lg:gap-7.5 items-stretch">
-        <div className="lg:col-span-3">
-          <div className="grid grid-cols-4 gap-5 lg:gap-7.5 h-full items-stretch">
-            <ChannelStats dashboardData={dashboardData.kpis} />
-          </div>
-        </div>
-        {/* <div className="lg:col-span-2">
-          <EntryCallout className="h-full" />
-        </div> */}
+    <div
+      className="grid grid-cols-1 gap-5 lg:gap-6 transition-opacity duration-200 data-[fetching=true]:opacity-60"
+      data-fetching={isFetching || undefined}
+      aria-busy={isFetching}
+    >
+      {/* Headline KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 lg:gap-6">
+        <ChannelStats dashboardData={dashboardData.kpis} />
       </div>
-      <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch">
-        <div className="lg:col-span-1">
-          <CommunityBadges
-            cardTitle='Newly assigned FAB ID'
-            newlyAssignedFabs={dashboardData.newly_assigned_fabs}
-          />
+
+      {/* Trend + status mix */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 lg:gap-6 items-stretch">
+        <div className="xl:col-span-2 min-w-0">
+          <EarningsChart months={performanceData?.months} data={performanceData?.data} />
         </div>
-        <div className="lg:col-span-1">
-          <Contributions
-            title='Overall Statistics'
-            overallStats={dashboardData.overall_statistics}
-          />
-        </div>
-        <div className='lg:col-span-1'>
-          <FinanceStats financeData={dashboardData.finance} />
-        </div>
+        <Contributions title="Overall statistics" overallStats={dashboardData.overall_statistics} />
       </div>
-      <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch">
-        <div className="lg:col-span-2">
-          <EarningsChart
-            months={performanceData?.months}
-            data={performanceData?.data}
-            title="Performance Overview"
-            timePeriod={timePeriod}
-            onTimePeriodChange={handlePeriodChange}
-          />
-        </div>
-        <div className="lg:col-span-1">
-          <CommunityBadges
-            cardTitle='Paused jobs'
-            newlyAssignedFabs={dashboardData.paused_jobs}
-          />
-        </div>
+
+      {/* Work queues + finance */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6 items-stretch">
+        <CommunityBadges
+          cardTitle="Newly assigned FABs"
+          description="Most recent assignments"
+          emptyMessage="No new assignments"
+          newlyAssignedFabs={dashboardData.newly_assigned_fabs}
+        />
+        <CommunityBadges
+          cardTitle="Paused jobs"
+          description="Waiting to be picked back up"
+          emptyMessage="Nothing is paused"
+          newlyAssignedFabs={dashboardData.paused_jobs}
+        />
+        <FinanceStats financeData={dashboardData.finance} />
       </div>
-      <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch">
-        {/* <div className="lg:col-span-1">
-          <TeamMeeting />
-        </div> */}
-        <div className="lg:col-span-3">
-          <Teams recentJobs={dashboardData?.recent_jobs} />
-        </div>
-      </div>
+
+      {/* Recent jobs */}
+      <Teams recentJobs={dashboardData?.recent_jobs} />
     </div>
   );
 }

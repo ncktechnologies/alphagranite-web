@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAllPermissions, useIsSuperAdmin } from '@/hooks/use-permission';
 import { DASHBOARD_WIDGETS, WIDGET_SECTIONS, type WidgetConfig } from '@/config/dashboard-widgets.config';
 import { CommunityBadges } from './components/fab';
@@ -7,10 +7,9 @@ import { Contributions } from './components/chart';
 import { FinanceStats } from './components/finance';
 import { EarningsChart } from './components/earnings-chart';
 import { Teams } from './components/teams';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { InfoIcon, TrendingDown, TrendingUp } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { toAbsoluteUrl } from '@/lib/helpers';
+import { ArrowRight, LayoutGrid } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { KpiTile } from './components/channel-stats';
 import { useGetStagesQuery } from '@/store/api/job';
 
 /**
@@ -23,7 +22,6 @@ import { useGetStagesQuery } from '@/store/api/job';
 export function RoleBasedDashboard() {
   const permissions = useAllPermissions();
   const isSuperAdmin = useIsSuperAdmin();
-  const navigate = useNavigate();
   
   // Fetch stage statistics
   const { data: stagesData, isLoading: isStagesLoading, isError: isStagesError } = useGetStagesQuery();
@@ -128,56 +126,32 @@ export function RoleBasedDashboard() {
    * Render a single stat widget
    */
   const renderStatWidget = (widget: WidgetConfig) => {
-    // Extract data properties safely
     const data = widget.data;
     const icon = data?.icon || 'h119.svg';
     const bgColor = data?.bgColor || 'bg-[#9CC15E]';
-    
-    // Get FAB count for this widget's stage
     const fabCount = getFabCountForStage(widget.id);
 
     return (
-      <Card
+      <Link
         key={widget.id}
-        className='shadow-[#00000008] shadow-sm rounded-lg hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-pointer'
-        onClick={() => navigate(getRouteForWidget(widget.id))}
+        to={getRouteForWidget(widget.id)}
+        className="rounded-xl focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
+        aria-label={`${widget.title}: ${isStagesLoading ? 'loading' : fabCount} FABs`}
       >
-        <CardContent className="p-0 pt-6 pb-8 flex justify-between items-start gap-6 h-full bg-cover rtl:bg-[left_top_-1.7rem] bg-[right_top_-1.7rem] bg-no-repeat channel-stats-bg">
-          <div className={`${bgColor} size-[44px] order-2 flex items-center justify-center mr-5 rounded-[8px]`}>
-            <img
-              src={toAbsoluteUrl(`/images/icons/${icon}`)}
-              className="w-6 h-full max-h-5"
-              alt={widget.title}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1 px-5 space-y-1 order-1">
-            <span className="text-[14px] leading-[14px] font-semibold text-text-foreground">
-              {widget.title}
+        <KpiTile
+          interactive
+          icon={icon}
+          iconBg={bgColor}
+          label={widget.title}
+          value={isStagesLoading ? <Skeleton className="h-[30px] w-14" /> : fabCount}
+          footer={
+            <span className="inline-flex items-center gap-1 font-medium text-muted-foreground transition-colors group-hover:text-primary-accent">
+              {fabCount === 1 ? 'FAB in queue' : 'FABs in queue'}
+              <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
             </span>
-            <span className="text-[32px] leading-[32px] pt-3 font-semibold text-black">
-              {isStagesLoading ? '...' : fabCount}
-            </span>
-            {/* <p className="flex items-center text-[12px] leading-[16px] font-normal text-[#6B7280]">
-              <span>
-                {data?.change && data.change.startsWith('+') ? (
-                  <span className="text-[#10B981]"><TrendingUp className='w-4 h-3'/></span>
-                ) : data?.change && data.change.startsWith('-') ? (
-                  <span className="text-[#EF4444]"><TrendingDown className='w-4 h-3'/></span>
-                ) : (
-                  <span className="text-[#6B7280]">■</span>
-                )}
-              </span>
-              <span>
-                <span className={`${data?.change && data.change.startsWith('-') ? 'text-[#FF5F57]' : ''}`}>
-                  {data?.change || '+0'}
-                </span>
-                {' '}this week
-              </span>
-            </p> */}
-          </div>
-        </CardContent>
-      </Card>
+          }
+        />
+      </Link>
     );
   };
 
@@ -281,7 +255,7 @@ export function RoleBasedDashboard() {
       <>
         {/* Stats Section - 4 columns grid for all stat widgets */}
         {sectionWidgetsByCategory.stats.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-7.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 lg:gap-6">
             {sectionWidgetsByCategory.stats.map(renderWidget)}
           </div>
         )}
@@ -295,14 +269,16 @@ export function RoleBasedDashboard() {
   if (accessibleWidgets.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Alert className="max-w-md">
-          <InfoIcon className="h-4 w-4" />
-          <AlertTitle>No Dashboard Access</AlertTitle>
-          <AlertDescription>
-            You don't have permission to view any dashboard widgets. Please contact your administrator
-            to grant you the necessary permissions.
-          </AlertDescription>
-        </Alert>
+        <div className="flex max-w-md flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-background px-8 py-12 text-center">
+          <span className="flex size-12 items-center justify-center rounded-full bg-muted ring-1 ring-border">
+            <LayoutGrid className="size-5 text-muted-foreground" />
+          </span>
+          <p className="text-base font-semibold text-foreground">No dashboard widgets yet</p>
+          <p className="text-sm text-muted-foreground">
+            You don't have permission to view any dashboard widgets. Ask your administrator to grant access to the
+            stages you work on.
+          </p>
+        </div>
       </div>
     );
   }
@@ -323,7 +299,7 @@ export function RoleBasedDashboard() {
   // }
 
   return (
-    <div className="grid gap-5 lg:gap-7.5">
+    <div className="grid grid-cols-1 gap-5 lg:gap-6">
       {renderWidgetsWithTitles()}
     </div>
   );

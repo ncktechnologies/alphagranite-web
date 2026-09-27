@@ -26,8 +26,8 @@ const useCardContext = () => {
 const cardVariants = cva('flex flex-col items-stretch text-card-foreground rounded-xl', {
   variants: {
     variant: {
-      default: 'bg-card border border-border shadow-xs black/5',
-      accent: 'bg-muted shadow-xs p-1',
+      default: 'bg-card border border-border/80 shadow-card',
+      accent: 'bg-muted border border-border/60 shadow-card p-1',
     },
   },
   defaultVariants: {
@@ -35,7 +35,7 @@ const cardVariants = cva('flex flex-col items-stretch text-card-foreground round
   },
 });
 
-const cardHeaderVariants = cva('flex items-center justify-between flex-wrap px-5 min-h-14 gap-2.5', {
+const cardHeaderVariants = cva('flex items-center justify-between flex-wrap px-5 min-h-14 gap-2.5 [&:has(+[data-slot=card-table])]:border-b [&:has(+[data-slot=card-table])]:border-border/80', {
   variants: {
     variant: {
       default: '',
@@ -74,7 +74,7 @@ const cardTableVariants = cva('grid grow', {
 const cardFooterVariants = cva('flex items-center px-5 min-h-14', {
   variants: {
     variant: {
-      default: 'border-t border-border',
+      default: 'border-t border-border/80',
       accent: 'bg-card rounded-b-xl mt-[2px]',
     },
   },
@@ -133,7 +133,7 @@ function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElem
   return (
     <h3
       data-slot="card-title"
-      className={cn('text-[20px] leading-[24px] text-[#404040] font-semibold tracking-tight', className)}
+      className={cn('text-base leading-6 text-foreground font-semibold tracking-tight', className)}
       {...props}
     />
   );

@@ -9,7 +9,10 @@ import {
   FileText,
   Globe,
   IdCard,
+  Keyboard,
+  LogOut,
   Moon,
+  Rows3,
   Settings,
   Shield,
   SquareCode,
@@ -21,7 +24,6 @@ import { Link, useNavigate } from 'react-router';
 import { toAbsoluteUrl } from '@/lib/helpers';
 import { useLanguage } from '@/providers/i18n-provider';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +31,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -38,6 +41,8 @@ import { Switch } from '@/components/ui/switch';
 import { logout } from "@/store/slice";
 import { useDispatch, useSelector } from "react-redux";
 import { getUserInitials } from '@/utils/userUtils';
+import { useUiPreferences, type Density } from '@/hooks/use-ui-preferences';
+import { openShortcuts } from '@/lib/keyboard';
 
 export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
   // const { logout, user } = useAuth();
@@ -48,6 +53,7 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
 
   const { currenLanguage, changeLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
+  const { density, setDensity } = useUiPreferences();
 
   // Use display data from currentUser
   const displayName =
@@ -76,39 +82,29 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
-      <DropdownMenuContent className="w-auto" side="bottom" align="end">
+      <DropdownMenuContent className="w-72" side="bottom" align="end" sideOffset={8}>
         {/* Header */}
-        <div className="flex items-center justify-between p-3">
-          <div className="flex items-center gap-2">
-            {user?.profile_image_url ? (
-              <img
-                src={user.profile_image_url}
-                alt={displayName}
-                className="size-9 rounded-full border-2 border-green-500 object-cover"
-              />
-            ) : (
-              <div className="size-9 rounded-full border-2 border-green-500 flex items-center justify-center bg-green-100 text-green-800 font-semibold">
-                {getUserInitials(user)}
-              </div>
-            )}
-            <div className="flex flex-col">
-              <Link
-                to=""
-                className="text-sm text-mono hover:text-primary font-semibold"
-              >
-                {displayName}
-              </Link>
-              <a
-                href={`mailto:${displayEmail}`}
-                className="text-xs text-muted-foreground hover:text-primary"
-              >
-                {displayEmail}
-              </a>
+        <div className="flex items-center gap-3 rounded-lg bg-muted/70 p-3 mb-1">
+          {user?.profile_image_url ? (
+            <img
+              src={user.profile_image_url}
+              alt={displayName}
+              className="size-10 rounded-full object-cover ring-2 ring-primary-light/50 ring-offset-2 ring-offset-muted shrink-0"
+            />
+          ) : (
+            <div className="size-10 rounded-full shrink-0 flex items-center justify-center bg-primary-soft text-primary-accent font-semibold ring-2 ring-primary-light/50 ring-offset-2 ring-offset-muted">
+              {getUserInitials(user)}
             </div>
+          )}
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-sm font-semibold text-foreground">{displayName}</span>
+            <span className="truncate text-xs text-muted-foreground">{displayEmail}</span>
+            {user?.role && (
+              <Badge variant="primary" appearance="light" size="sm" className="mt-1.5 self-start">
+                {user.role}
+              </Badge>
+            )}
           </div>
-          <Badge variant="primary" appearance="light" size="sm">
-            {user?.role}
-          </Badge>
         </div>
 
         <DropdownMenuSeparator />
@@ -132,6 +128,26 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
             My Profile
           </Link>
         </DropdownMenuItem>
+        <DropdownMenuItem className="flex items-center gap-2" onSelect={() => openShortcuts()}>
+          <Keyboard />
+          Keyboard shortcuts
+          <DropdownMenuShortcut>?</DropdownMenuShortcut>
+        </DropdownMenuItem>
+
+        {/* Table density */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="flex items-center gap-2">
+            <Rows3 />
+            Table density
+            <span className="ms-auto text-xs capitalize text-muted-foreground">{density}</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-48">
+            <DropdownMenuRadioGroup value={density} onValueChange={(v) => setDensity(v as Density)}>
+              <DropdownMenuRadioItem value="comfortable">Comfortable</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="compact">Compact</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
 
         {/* My Account Submenu */}
         {/* <DropdownMenuSub>
@@ -250,16 +266,14 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
             />
           </div>
         </DropdownMenuItem> */}
-        <div className="p-2 mt-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => logOut()}
-          >
-            Logout
-          </Button>
-        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="flex items-center gap-2 text-destructive focus:text-destructive focus:bg-destructive/5"
+          onSelect={() => logOut()}
+        >
+          <LogOut className="text-destructive" />
+          Sign out
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

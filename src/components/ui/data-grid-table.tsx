@@ -8,6 +8,7 @@ import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { formatCalendarDate, formatUsDate } from '@/utils/date-utils';
 import { parseISO, isValid, format } from 'date-fns';
+import { Inbox } from 'lucide-react';
 
 const headerCellSpacingVariants = cva('', {
   variants: {
@@ -51,6 +52,7 @@ function DataGridTableBase({ children }: { children: ReactNode }) {
   return (
     <table
       data-slot="data-grid-table"
+      data-dense={props.tableLayout?.dense || undefined}
       className={cn(
         'w-full align-middle caption-bottom text-left rtl:text-right text-text font-normal text-[15px] leading-[15px]',
         !props.tableLayout?.columnsDraggable && 'border-separate border-spacing-0',
@@ -91,8 +93,8 @@ function DataGridTableHeadRow<TData>({
     <tr
       key={headerGroup.id}
       className={cn(
-        'bg-muted/40',
-        props.tableLayout?.headerBorder && '[&>th]:border-b',
+        'bg-muted',
+        props.tableLayout?.headerBorder && '[&>th]:border-b [&>th]:border-border/80',
         props.tableLayout?.cellBorder && '[&_>:last-child]:border-e-0',
         props.tableLayout?.stripped && 'bg-transparent',
         props.tableLayout?.headerBackground === false && 'bg-transparent',
@@ -140,7 +142,7 @@ function DataGridTableHeadRowCell<TData>({
       data-pinned={isPinned || undefined}
       data-last-col={isLastLeftPinned ? 'left' : isFirstRightPinned ? 'right' : undefined}
       className={cn(
-        'relative min-h-6 text-left rtl:text-right align-middle font-normal text-accent-foreground [&:has([role=checkbox])]:pe-0 break-words whitespace-normal',
+        'relative min-h-6 text-left rtl:text-right align-middle text-xs font-medium tracking-[0.01em] text-muted-foreground [&:has([role=checkbox])]:pe-0 break-words whitespace-normal',
         headerCellSpacing,
         props.tableLayout?.cellBorder && 'border-e',
         props.tableLayout?.columnsPinnable &&
@@ -355,8 +357,13 @@ function DataGridTableEmpty() {
 
   return (
     <tr>
-      <td colSpan={totalColumns} className="text-center text-text py-6">
-        {props.emptyMessage || 'No data available'}
+      <td colSpan={totalColumns} className="text-center py-12">
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex size-11 items-center justify-center rounded-full bg-muted ring-1 ring-border">
+            <Inbox className="size-5 text-muted-foreground" />
+          </div>
+          <div className="text-sm font-medium text-text">{props.emptyMessage || 'No data available'}</div>
+        </div>
       </td>
     </tr>
   );
@@ -367,9 +374,9 @@ function DataGridTableLoader() {
 
   return (
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-      <div className="text-muted-foreground bg-card  flex items-center gap-2 px-4 py-2 font-medium leading-none text-sm border shadow-xs rounded-md">
+      <div className="text-muted-foreground bg-card flex items-center gap-2 px-4 py-2.5 font-medium leading-none text-sm border shadow-popover rounded-full">
         <svg
-          className="animate-spin -ml-1 h-5 w-5 text-muted-foreground"
+          className="animate-spin -ml-1 h-4 w-4 text-primary"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
