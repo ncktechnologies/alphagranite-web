@@ -105,7 +105,7 @@ const ShopDetailsPage = () => {
                 </Toolbar>
             </Container>
             <div className=" border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0  items-start lg:flex-shrink-0">
-                <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px]" >
+                <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px] lg:border-r lg:border-border/80" >
                     <GraySidebar sections={sidebarSections as any} className='' />
 
                 </div>

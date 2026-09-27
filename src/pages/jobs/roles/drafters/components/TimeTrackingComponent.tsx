@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
+import { SessionTimerPanel } from '@/components/common/session-timer-panel';
 import { parseServerDateTime } from '@/utils/date-utils';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, Square } from 'lucide-react';
 import { toast } from 'sonner';
-import { Can } from '@/components/permission';
 import {
   Dialog,
   DialogContent,
@@ -287,130 +286,27 @@ export const TimeTrackingComponent = ({
   };
 
   // ---------- UI FORMATTING ----------
-  const formatTime = (date?: Date | null) => {
-    if (!date || isNaN(date.getTime())) return '--';
-    const datePart = date.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-    const timePart = date.toLocaleTimeString('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
-    return `${datePart} | ${timePart}`;
-  };
-
-  const formatDuration = (seconds: number) => {
-    if (seconds < 0) seconds = 0;
-    const days = Math.floor(seconds / (24 * 3600));
-    const remainingSeconds = seconds % (24 * 3600);
-    const hours = Math.floor(remainingSeconds / 3600);
-    const minutes = Math.floor((remainingSeconds % 3600) / 60);
-    const secs = remainingSeconds % 60;
-
-    const pad = (n: number) => n.toString().padStart(2, '0');
-
-    if (days > 0) {
-      return `${days}d ${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
-    }
-    return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
-  };
-
   // ---------- RENDER ----------
   return (
     <div className="border-none">
-      <div className="flex items-center gap-6 justify-between">
-
-        <div className="flex-shrink-0">
-          <div className="flex items-center justify-center">
-            <img src="/images/app/clock.svg" alt="" />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-10 flex-1">
-
-          {/* START TIME */}
-          <div>
-            <span className="text-sm text-text-foreground">Start time & Date:</span>
-            <p className="text-[16px] text-text font-semibold">
-              {startTime ? formatTime(startTime) : '00 00 | 00 : 00'}
-            </p>
-          </div>
-
-          {/* PAUSE (if paused) */}
-          {isPaused && pausedTime && !hasEnded && (
-            <div>
-              <span className="text-sm text-text-foreground">Paused time & Date:</span>
-              <p className="text-[16px] text-text font-semibold">
-                {formatTime(pausedTime)}
-              </p>
-            </div>
-          )}
-
-          {/* END TIME (if ended) */}
-          {!isPaused && endTime && hasEnded && (
-            <div>
-              <span className="text-sm text-text-foreground">End time & Date:</span>
-              <p className="text-[16px] text-text font-semibold">{formatTime(endTime)}</p>
-            </div>
-          )}
-
-          {/* LIVE / FINAL DURATION */}
-          {((isDrafting && !hasEnded) || hasEnded) && totalTime > 0 && (
-            <div className="bg-[#FF8D28] px-10 py-2 rounded-[6px] text-white text-[12px]">
-              <span className="text-sm font-medium text-[#EEEEEE]">Total hour spent</span>
-              <p className="text-base font-semibold">{formatDuration(totalTime)}</p>
-            </div>
-          )}
-        </div>
-
-        {/* ACTION BUTTONS */}
-        <div className="flex gap-2">
-
-          {isPaused && !hasEnded ? (
-            <Can action="create" on="Drafting">
-              <Button onClick={handleResume} variant="inverse" className="bg-[#4B545D] text-white">
-                <Play className="w-4 h-4 mr-2" />
-                Resume
-              </Button>
-            </Can>
-          ) : !isDrafting && !hasEnded && !isPaused ? (
-            <Can action="create" on="Drafting">
-              <Button onClick={handleStart} disabled={isStarting}>
-                <Play className="w-4 h-4 mr-2" />
-                {isStarting ? 'Starting...' : 'Start drafting'}
-              </Button>
-            </Can>
-          ) : isDrafting && !hasEnded ? (
-            <>
-              {!isPaused ? (
-                <Button onClick={handlePause} variant="inverse" className="bg-[#4B545D] text-white">
-                  <Pause className="w-4 h-4 mr-2" />
-                  Pause
-                </Button>
-              ) : (
-                <Button onClick={handleResume} variant="inverse" className="bg-[#4B545D] text-white">
-                  <Play className="w-4 h-4 mr-2" />
-                  Resume
-                </Button>
-              )}
-              {!isFabOnHold && (
-                <Button
-                  onClick={handleOnHold}
-                  variant="inverse"
-                  className="text-[#FF8C00] border border-[#FF8C00]"
-                >
-                  <Square className="w-4 h-4 mr-2" />
-                  On Hold
-                </Button>
-              )}
-            </>
-          ) : null}
-        </div>
-
-      </div>
+      <SessionTimerPanel
+        title="Drafting session"
+        startLabel="Start drafting"
+        permissionSubject="Drafting"
+        isActive={isDrafting}
+        isPaused={isPaused}
+        hasEnded={hasEnded}
+        isStarting={isStarting}
+        isFabOnHold={isFabOnHold}
+        startTime={startTime}
+        pausedTime={pausedTime}
+        endTime={endTime}
+        totalSeconds={totalTime}
+        onStart={handleStart}
+        onPause={handlePause}
+        onResume={handleResume}
+        onOnHold={handleOnHold}
+      />
 
       {/* MODALS (unchanged) */}
       <>
