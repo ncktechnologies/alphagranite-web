@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { parseServerDateTime } from '@/utils/date-utils';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, Square } from 'lucide-react';
 import { toast } from 'sonner';
@@ -44,15 +45,8 @@ interface TimeTrackingComponentProps {
 }
 
 // Helper: parse server timestamp as UTC
-const parseUTCDate = (dateStr: string | undefined): Date | undefined => {
-  if (!dateStr) return undefined;
-  const [datePart, timePart] = dateStr.split('T');
-  if (!datePart || !timePart) return undefined;
-  const [y, m, d] = datePart.split('-').map(Number);
-  const [h, min, s] = timePart.split(':').map(Number);
-  const seconds = Math.floor(s);
-  return new Date(Date.UTC(y, m - 1, d, h, min, seconds));
-};
+// Tolerates naive, Z-suffixed and offset timestamps; never yields an Invalid Date.
+const parseUTCDate = (dateStr: string | undefined): Date | undefined => parseServerDateTime(dateStr);
 
 export const TimeTrackingComponent = ({
   isDrafting,
@@ -260,7 +254,7 @@ export const TimeTrackingComponent = ({
   // ── Format helpers ──────────────────────────────────────────────────────
 
   const formatTime = (date?: Date | null) => {
-    if (!date) return '--';
+    if (!date || isNaN(date.getTime())) return '--';
     const datePart = date.toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'short',

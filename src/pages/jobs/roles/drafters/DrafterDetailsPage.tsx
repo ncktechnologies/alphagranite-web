@@ -1,5 +1,6 @@
 // DrafterDetailsPageRefactor.tsx - FIXED DOUBLE SUBMIT VERSION
 import { useCallback, useState, useEffect, useRef, useMemo } from 'react';
+import { parseServerDateTime } from '@/utils/date-utils';
 import { Container } from '@/components/common/container';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -124,11 +125,11 @@ export function DrafterDetailsPage() {
         }
 
         if (session.current_session_start_time) {
-          setDraftStart(new Date(session.current_session_start_time));
+          setDraftStart(parseServerDateTime(session.current_session_start_time) ?? null);
         }
 
         if (session.last_action_time && (session.status === 'ended' || session.status === 'on_hold')) {
-          setDraftEnd(new Date(session.last_action_time));
+          setDraftEnd(parseServerDateTime(session.last_action_time) ?? null);
         } else {
           setDraftEnd(null);
         }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { parseServerDateTime } from '@/utils/date-utils';
 
 interface SCTTimerProps {
   startTime: string | null;  // UTC timestamp without timezone
@@ -11,23 +12,8 @@ export const SCTTimer = ({ startTime, endTime, text }: SCTTimerProps) => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Parse any ISO-like string as UTC (no local timezone interference)
-  const parseUTCDate = (dateStr: string): number => {
-    if (!dateStr) return 0;
-    // If it's already a number (timestamp)
-    const asNumber = Number(dateStr);
-    if (!isNaN(asNumber)) return asNumber;
-    
-    // Remove 'Z' if present to avoid double processing
-    const cleanStr = dateStr.replace(/Z$/, '');
-    // Split into date and time parts (accept both 'T' or space)
-    const [datePart, timePart] = cleanStr.split(/[T ]/);
-    if (!datePart) return 0;
-    
-    const [year, month, day] = datePart.split('-').map(Number);
-    const [hour = 0, minute = 0, second = 0] = timePart ? timePart.split(':').map(Number) : [0,0,0];
-    
-    return Date.UTC(year, month - 1, day, hour, minute, second);
-  };
+  // Epoch ms from any API timestamp shape (naive, Z, offset, or numeric); 0 when unparseable.
+  const parseUTCDate = (dateStr: string): number => parseServerDateTime(dateStr)?.getTime() ?? 0;
 
   useEffect(() => {
     const calculateDuration = () => {

@@ -2,6 +2,7 @@
 // Includes pause pre‑fill, work percentage, and session history
 
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
+import { parseServerDateTime } from '@/utils/date-utils';
 import { Container } from '@/components/common/container';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -116,8 +117,8 @@ export function SlabSmithDetailsPage() {
       } else if (session.status === 'ended') {
         setIsDrafting(false); setIsPaused(false); setHasEnded(true);
       }
-      if (session.current_session_start_time) setDraftStart(new Date(session.current_session_start_time));
-      if (session.last_action_time && session.status === 'ended') setDraftEnd(new Date(session.last_action_time));
+      if (session.current_session_start_time) setDraftStart(parseServerDateTime(session.current_session_start_time) ?? null);
+      if (session.last_action_time && session.status === 'ended') setDraftEnd(parseServerDateTime(session.last_action_time) ?? null);
       if (typeof session.duration_seconds === 'number') setTotalTime(session.duration_seconds);
     }
   }, [ssSessionData]);

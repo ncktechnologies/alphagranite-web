@@ -90,6 +90,49 @@ export const formatDateTimeForBackend = (date: Date | string | null | undefined)
 };
 
 // Parse date from various input formats
+/**
+ * Parse a timestamp from the API into a valid Date, or `undefined`.
+ *
+ * Accepts every shape the backend has sent for session times:
+ *   "2026-09-27T14:03:22.123456"        (naive — treated as UTC, the historical format)
+ *   "2026-09-27T14:03:22.123456Z"       (explicit UTC)
+ *   "2026-09-27T14:03:22.123456+00:00"  (explicit offset)
+ *   "2026-09-27 14:03:22"               (space separator)
+ * plus epoch numbers and Date objects. Fractional seconds are trimmed to
+ * milliseconds because some browsers (Safari) reject longer fractions.
+ * Never returns an Invalid Date.
+ */
+export const parseServerDateTime = (value: string | number | Date | null | undefined): Date | undefined => {
+  if (value === null || value === undefined || value === '') return undefined;
+
+  if (value instanceof Date) return isNaN(value.getTime()) ? undefined : value;
+
+  if (typeof value === 'number') {
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? undefined : d;
+  }
+
+  let str = String(value).trim();
+  if (!str) return undefined;
+
+  if (/^\d+$/.test(str)) {
+    const d = new Date(Number(str));
+    return isNaN(d.getTime()) ? undefined : d;
+  }
+
+  // "YYYY-MM-DD HH:MM..." → "YYYY-MM-DDTHH:MM..."
+  str = str.replace(/^(\d{4}-\d{2}-\d{2})[ T]/, '$1T');
+  // Trim fractional seconds to 3 digits
+  str = str.replace(/(\.\d{3})\d+/, '$1');
+
+  const hasTime = /T\d{2}:\d{2}/.test(str);
+  const hasZone = /(Z|[+-]\d{2}:?\d{2})$/i.test(str);
+  if (hasTime && !hasZone) str += 'Z'; // naive timestamps from the API are UTC
+
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? undefined : d;
+};
+
 export const parseDate = (dateString: string): Date | null => {
   if (!dateString) return null;
   
