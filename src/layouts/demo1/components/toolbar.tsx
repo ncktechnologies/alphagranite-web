@@ -96,14 +96,18 @@ function ToolbarHeading({ title = '', description }: ToolbarHeadingProps) {
   const item = getCurrentItem(MENU_SIDEBAR);
   const resolvedTitle = (typeof title === 'string' ? title.trim() : title) || item?.title || 'Untitled';
 
+  // Depend on the resulting string, not the (possibly JSX) title, so this doesn't rewrite
+  // document.title on every render and clobber other title updates (e.g. a running timer).
+  const docTitle =
+    typeof resolvedTitle === 'string' ? resolvedTitle.trim() || item?.title || 'Alpha Granite' : 'Alpha Granite';
+
   useEffect(() => {
-    const nextTitle = typeof resolvedTitle === 'string' ? resolvedTitle.trim() || item?.title || 'Alpha Granite' : 'Alpha Granite';
-    document.title = `${nextTitle} | The Odyssey Tracker`;
+    document.title = `${docTitle} | The Odyssey Tracker`;
 
     return () => {
       document.title = 'Alpha Granite';
     };
-  }, [resolvedTitle, item?.title]);
+  }, [docTitle]);
 
   return (
     <div className="flex flex-col justify-center gap-1.5 min-w-0">

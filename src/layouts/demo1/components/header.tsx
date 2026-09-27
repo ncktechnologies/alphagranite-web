@@ -115,10 +115,15 @@ export function Header() {
             </Sheet>
           )}
           {mobileMode ? (
-            <Link to="/" className="shrink-0">
+            <Link to="/" className="shrink-0" aria-label="The Odyssey Tracker — Dashboard">
+              <img
+                src={toAbsoluteUrl('/images/logo/mini-logo.png')}
+                className="h-8 w-auto sm:hidden"
+                alt="The Odyssey Tracker"
+              />
               <img
                 src={toAbsoluteUrl('/images/logo/ody-logo.png')}
-                className="h-[44px] w-auto"
+                className="hidden sm:block h-[44px] w-auto"
                 alt="The Odyssey Tracker"
               />
             </Link>

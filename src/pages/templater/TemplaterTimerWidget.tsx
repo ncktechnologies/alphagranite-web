@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
-import { Clock, Pause, Play, X } from 'lucide-react';
+import { Pause, Play, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     useGetTemplaterTimerStateQuery,
@@ -136,60 +137,64 @@ export function TemplaterTimerWidget() {
 
     return (
         <>
-            <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg px-3 py-2 shadow-sm">
-                <Clock className="w-4 h-4 text-blue-600 animate-pulse" />
-                
-                <div className="flex flex-col">
-                    <span className="text-xs text-gray-500 font-medium">Templating</span>
-                    <div className="flex items-baseline gap-1">
-                        {Math.floor(elapsedTime / (24 * 3600)) > 0 && (
-                            <span className="text-xs font-semibold text-blue-600">
-                                {Math.floor(elapsedTime / (24 * 3600))}d
-                            </span>
+            <div
+                className={cn(
+                    'flex h-10 items-center gap-1 rounded-full border ps-1 pe-1 shadow-xs transition-colors',
+                    isPaused
+                        ? 'border-amber-200 bg-amber-50 text-amber-900'
+                        : 'border-primary-light/50 bg-primary-soft text-primary-accent',
+                )}
+            >
+                <button
+                    type="button"
+                    onClick={handleNavigateToTimer}
+                    className="flex h-8 items-center gap-2 rounded-full ps-2.5 pe-2 transition-colors hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    title="Open templating timer"
+                >
+                    <span className="relative flex size-2">
+                        {isRunning && (
+                            <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-60" />
                         )}
-                        <span className="text-sm font-mono font-bold text-blue-700">
-                            {formatTime(elapsedTime)}
-                        </span>
-                    </div>
-                </div>
+                        <span className={cn('relative inline-flex size-2 rounded-full', isPaused ? 'bg-amber-500' : 'bg-primary')} />
+                    </span>
+                    <span className="hidden sm:inline text-xs font-medium opacity-80">
+                        {isPaused ? 'Templating paused' : 'Templating'}
+                    </span>
+                    <span className="text-sm font-semibold tabular-nums">
+                        {Math.floor(elapsedTime / (24 * 3600)) > 0 && (
+                            <span className="me-1 text-xs">{Math.floor(elapsedTime / (24 * 3600))}d</span>
+                        )}
+                        {formatTime(elapsedTime)}
+                    </span>
+                </button>
 
                 {isRunning && (
                     <Button
                         variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+                        mode="icon"
+                        shape="circle"
+                        className="size-8 text-amber-700 hover:bg-amber-100 hover:text-amber-800"
                         onClick={handlePause}
                         title="Pause timer"
+                        aria-label="Pause timer"
                     >
-                        <Pause className="w-4 h-4" />
+                        <Pause className="size-4 fill-current" />
                     </Button>
                 )}
 
                 {isPaused && (
                     <Button
                         variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-100"
+                        mode="icon"
+                        shape="circle"
+                        className="size-8 text-primary hover:bg-primary-soft hover:text-primary-accent"
                         onClick={handleResume}
                         title="Resume timer"
+                        aria-label="Resume timer"
                     >
-                        <Play className="w-4 h-4" />
+                        <Play className="size-4 fill-current" />
                     </Button>
                 )}
-
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0 text-gray-600 hover:text-gray-700 hover:bg-gray-100"
-                    onClick={handleNavigateToTimer}
-                    title="View timer details"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M15 3h6v6" />
-                        <path d="M10 14 21 3" />
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                    </svg>
-                </Button>
             </div>
 
             <PauseModal

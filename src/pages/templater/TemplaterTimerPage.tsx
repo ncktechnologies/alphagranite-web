@@ -245,18 +245,12 @@ export function TemplaterTimerPage() {
                                 onResume={handleResume}
                                 onTimeUpdate={setElapsedTime}
                                 disabled={!job_id || !templater_id}
+                                finishAction={
+                                    isStopped
+                                        ? undefined
+                                        : { onClick: handleStopSubmit, disabled: !job_id || !templater_id }
+                                }
                             />
-                            {!isStopped && (
-                                <div className="mt-6 flex justify-center">
-                                    <Button
-                                        onClick={handleStopSubmit}
-                                        size="xl"
-                                        disabled={!job_id || !templater_id}
-                                    >
-                                        Submit
-                                    </Button>
-                                </div>
-                            )}
                         </>
                     )}
                     {/* ── Media Files ─────────────────────────────────────────────────── */}

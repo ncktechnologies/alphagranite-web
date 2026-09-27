@@ -234,18 +234,12 @@ export function InstallerTimerPage() {
                                 onResume={handleResume}
                                 onTimeUpdate={setElapsedTime}
                                 disabled={!job_id || !installer_id}
+                                finishAction={
+                                    isStopped
+                                        ? undefined
+                                        : { onClick: handleStopSubmit, disabled: !job_id || !installer_id }
+                                }
                             />
-                            {!isStopped && (
-                                <div className="mt-6 flex justify-center">
-                                    <Button
-                                        onClick={handleStopSubmit}
-                                        size="xl"
-                                        disabled={!job_id || !installer_id}
-                                    >
-                                        {t('COMMON.SUBMIT')}
-                                    </Button>
-                                </div>
-                            )}
                         </>
                     )}
 

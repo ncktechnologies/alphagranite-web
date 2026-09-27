@@ -241,6 +241,12 @@
   "TIMER.READY_TO_START": "Listo para Iniciar",
   "TIMER.DAYS": "días",
   "TIMER.DAY": "día",
+  "TIMER.HINT_IDLE": "Inicia el temporizador cuando comiences a trabajar en este trabajo.",
+  "TIMER.HINT_RUNNING": "Se está registrando el tiempo. Pausa para los descansos.",
+  "TIMER.HINT_PAUSED": "En pausa — reanuda cuando vuelvas al trabajo.",
+  "TIMER.HINT_STOPPED": "Esta sesión ha sido enviada.",
+  "TIMER.FINISH_SUBMIT": "Terminar y enviar",
+  "TIMER.OVER_ESTIMATE": "{hours}h sobre lo estimado",
 
   "SUBMISSION.TITLE": "Enviar Trabajo",
   "SUBMISSION.DESCRIPTION": "Descripción del Envío",
