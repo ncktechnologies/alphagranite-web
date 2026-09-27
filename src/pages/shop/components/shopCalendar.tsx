@@ -1,16 +1,31 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Check, ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, X, Search, Rows3, Columns3, Lock } from 'lucide-react';
+import {
+  AlertTriangle,
+  CalendarX2,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Columns3,
+  Lock,
+  Plus,
+  Rows3,
+  Search,
+  X,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { isTypingTarget } from '@/lib/keyboard';
 import {
   format,
   addDays,
+  addHours,
   startOfWeek,
   endOfWeek,
   isSameDay,
+  isWeekend,
   addMonths,
   startOfMonth,
   endOfMonth,
@@ -18,6 +33,12 @@ import {
   getMonth,
 } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Kbd } from '@/components/ui/kbd';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Container } from '@/components/common/container';
+import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import {
   Select,
   SelectContent,
@@ -32,7 +53,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, useGetEmployeesQuery, useGetPlanningSectionsQuery, useGetRolesQuery } from '@/store/api';
-import { formatTime } from '@/utils/date-utils';
 import CreatePlanPage from './createPlanePage';
 import {
   SHOP_DAY_START_HOUR,
@@ -51,6 +71,13 @@ const TOTAL_HOURS = DAY_END_HOUR - DAY_START_HOUR;
 const DISPLAY_HOURS = TOTAL_HOURS;
 const HOUR_HEIGHT = 80;
 const HOUR_WIDTH = 220;
+const DAY_COL_MIN_WIDTH = 160;
+const EVENT_MIN_WIDTH = 96; // keeps overlapping blocks legible instead of "41…" slivers
+const ROW_LANE_H = 64;
+const END_GUTTER_X = 96; // closed time after the shop day ends (timeline layout)
+const END_GUTTER_Y = 40; // same for the columns layout
+const LANE_GAP = 4;
+const VIEW_STORAGE_KEY = 'shop_calendar_view_v1';
 
 // ─── Helper functions ──────────────────────────────────────────────────────
 const getTimePosition = (hour: number) => (hour - DAY_START_HOUR) * HOUR_HEIGHT;
@@ -62,6 +89,11 @@ const getVisualEndPosition = (startHour: number, duration: number, unit: number)
   return (endHour - DAY_START_HOUR + (crossesBreak ? BREAK_DURATION : 0)) * unit;
 };
 
+const formatHour = (hour: number, is12: boolean) =>
+  is12
+    ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour} ${hour >= 12 ? 'PM' : 'AM'}`
+    : `${String(hour).padStart(2, '0')}:00`;
+
 const FAB_TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   'standard': { bg: '#9eeb47', border: '#6b9e2f', text: '#1e293b' },
   'fab only': { bg: '#5bd1d7', border: '#2e8b8f', text: '#1e293b' },
@@ -70,21 +102,235 @@ const FAB_TYPE_COLORS: Record<string, { bg: string; border: string; text: string
   'fast track': { bg: '#f59794', border: '#b35e5b', text: '#1e293b' },
   'ag redo': { bg: '#f5cc94', border: '#b58f4f', text: '#1e293b' },
 };
-const DEFAULT_COLOR = { bg: '#ffffff', border: '#000000', text: '#1e293b' };
+const FAB_TYPE_LABELS: Record<string, string> = {
+  'standard': 'Standard',
+  'fab only': 'FAB only',
+  'cust redo': 'Cust redo',
+  'resurface': 'Resurface',
+  'fast track': 'Fast track',
+  'ag redo': 'AG redo',
+};
+const DEFAULT_COLOR = { bg: '#ffffff', border: '#9aa1ad', text: '#1e293b' };
 
-function getFabTypeColor(fabType: string) {
+function getColorForFab(_fabId: string | number, fabType: string) {
   return FAB_TYPE_COLORS[fabType?.toLowerCase()] ?? DEFAULT_COLOR;
 }
 
-const COLOR_CYCLE = [
-  { bg: '#ffffff', border: '#000000', text: '#1e293b' },
-];
+const eventKey = (ev: any) => `${ev._planId ?? ev.id}-${ev.scheduled_start_date}`;
 
-function getColorForFab(fabId: string | number, fabType: string) {
-  const base = getFabTypeColor(fabType);
-  if (base !== DEFAULT_COLOR) return base;
-  const idx = Number(fabId) % COLOR_CYCLE.length;
-  return COLOR_CYCLE[idx];
+const timeRange = (ev: any) => {
+  const start = new Date(ev.scheduled_start_date);
+  const end = addHours(start, Number(ev.estimated_hours) || 0);
+  return `${format(start, 'h:mm')} – ${format(end, 'h:mm a')}`;
+};
+
+const BREAK_PATTERN =
+  'bg-[repeating-linear-gradient(135deg,rgb(148_155_140/0.18)_0px,rgb(148_155_140/0.18)_6px,transparent_6px,transparent_12px)]';
+
+// ─── Small presentational pieces ─────────────────────────────────────────────
+function EventDetails({ ev }: { ev: any }) {
+  const job = [ev.job_name, ev.job_number].filter(Boolean).join(' · ');
+  const totalHours = ev._originalHours ?? ev.estimated_hours;
+  const rows: [string, React.ReactNode][] = [
+    ['Time', timeRange(ev)],
+    ['Operator', ev.operator_name || '—'],
+    ['Workstation', ev.workstation_name || '—'],
+    ['Est. hours', totalHours ?? '—'],
+    ['Job', job || '—'],
+    ['Account', ev.account_name || '—'],
+    ['Plan', ev.plan_name || '—'],
+  ];
+  const { bg } = getColorForFab(ev.fab_id, ev.fab_type);
+  const pct = Math.max(0, Math.min(100, Number(ev.work_percentage) || 0));
+
+  return (
+    <div className="w-64 space-y-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold text-foreground">FAB #{ev.fab_id}</span>
+        {ev.fab_type && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-text">
+            <span className="size-2 rounded-full" style={{ backgroundColor: bg }} />
+            {ev.fab_type}
+          </span>
+        )}
+      </div>
+      {ev.has_pending_shop_revision && (
+        <div className="flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1 text-[11px] font-medium text-destructive">
+          <AlertTriangle className="size-3.5" /> Pending shop revision
+        </div>
+      )}
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+        {rows.map(([k, v]) => (
+          <React.Fragment key={k}>
+            <dt className="text-muted-foreground">{k}</dt>
+            <dd className="truncate text-foreground">{v}</dd>
+          </React.Fragment>
+        ))}
+      </dl>
+      <div>
+        <div className="mb-1 flex justify-between text-[11px] text-muted-foreground">
+          <span>Progress</span>
+          <span className="tabular-nums text-foreground">{pct}%</span>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+      {ev.notes && <p className="border-t border-border pt-2 text-xs text-text">{ev.notes}</p>}
+    </div>
+  );
+}
+
+function ProgressBar({ value, color }: { value: number; color: string }) {
+  const pct = Math.max(0, Math.min(100, Number(value) || 0));
+  return (
+    <div className="h-1 w-full overflow-hidden rounded-full bg-black/10">
+      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+    </div>
+  );
+}
+
+interface MultiSelectFilterProps {
+  allLabel: string;
+  unitLabel: string;
+  searchPlaceholder: string;
+  emptyText: string;
+  options: { id: string; name: string }[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+  placeholderContent?: React.ReactNode;
+}
+
+function MultiSelectFilter({
+  allLabel,
+  unitLabel,
+  searchPlaceholder,
+  emptyText,
+  options,
+  selected,
+  onChange,
+  placeholderContent,
+}: MultiSelectFilterProps) {
+  const [open, setOpen] = useState(false);
+  const label =
+    selected.length === 0
+      ? allLabel
+      : selected.length === 1
+        ? options.find((o) => o.id === selected[0])?.name ?? `1 ${unitLabel}`
+        : `${selected.length} ${unitLabel}s`;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'flex h-9 min-w-[140px] max-w-[200px] items-center justify-between gap-2 rounded-lg border bg-background px-3 text-sm shadow-xs shadow-black/[0.03] transition-colors hover:border-[#CDD2C6] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/25',
+            selected.length ? 'border-primary-light/70 bg-primary-soft/60 text-primary-accent font-medium' : 'border-input text-text',
+          )}
+        >
+          <span className="truncate">{label}</span>
+          <ChevronDown className="size-4 shrink-0 opacity-60" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[240px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder={searchPlaceholder} />
+          <CommandList>
+            <CommandEmpty>{emptyText}</CommandEmpty>
+            <CommandGroup>
+              {placeholderContent && options.length === 0
+                ? placeholderContent
+                : options.map((o) => {
+                    const isSelected = selected.includes(o.id);
+                    return (
+                      <CommandItem
+                        key={o.id}
+                        onSelect={() =>
+                          onChange(isSelected ? selected.filter((id) => id !== o.id) : [...selected, o.id])
+                        }
+                      >
+                        <div
+                          className={cn(
+                            'flex size-4 items-center justify-center rounded-[4px] border border-[#CDD2C6]',
+                            isSelected ? 'border-primary bg-primary text-primary-foreground' : '[&_svg]:invisible',
+                          )}
+                        >
+                          <Check className="size-3!" />
+                        </div>
+                        <span className="truncate">{o.name}</span>
+                      </CommandItem>
+                    );
+                  })}
+            </CommandGroup>
+          </CommandList>
+          {selected.length > 0 && (
+            <div className="border-t border-border p-1.5">
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                className="w-full rounded-md px-2 py-1.5 text-start text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                Clear selection
+              </button>
+            </div>
+          )}
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function SegmentedControl<T extends string>({
+  value,
+  onChange,
+  options,
+  label,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: React.ReactNode; title?: string }[];
+  label: string;
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className="inline-flex items-center gap-0.5 rounded-lg border border-border/80 bg-muted p-0.5">
+      {options.map((o) => {
+        const active = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            title={o.title}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              'inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-[color,background-color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              active ? 'bg-background text-foreground shadow-card' : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function readStoredView(): { viewMode: 'day' | 'week' | 'month'; isAxisSwapped: boolean } {
+  try {
+    const raw = localStorage.getItem(VIEW_STORAGE_KEY);
+    if (raw) {
+      const v = JSON.parse(raw);
+      return {
+        viewMode: ['day', 'week', 'month'].includes(v.viewMode) ? v.viewMode : 'week',
+        isAxisSwapped: typeof v.isAxisSwapped === 'boolean' ? v.isAxisSwapped : true,
+      };
+    }
+  } catch {
+    /* storage unavailable */
+  }
+  return { viewMode: 'week', isAxisSwapped: true };
 }
 
 // ─── Main Component ─────────────────────────────────────────────────────────
@@ -101,15 +347,15 @@ const ShopCalendarPage: React.FC = () => {
     }
     return new Date();
   });
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
+  const [, setSelectedDate] = useState<Date | null>(null);
   const [is12HourFormat] = useState(true);
-  const [isAxisSwapped, setIsAxisSwapped] = useState(true);
-  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
+  const [isAxisSwapped, setIsAxisSwapped] = useState(() => readStoredView().isAxisSwapped);
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>(() => readStoredView().viewMode);
   const [activePage, setActivePage] = useState<'calendar' | 'create-plan'>('calendar');
-  const [fabPickerOpen, setFabPickerOpen] = useState(false);
-  const [fabPickerInput, setFabPickerInput] = useState('');
+  const [, setFabPickerOpen] = useState(false);
+  const [, setFabPickerInput] = useState('');
   const [createPlanFabId, setCreatePlanFabId] = useState('');
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
 
   const [searchFabId, setSearchFabId] = useState('');
   const [searchType, setSearchType] = useState<'fab_id' | 'job_number'>('fab_id');
@@ -120,9 +366,14 @@ const ShopCalendarPage: React.FC = () => {
 
   const isSearchLocked = !!lockedFabId;
 
-  const [operatorPopoverOpen, setOperatorPopoverOpen] = useState(false);
-  const [sectionPopoverOpen, setSectionPopoverOpen] = useState(false);
-  const [workstationPopoverOpen, setWorkstationPopoverOpen] = useState(false);
+  // Remember the preferred view per browser
+  useEffect(() => {
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify({ viewMode, isAxisSwapped }));
+    } catch {
+      /* storage unavailable */
+    }
+  }, [viewMode, isAxisSwapped]);
 
   // ── Data fetching ──
   const { data: fabTypesData } = useGetFabTypesQuery();
@@ -210,7 +461,6 @@ const ShopCalendarPage: React.FC = () => {
     currentData: plansResponse,
     isLoading,
     isFetching,
-    refetch,
   } = useGetAllShopPlansQuery(queryParams);
 
   const flatPlans = useMemo(
@@ -247,13 +497,12 @@ const ShopCalendarPage: React.FC = () => {
     return weeks;
   }, [currentDate, viewMode]);
 
-  // ─── Group events by day ────────────────────────────────────────────────────
+  // ─── Group events by day (splitting work around the break / end of day) ─
   const eventsByDay = useMemo(() => {
     const grouped: Record<string, any[]> = {};
     const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
     allDays.forEach((d) => { grouped[format(d, 'yyyy-MM-dd')] = []; });
 
-    // Ensure flatPlans is an array (it should be, but guard anyway)
     const plans = Array.isArray(flatPlans) ? flatPlans : [];
 
     plans.forEach((event: any) => {
@@ -284,7 +533,6 @@ const ShopCalendarPage: React.FC = () => {
           const partStart = new Date(currentDate);
           partStart.setHours(currentHour, 0, 0, 0);
           const key = format(currentDate, 'yyyy-MM-dd');
-          // Safety: ensure the key exists before pushing
           if (!grouped[key]) grouped[key] = [];
           grouped[key].push({
             ...event,
@@ -313,22 +561,36 @@ const ShopCalendarPage: React.FC = () => {
 
     return grouped;
   }, [flatPlans, displayDays, monthWeeks, viewMode]);
-  const totalPlans = useMemo(
-    () => Object.values(eventsByDay).reduce((acc, evs) => acc + evs.length, 0),
-    [eventsByDay],
-  );
 
-  const handlePrevious = () => {
-    if (viewMode === 'day') setCurrentDate(addDays(currentDate, -1));
-    else if (viewMode === 'week') setCurrentDate(addDays(currentDate, -7));
-    else setCurrentDate(addMonths(currentDate, -1));
-  };
+  // Count distinct plans (a plan split around lunch is still one plan) and hours in view
+  const { planCount, scheduledHours } = useMemo(() => {
+    // Month view only counts days inside the month (not the padding days of adjacent months)
+    const visibleKeys = new Set(displayDays.map((d) => format(d, 'yyyy-MM-dd')));
+    const ids = new Set<number | string>();
+    let hours = 0;
+    Object.entries(eventsByDay).forEach(([k, evs]) => {
+      if (!visibleKeys.has(k)) return;
+      evs.forEach((ev) => {
+        ids.add(ev._planId ?? ev.id);
+        hours += Number(ev.estimated_hours) || 0;
+      });
+    });
+    return { planCount: ids.size, scheduledHours: Math.round(hours * 10) / 10 };
+  }, [eventsByDay, displayDays]);
 
-  const handleNext = () => {
-    if (viewMode === 'day') setCurrentDate(addDays(currentDate, 1));
-    else if (viewMode === 'week') setCurrentDate(addDays(currentDate, 7));
-    else setCurrentDate(addMonths(currentDate, 1));
-  };
+  const handlePrevious = useCallback(() => {
+    if (viewMode === 'day') setCurrentDate((d) => addDays(d, -1));
+    else if (viewMode === 'week') setCurrentDate((d) => addDays(d, -7));
+    else setCurrentDate((d) => addMonths(d, -1));
+  }, [viewMode]);
+
+  const handleNext = useCallback(() => {
+    if (viewMode === 'day') setCurrentDate((d) => addDays(d, 1));
+    else if (viewMode === 'week') setCurrentDate((d) => addDays(d, 7));
+    else setCurrentDate((d) => addMonths(d, 1));
+  }, [viewMode]);
+
+  const handleToday = useCallback(() => setCurrentDate(new Date()), []);
 
   const handleOpenEditPlan = useCallback((event: any) => {
     const planId = event._planId || event.id;
@@ -343,17 +605,51 @@ const ShopCalendarPage: React.FC = () => {
     setActivePage('create-plan');
   }, [planMap]);
 
-  const handleOpenCreatePlanWithFab = useCallback((fabId: string) => {
-    setCreatePlanFabId(fabId);
-    setFabPickerOpen(false);
-    setActivePage('create-plan');
-  }, []);
-
   const handleBackToCalendar = useCallback(() => {
     setActivePage('calendar');
     setSelectedPlan(null);
     setCreatePlanFabId('');
   }, []);
+
+  const openDay = useCallback((day: Date) => {
+    setCurrentDate(day);
+    setViewMode('day');
+  }, []);
+
+  const hasActiveFilters =
+    !!searchFabId ||
+    !!filterFabType ||
+    filterWorkstation.length > 0 ||
+    filterOperator.length > 0 ||
+    filterPlanningSections.length > 0;
+
+  const clearFilters = () => {
+    setSearchFabId('');
+    setFilterFabType('');
+    setFilterWorkstation([]);
+    setFilterOperator([]);
+    setFilterPlanningSections([]);
+  };
+
+  // ─── Keyboard: ← / → navigate, T today, D / W / M views ────────────────
+  useEffect(() => {
+    if (activePage !== 'calendar') return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || isTypingTarget(e.target)) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      const k = e.key.toLowerCase();
+      if (e.key === 'ArrowLeft') handlePrevious();
+      else if (e.key === 'ArrowRight') handleNext();
+      else if (k === 't') handleToday();
+      else if (k === 'd') setViewMode('day');
+      else if (k === 'w') setViewMode('week');
+      else if (k === 'm') setViewMode('month');
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activePage, handlePrevious, handleNext, handleToday]);
 
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -364,7 +660,8 @@ const ShopCalendarPage: React.FC = () => {
     return () => clearInterval(t);
   }, []);
 
-  const showTimeIndicator = currentTime.getHours() >= DAY_START_HOUR && currentTime.getHours() < DAY_END_HOUR;
+  const nowHour = currentTime.getHours() + currentTime.getMinutes() / 60;
+  const showTimeIndicator = nowHour >= DAY_START_HOUR && nowHour < DAY_END_HOUR;
 
   // ─── Column view: position events ──────────────────────────────────────
   const getEventsWithPositions = useMemo(() => {
@@ -397,57 +694,77 @@ const ShopCalendarPage: React.FC = () => {
     };
   }, []);
 
+  // Per-day layout so header + body columns share the same (overlap-aware) width
+  const dayLayouts = useMemo(
+    () =>
+      displayDays.map((day) => {
+        const key = format(day, 'yyyy-MM-dd');
+        const positioned = getEventsWithPositions(eventsByDay[key] || []);
+        const maxCol = positioned[0]?._maxCol ?? 1;
+        const minWidth = Math.max(viewMode === 'day' ? 320 : DAY_COL_MIN_WIDTH, maxCol * EVENT_MIN_WIDTH);
+        return { day, key, positioned, minWidth };
+      }),
+    [displayDays, eventsByDay, getEventsWithPositions, viewMode],
+  );
+
   const renderEventCard = useCallback((event: any) => {
     const col = event._maxCol ?? 1;
     const { bg, border, text } = getColorForFab(event.fab_id, event.fab_type);
-    const PAD = 4;
-    const colW = `calc(${100 / col}% - ${PAD}px)`;
-    const colLeft = `calc(${(event._col / col) * 100}% + ${PAD / 2}px)`;
+    const PAD = 3;
+    const colW = `calc(${100 / col}% - ${PAD * 2}px)`;
+    const colLeft = `calc(${(event._col / col) * 100}% + ${PAD}px)`;
+    const h = event._height - PAD * 2;
+    const pendingRevision = !!event?.has_pending_shop_revision;
 
     return (
-      <Tooltip key={event.id} delayDuration={300}>
+      <Tooltip key={eventKey(event)} delayDuration={250}>
         <TooltipTrigger asChild>
-          <div
-            className="absolute z-0 cursor-pointer rounded-[12px] border overflow-hidden transition-opacity hover:opacity-90"
+          <button
+            type="button"
+            className={cn(
+              'group absolute z-[2] cursor-pointer overflow-hidden rounded-lg border text-start shadow-[0_1px_2px_rgb(0_0_0/0.06)] transition-[box-shadow,transform] hover:z-[3] hover:-translate-y-px hover:shadow-card-hover focus-visible:z-[3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              pendingRevision && 'ring-2 ring-destructive ring-offset-1',
+            )}
             style={{
               top: event._top + PAD,
-              height: event._height - PAD,
+              height: h,
               left: colLeft,
               width: colW,
               backgroundColor: bg,
-              borderColor: event?.has_pending_shop_revision ? '#ff0000' : border,
-              borderWidth: event?.has_pending_shop_revision ? 2 : 1,
+              borderColor: border,
             }}
             onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(event); }}
+            aria-label={`FAB ${event.fab_id}, ${event.plan_name ?? ''}, ${timeRange(event)}`}
           >
-            <div className="px-3 py-2 h-full flex flex-col justify-start overflow-hidden">
-              <p className="text-[13px] font-semibold truncate" style={{ color: text }}>
-                {event.fab_id} {event.plan_name ? `• ${event.plan_name}` : ''} {event.operator_name ? `• ${event.operator_name}` : ''}
-              </p>
-              <p className="text-[11px] truncate mt-0.5" style={{ color: text, opacity: 0.7 }}>
-                {event.fab_type || event.percent_complete != null ? `${event.work_percentage ?? 0}%` : ''}
-              </p>
-              {event._height > 60 && (
-                <p className="text-[10px] truncate mt-1" style={{ color: text, opacity: 0.6 }}>
-                  {event.workstation_name || ''}
+            <div className="@container flex h-full flex-col gap-0.5 px-2 py-1.5" style={{ color: text }}>
+              <div className="flex items-center gap-1 min-w-0">
+                {pendingRevision && <AlertTriangle className="size-3 shrink-0 text-destructive" />}
+                <span className="truncate text-[12px] font-semibold tabular-nums">#{event.fab_id}</span>
+                {h >= 48 && (
+                  <span className="ms-auto hidden shrink-0 text-[10px] font-semibold tabular-nums opacity-70 @[104px]:inline">
+                    {event.work_percentage ?? 0}%
+                  </span>
+                )}
+              </div>
+              {h >= 48 && (
+                <p className="truncate text-[11px] font-medium opacity-80">
+                  {[event.plan_name, event.operator_name].filter(Boolean).join(' · ')}
                 </p>
               )}
+              {h >= 84 && <p className="truncate text-[10px] opacity-70">{timeRange(event)}</p>}
+              {h >= 110 && event.workstation_name && (
+                <p className="truncate text-[10px] opacity-70">{event.workstation_name}</p>
+              )}
+              {h >= 40 && (
+                <div className="mt-auto">
+                  <ProgressBar value={event.work_percentage} color={border} />
+                </div>
+              )}
             </div>
-          </div>
+          </button>
         </TooltipTrigger>
-        <TooltipContent side="right" className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
-          <div className="space-y-1">
-            <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
-            <p><span className="font-semibold">Operator:</span> {event.operator_name || 'N/A'}</p>
-            <p><span className="font-semibold">Workstation:</span> {event.workstation_name || 'N/A'}</p>
-            <p><span className="font-semibold">Est. Hours:</span> {event.estimated_hours ?? 'N/A'}</p>
-            <p><span className="font-semibold">% Complete:</span> {event.work_percentage ?? 0}%</p>
-            <p><span className="font-semibold">Job:</span> {`${event.job_name}-${event.job_number}` || 'N/A'}</p>
-            <p><span className="font-semibold">Job No:</span> {event.job_number || 'N/A'}</p>
-            <p><span className="font-semibold">Account Name:</span> {event.account_name || 'N/A'}</p>
-            <p><span className="font-semibold">Plan:</span> {event.plan_name}</p>
-            {event.notes && <p><span className="font-semibold">Notes:</span> {event.notes}</p>}
-          </div>
+        <TooltipContent side="right" variant="light" className="p-3">
+          <EventDetails ev={event} />
         </TooltipContent>
       </Tooltip>
     );
@@ -466,363 +783,365 @@ const ShopCalendarPage: React.FC = () => {
     );
   }
 
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const calLabel =
     viewMode === 'day'
       ? format(currentDate, 'EEEE, MMMM d, yyyy')
       : viewMode === 'week'
-        ? `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d')} – ${format(addDays(startOfWeek(currentDate, { weekStartsOn: 1 }), 6), 'MMM d, yyyy')}`
+        ? `${format(weekStart, 'MMM d')} – ${format(addDays(weekStart, 6), 'MMM d, yyyy')}`
         : format(currentDate, 'MMMM yyyy');
 
+  const viewsToday = displayDays.some((d) => isSameDay(d, new Date()));
+  const hourMarks = Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => DAY_START_HOUR + i);
+
   return (
-    <div className="bg-white min-h-screen flex flex-col">
-      {/* ─── Sticky Header ─── */}
-      <div className="sticky top-0 z-20 bg-white border-b border-[#dfdfdf] shadow-sm">
-        <div className="px-10 pt-5 pb-5">
-          <div className="flex items-center justify-between gap-10">
-            <div className="flex flex-col gap-2">
-              <p className="font-semibold text-[28px] leading-[32px] text-black">Shop Plan</p>
-              <p className="font-semibold text-[20px] leading-[24px] text-[#4a4d59]">{calLabel}</p>
-            </div>
-            <button
-              onClick={() => navigate('/shop/create-plan')}
-              className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px] tracking-[-0.56px]"
-              style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
-            >
-              <Plus className="h-4 w-4" />
-              Create Plan
-            </button>
-          </div>
-        </div>
+    <>
+      <Container>
+        <Toolbar>
+          <ToolbarHeading title="Shop Plan" description="Schedule and track cut plans across workstations and operators" />
+          <ToolbarActions>
+            <Button size="lg" onClick={() => navigate('/shop/create-plan')}>
+              <Plus />
+              Create plan
+            </Button>
+          </ToolbarActions>
+        </Toolbar>
+      </Container>
 
-        <div className="flex items-center px-10 h-[65px]">
-          <div className="bg-[#f9f9f9] h-[45px] rounded-[6px] flex items-start pt-[4px] px-[4px] gap-2">
-            {(['day', 'week', 'month'] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setViewMode(mode)}
-                className={`px-[15px] py-[8px] rounded-[4px] font-semibold text-[14px] leading-[21px] capitalize transition-all ${viewMode === mode
-                  ? 'bg-white text-black shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
-                  : 'text-[#78829d]'
-                  }`}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between px-10 h-[65px]">
-          <div className="flex items-center gap-[10px]">
-            {isSearchLocked ? (
-              <div className="flex items-center gap-2 h-[36px] bg-[#f0f4e8] border border-[#9cc15e] rounded-[6px] px-3">
-                <Lock className="size-3.5 text-[#7a9705]" />
-                <span className="font-semibold text-[13px] text-[#4b545d]">{lockedFabId}</span>
+      <Container>
+        <Card className="overflow-hidden">
+          {/* ─── Navigation row ─── */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="md" onClick={handleToday} disabled={viewsToday}>
+                    Today
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Jump to today <Kbd size="xs" className="ms-1 bg-white/15 border-white/20 text-white font-sans">T</Kbd></TooltipContent>
+              </Tooltip>
+              <div className="flex items-center">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" mode="icon" onClick={handlePrevious} aria-label={`Previous ${viewMode}`}>
+                      <ChevronLeft className="size-[18px]!" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Previous {viewMode} <Kbd size="xs" className="ms-1 bg-white/15 border-white/20 text-white font-sans">←</Kbd></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" mode="icon" onClick={handleNext} aria-label={`Next ${viewMode}`}>
+                      <ChevronRight className="size-[18px]!" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Next {viewMode} <Kbd size="xs" className="ms-1 bg-white/15 border-white/20 text-white font-sans">→</Kbd></TooltipContent>
+                </Tooltip>
               </div>
-            ) : (
-              <div className="flex items-center gap-0">
-                <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number')}>
-                  <SelectTrigger className="w-[130px] h-[36px] bg-white border border-[#e2e4ed] rounded-[6px] rounded-e-none border-r-0 text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
-                    <SelectValue placeholder="Search by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fab_id">FAB ID</SelectItem>
-                    <SelectItem value="job_number">Job Number</SelectItem>
-                  </SelectContent>
-                </Select>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#78829d]" />
-                  <input
-                    placeholder={`Search by ${searchType === 'fab_id' ? 'FAB ID' : 'Job Number'}...`}
-                    value={searchFabId}
-                    onChange={(e) => setSearchFabId(e.target.value)}
-                    className="w-[194px] h-[36px] bg-white border border-[#e2e4ed] rounded-[6px] rounded-s-none pl-9 pr-3 text-[13px] text-[#4b545d] placeholder:text-[#78829d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] outline-none focus:ring-1 focus:ring-[#e2e4ed]"
-                  />
-                  {searchFabId && (
-                    <button className="absolute right-2 top-1/2 -translate-y-1/2" onClick={() => setSearchFabId('')}>
-                      <X className="size-3.5 text-[#78829d]" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <Select value={filterFabType || 'all'} onValueChange={(v) => setFilterFabType(v === 'all' ? '' : v)}>
-              <SelectTrigger className="min-w-[133px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
-                <SelectValue placeholder="All FAB Types" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[200px] overflow-y-auto">
-                <SelectItem value="all">All FAB Types</SelectItem>
-                {fabTypes.map((t: string) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-              </SelectContent>
-            </Select>
-
-            {/* WORKSTATION multi‑select */}
-            <Popover open={workstationPopoverOpen} onOpenChange={setWorkstationPopoverOpen}>
-              <PopoverTrigger asChild>
-                <button className="min-w-[150px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
-                  <span className="truncate">
-                    {filterWorkstation.length === 0 ? 'All Workstations' : `${filterWorkstation.length} selected`}
-                  </span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[220px] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Search workstations..." />
-                  <CommandList>
-                    <CommandEmpty>No workstations found.</CommandEmpty>
-                    <CommandGroup>
-                      {workstations.map((w: any) => {
-                        const isSelected = filterWorkstation.includes(w.id);
-                        return (
-                          <CommandItem
-                            key={w.id}
-                            onSelect={() => {
-                              if (isSelected) {
-                                setFilterWorkstation(filterWorkstation.filter(id => id !== w.id));
-                              } else {
-                                setFilterWorkstation([...filterWorkstation, w.id]);
-                              }
-                            }}
-                          >
-                            <div
-                              className={cn(
-                                "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
-                              )}
-                            >
-                              <Check className={cn("h-4 w-4")} />
-                            </div>
-                            <span className="truncate">{w.name}</span>
-                          </CommandItem>
-                        );
-                      })}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-
-            {/* OPERATOR multi‑select – only shows operator role users */}
-            <Popover open={operatorPopoverOpen} onOpenChange={setOperatorPopoverOpen}>
-              <PopoverTrigger asChild>
-                <button className="min-w-[137px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
-                  <span className="truncate">
-                    {filterOperator.length === 0 ? 'All Operators' : `${filterOperator.length} selected`}
-                  </span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[220px] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Search operators..." />
-                  <CommandList>
-                    <CommandEmpty>No operators found.</CommandEmpty>
-                    <CommandGroup>
-                      {operators.length === 0 ? (
-                        <div className="px-3 py-2 text-sm text-muted-foreground">
-                          {employeesLoading || rolesLoading ? 'Loading operators...' : 'No operator users found'}
-                        </div>
-                      ) : (
-                        operators.map((o: any) => {
-                          const isSelected = filterOperator.includes(o.id);
-                          return (
-                            <CommandItem
-                              key={o.id}
-                              onSelect={() => {
-                                if (isSelected) {
-                                  setFilterOperator(filterOperator.filter(id => id !== o.id));
-                                } else {
-                                  setFilterOperator([...filterOperator, o.id]);
-                                }
-                              }}
-                            >
-                              <div
-                                className={cn(
-                                  "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                  isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
-                                )}
-                              >
-                                <Check className={cn("h-4 w-4")} />
-                              </div>
-                              <span className="truncate">{o.name}</span>
-                            </CommandItem>
-                          );
-                        })
-                      )}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-
-            {/* PLANNING SECTION multi‑select */}
-            <Popover open={sectionPopoverOpen} onOpenChange={setSectionPopoverOpen}>
-              <PopoverTrigger asChild>
-                <button className="min-w-[150px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
-                  <span className="truncate">
-                    {filterPlanningSections.length === 0 ? 'All Plans' : `${filterPlanningSections.length} selected`}
-                  </span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[220px] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Search sections..." />
-                  <CommandList>
-                    <CommandEmpty>No sections found.</CommandEmpty>
-                    <CommandGroup>
-                      {planningSections.map((s: any) => {
-                        const isSelected = filterPlanningSections.includes(s.id);
-                        return (
-                          <CommandItem
-                            key={s.id}
-                            onSelect={() => {
-                              if (isSelected) {
-                                setFilterPlanningSections(filterPlanningSections.filter(id => id !== s.id));
-                              } else {
-                                setFilterPlanningSections([...filterPlanningSections, s.id]);
-                              }
-                            }}
-                          >
-                            <div
-                              className={cn(
-                                "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
-                              )}
-                            >
-                              <Check className={cn("h-4 w-4")} />
-                            </div>
-                            <span className="truncate">{s.name}</span>
-                          </CommandItem>
-                        );
-                      })}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {viewMode !== 'month' && (
-            <div className="bg-[#eaebe7] rounded-[8px] flex items-center gap-[2px] p-[2px]">
-              <button
-                onClick={() => setIsAxisSwapped(false)}
-                className={`p-[8px] rounded-[6px] transition-all ${!isAxisSwapped ? 'bg-white shadow-sm' : ''}`}
-                title="Column view"
-              >
-                <Columns3 className="size-6 text-black" strokeWidth={2} />
-              </button>
-              <button
-                onClick={() => setIsAxisSwapped(true)}
-                className={`p-[8px] rounded-[6px] transition-all ${isAxisSwapped ? 'bg-white shadow-sm' : ''}`}
-                title="Row view"
-              >
-                <Rows3 className="size-6 text-[#93948e]" strokeWidth={2} />
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ─── Calendar body ─── */}
-      <div className="flex-1 p-4 md:p-6 overflow-auto">
-        <div className="border border-[#ecedf0] rounded-[16px] px-4 py-6 flex flex-col gap-4">
-          <div className="flex items-center justify-between pl-4">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handlePrevious}
-                className="bg-white h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] flex items-center justify-center hover:bg-gray-50"
-              >
-                <ChevronLeft className="h-5 w-5 text-[#74798b]" />
-              </button>
-
-              <Popover>
+              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                 <PopoverTrigger asChild>
-                  <button className="flex items-center gap-3">
-                    <CalendarIcon className="size-6 text-[#4b545d]" strokeWidth={2} />
-                    <span className="font-semibold text-[20px] leading-[24px] text-[#4a4d59] whitespace-nowrap">{calLabel}</span>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span className="text-base sm:text-lg font-semibold tracking-tight text-foreground whitespace-nowrap">{calLabel}</span>
+                    <ChevronDown className="size-4 text-muted-foreground" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={currentDate} onSelect={(d) => d && setCurrentDate(d)} />
+                  <Calendar
+                    mode="single"
+                    weekStartsOn={1}
+                    selected={currentDate}
+                    defaultMonth={currentDate}
+                    onSelect={(d) => {
+                      if (d) {
+                        setCurrentDate(d);
+                        setDatePickerOpen(false);
+                      }
+                    }}
+                  />
                 </PopoverContent>
               </Popover>
-
-              <button
-                onClick={handleNext}
-                className="bg-white h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] flex items-center justify-center hover:bg-gray-50"
-              >
-                <ChevronRight className="h-5 w-5 text-[#74798b]" />
-              </button>
             </div>
 
-            <div className="flex flex-col items-end gap-1">
-              <p className="font-semibold text-[16px] leading-[24px] text-[#7c8689] whitespace-nowrap">
-                Total Scheduled Plans
-                {isSearchLocked && <span className="ml-2 text-[#7a9705]">. {lockedFabId}</span>}
-                {isFetching && (
-                  <span className="ml-2 inline-flex items-center gap-1.5">
-                    <svg className="animate-spin h-3.5 w-3.5 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span className="text-[12px] font-medium text-[#7a9705]">Refreshing...</span>
-                  </span>
-                )}
-              </p>
-              <p className="font-semibold text-[20px] leading-[24px] text-black">
-                {isLoading || isFetching ? '–' : totalPlans}
-              </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <SegmentedControl
+                label="Calendar view"
+                value={viewMode}
+                onChange={setViewMode}
+                options={[
+                  { value: 'day', label: 'Day', title: 'Day view (D)' },
+                  { value: 'week', label: 'Week', title: 'Week view (W)' },
+                  { value: 'month', label: 'Month', title: 'Month view (M)' },
+                ]}
+              />
+              {viewMode !== 'month' && (
+                <SegmentedControl
+                  label="Layout"
+                  value={isAxisSwapped ? 'rows' : 'columns'}
+                  onChange={(v) => setIsAxisSwapped(v === 'rows')}
+                  options={[
+                    { value: 'rows', label: <><Rows3 className="size-4" /><span className="hidden sm:inline">Timeline</span></>, title: 'Days as rows, time across' },
+                    { value: 'columns', label: <><Columns3 className="size-4" /><span className="hidden sm:inline">Columns</span></>, title: 'Days as columns, time down' },
+                  ]}
+                />
+              )}
             </div>
           </div>
 
-          {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <p className="text-[#7c8689]">Loading calendar events…</p>
-            </div>
-          ) : (
-            <>
-              {isFetching && (
-                <div className="relative">
-                  <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-[8px]">
-                    <div className="bg-white border border-[#e2e4ed] rounded-[8px] px-4 py-2 shadow-sm flex items-center gap-2">
-                      <svg className="animate-spin h-4 w-4 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span className="text-[13px] font-medium text-[#4b545d]">Updating calendar...</span>
-                    </div>
+          {/* ─── Filters row ─── */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 bg-muted/50 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {isSearchLocked ? (
+                <div className="flex h-9 items-center gap-2 rounded-lg border border-primary-light/70 bg-primary-soft px-3 text-sm">
+                  <Lock className="size-3.5 text-primary-accent" />
+                  <span className="font-semibold text-primary-accent">FAB #{lockedFabId}</span>
+                </div>
+              ) : (
+                <div className="flex items-center">
+                  <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number')}>
+                    <SelectTrigger className="h-9 w-[124px] rounded-e-none border-e-0 text-sm">
+                      <SelectValue placeholder="Search by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fab_id">FAB ID</SelectItem>
+                      <SelectItem value="job_number">Job number</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      placeholder={`Search ${searchType === 'fab_id' ? 'FAB ID' : 'job number'}…`}
+                      value={searchFabId}
+                      onChange={(e) => setSearchFabId(e.target.value)}
+                      className="h-9 w-[200px] rounded-lg rounded-s-none border border-input bg-background ps-9 pe-8 text-sm text-foreground shadow-xs shadow-black/[0.03] outline-none transition-[border-color,box-shadow] placeholder:text-placeholder hover:border-[#CDD2C6] focus-visible:border-primary-light focus-visible:ring-[3px] focus-visible:ring-ring/25"
+                    />
+                    {searchFabId && (
+                      <button
+                        type="button"
+                        aria-label="Clear search"
+                        className="absolute end-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                        onClick={() => setSearchFabId('')}
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
-              <TooltipProvider>
-                <div className="border border-[#ecedf0] rounded-[8px] overflow-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
-                  {/* Month view */}
+
+              <Select value={filterFabType || 'all'} onValueChange={(v) => setFilterFabType(v === 'all' ? '' : v)}>
+                <SelectTrigger
+                  className={cn(
+                    'h-9 min-w-[140px] w-auto text-sm',
+                    filterFabType && 'border-primary-light/70 bg-primary-soft/60 text-primary-accent font-medium',
+                  )}
+                >
+                  <SelectValue placeholder="All FAB types" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[260px] overflow-y-auto">
+                  <SelectItem value="all">All FAB types</SelectItem>
+                  {fabTypes.map((t: string) => (
+                    <SelectItem key={t} value={t}>
+                      <span className="flex items-center gap-2">
+                        <span className="size-2.5 rounded-full border border-black/10" style={{ backgroundColor: getColorForFab(0, t).bg }} />
+                        {t}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <MultiSelectFilter
+                allLabel="All workstations"
+                unitLabel="workstation"
+                searchPlaceholder="Search workstations…"
+                emptyText="No workstations found."
+                options={workstations}
+                selected={filterWorkstation}
+                onChange={setFilterWorkstation}
+              />
+              <MultiSelectFilter
+                allLabel="All operators"
+                unitLabel="operator"
+                searchPlaceholder="Search operators…"
+                emptyText="No operators found."
+                options={operators}
+                selected={filterOperator}
+                onChange={setFilterOperator}
+                placeholderContent={
+                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                    {employeesLoading || rolesLoading ? 'Loading operators…' : 'No operator users found'}
+                  </div>
+                }
+              />
+              <MultiSelectFilter
+                allLabel="All plans"
+                unitLabel="plan"
+                searchPlaceholder="Search sections…"
+                emptyText="No sections found."
+                options={planningSections}
+                selected={filterPlanningSections}
+                onChange={setFilterPlanningSections}
+              />
+
+              {hasActiveFilters && (
+                <Button variant="ghost" size="md" onClick={clearFilters} className="text-muted-foreground">
+                  <X />
+                  Clear filters
+                </Button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 text-sm" aria-live="polite">
+              {isFetching ? (
+                <span className="inline-flex items-center gap-2 text-muted-foreground">
+                  <span className="size-3.5 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
+                  Updating…
+                </span>
+              ) : (
+                <span className="text-muted-foreground">
+                  <span className="font-semibold text-foreground tabular-nums">{planCount}</span>{' '}
+                  {planCount === 1 ? 'plan' : 'plans'}
+                  <span className="mx-1.5 text-border">•</span>
+                  <span className="font-semibold text-foreground tabular-nums">{scheduledHours}</span> h scheduled
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* ─── Legend ─── */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-border/80 px-4 py-2.5 text-xs text-muted-foreground">
+            {Object.entries(FAB_TYPE_COLORS).map(([k, c]) => (
+              <span key={k} className="inline-flex items-center gap-1.5">
+                <span className="size-3 rounded-[4px] border" style={{ backgroundColor: c.bg, borderColor: c.border }} />
+                {FAB_TYPE_LABELS[k]}
+              </span>
+            ))}
+            <span className="inline-flex items-center gap-1.5">
+              <span className="size-3 rounded-[4px] bg-background ring-2 ring-destructive" />
+              Pending revision
+            </span>
+            {viewMode !== 'month' && (
+              <span className="inline-flex items-center gap-1.5">
+                <span className={cn('size-3 rounded-[4px] border border-border', BREAK_PATTERN)} />
+                Lunch break
+              </span>
+            )}
+          </div>
+
+          {/* ─── Calendar body ─── */}
+          {isLoading ? (
+            <div className="space-y-3 p-4">
+              <Skeleton className="h-12 w-full rounded-lg" />
+              <Skeleton className="h-[420px] w-full rounded-lg" />
+            </div>
+          ) : (
+            <TooltipProvider>
+              <div className="relative">
+                {isFetching && (
+                  <div className="pointer-events-none absolute inset-0 z-40 bg-background/50 backdrop-blur-[1px]" aria-hidden />
+                )}
+                {!isFetching && planCount === 0 && (
+                  <div className="pointer-events-none absolute inset-x-0 top-24 z-40 flex justify-center px-4">
+                    <div className="pointer-events-auto flex max-w-sm flex-col items-center gap-2 rounded-2xl border border-border bg-background/95 px-6 py-5 text-center shadow-popover">
+                      <span className="flex size-10 items-center justify-center rounded-full bg-muted ring-1 ring-border">
+                        <CalendarX2 className="size-5 text-muted-foreground" />
+                      </span>
+                      <p className="text-sm font-semibold text-foreground">No plans scheduled this {viewMode}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {hasActiveFilters ? 'Try widening your filters.' : 'Create a plan to start filling the schedule.'}
+                      </p>
+                      {hasActiveFilters ? (
+                        <Button variant="outline" size="sm" onClick={clearFilters}>Clear filters</Button>
+                      ) : (
+                        <Button size="sm" onClick={() => navigate('/shop/create-plan')}>
+                          <Plus /> Create plan
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="overflow-auto" style={{ maxHeight: 'max(440px, calc(100vh - 330px))' }}>
+                  {/* ─── Month view ─── */}
                   {viewMode === 'month' && (
-                    <div className="min-w-max">
-                      <div className="grid" style={{ gridTemplateColumns: 'auto repeat(7, 1fr)' }}>
-                        <div className="p-2 border-b border-[#e2e4ed]" />
+                    <div className="min-w-[760px]">
+                      <div className="sticky top-0 z-20 grid border-b border-border/80 bg-background" style={{ gridTemplateColumns: '56px repeat(7, minmax(0, 1fr))' }}>
+                        <div />
                         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-                          <div key={d} className="text-center text-[12px] font-medium text-[#4b545d] uppercase p-2 border-b border-l border-[#ecedf0]">{d}</div>
+                          <div key={d} className="border-s border-border/70 px-2 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                            {d}
+                          </div>
                         ))}
+                      </div>
+                      <div className="grid" style={{ gridTemplateColumns: '56px repeat(7, minmax(0, 1fr))' }}>
                         {monthWeeks.map((week, wi) => (
                           <React.Fragment key={wi}>
-                            <div className="text-[12px] font-medium text-[#7c8689] p-2 text-right pr-4 border-b border-[#ecedf0]">
-                              Wk {format(week[0], 'w')}
+                            <div className="border-b border-border/70 px-2 py-2 text-end text-[11px] font-medium text-muted-foreground tabular-nums">
+                              W{format(week[0], 'w')}
                             </div>
                             {week.map((day) => {
                               const dk = format(day, 'yyyy-MM-dd');
-                              const evs = eventsByDay[dk] || [];
+                              const seen = new Set<number | string>();
+                              const evs = (eventsByDay[dk] || [])
+                                .filter((ev) => {
+                                  const id = ev._planId ?? ev.id;
+                                  if (seen.has(id)) return false;
+                                  seen.add(id);
+                                  return true;
+                                })
+                                .sort((a, b) => new Date(a.scheduled_start_date).getTime() - new Date(b.scheduled_start_date).getTime());
                               const inMonth = getMonth(day) === getMonth(currentDate);
+                              const today = isSameDay(day, new Date());
                               return (
                                 <div
                                   key={dk}
-                                  className={`border-b border-l border-[#ecedf0] p-2 min-h-[80px] cursor-pointer hover:bg-gray-50 transition-colors ${!inMonth ? 'bg-gray-50' : ''}`}
-                                  onClick={() => { setCurrentDate(day); setViewMode('day'); }}
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={() => openDay(day)}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') openDay(day); }}
+                                  className={cn(
+                                    'group/cell flex min-h-[112px] cursor-pointer flex-col gap-1 border-b border-s border-border/70 p-1.5 text-start transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                                    !inMonth && 'bg-muted/60',
+                                    inMonth && isWeekend(day) && 'bg-muted/30',
+                                  )}
                                 >
-                                  <div className={`text-right text-[13px] font-medium ${!inMonth ? 'text-[#c0c4cc]' : 'text-[#4b545d]'}`}>{format(day, 'd')}</div>
-                                  {evs.length > 0 && (
-                                    <Badge variant="outline" className="mt-1 text-[14px] font-semibold">
-                                      {evs.length} plan{evs.length !== 1 ? 's' : ''}
-                                    </Badge>
+                                  <div className="flex items-center justify-between px-0.5">
+                                    <span
+                                      className={cn(
+                                        'flex size-6 items-center justify-center rounded-full text-xs font-semibold tabular-nums',
+                                        today ? 'bg-primary text-white' : inMonth ? 'text-text' : 'text-muted-foreground/60',
+                                      )}
+                                    >
+                                      {format(day, 'd')}
+                                    </span>
+                                  </div>
+                                  {evs.slice(0, 3).map((ev) => {
+                                    const c = getColorForFab(ev.fab_id, ev.fab_type);
+                                    return (
+                                      <button
+                                        key={eventKey(ev)}
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
+                                        className={cn(
+                                          'flex h-5 w-full items-center gap-1 truncate rounded-[5px] px-1.5 text-start text-[11px] font-medium transition-[filter] hover:brightness-95',
+                                          ev.has_pending_shop_revision && 'ring-1 ring-destructive',
+                                        )}
+                                        style={{ backgroundColor: c.bg, color: c.text }}
+                                        title={`FAB #${ev.fab_id} · ${ev.plan_name ?? ''} · ${timeRange(ev)}`}
+                                      >
+                                        <span className="tabular-nums opacity-70">{format(new Date(ev.scheduled_start_date), 'h:mm')}</span>
+                                        <span className="truncate">#{ev.fab_id}{ev.plan_name ? ` · ${ev.plan_name}` : ''}</span>
+                                      </button>
+                                    );
+                                  })}
+                                  {evs.length > 3 && (
+                                    <span className="px-1.5 text-[11px] font-medium text-muted-foreground group-hover/cell:text-foreground">
+                                      +{evs.length - 3} more
+                                    </span>
                                   )}
                                 </div>
                               );
@@ -833,81 +1152,114 @@ const ShopCalendarPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* ─── Day / Week column view with sticky headers ─── */}
+                  {/* ─── Day / Week: days as columns, time down ─── */}
                   {viewMode !== 'month' && !isAxisSwapped && (
                     <div className="min-w-max">
-                      <div className="flex sticky top-0 z-20 bg-white border-b border-[#e2e4ed]">
-                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] sticky left-0 z-30 bg-white" />
-                        {displayDays.map((day) => (
-                          <div
-                            key={format(day, 'yyyy-MM-dd')}
-                            className="flex-1 min-w-[160px] border-r border-[#ecedf0] flex flex-col items-center py-3 gap-1 bg-white"
-                          >
-                            <span className="text-[12px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
-                            <span
-                              className={`text-[22px] font-semibold w-9 h-9 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'}`}
+                      <div className="sticky top-0 z-30 flex border-b border-border/80 bg-background">
+                        <div className="sticky left-0 z-30 w-[72px] flex-shrink-0 border-e border-border/70 bg-background" />
+                        {dayLayouts.map(({ day, key, minWidth }) => {
+                          const today = isSameDay(day, new Date());
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => viewMode === 'week' && openDay(day)}
+                              className={cn(
+                                'flex flex-1 flex-col items-center gap-0.5 border-e border-border/70 py-2.5 transition-colors',
+                                viewMode === 'week' ? 'cursor-pointer hover:bg-accent/60' : 'cursor-default',
+                                isWeekend(day) && 'bg-muted/40',
+                              )}
+                              style={{ minWidth }}
+                              title={viewMode === 'week' ? `Open ${format(day, 'EEEE, MMM d')}` : undefined}
                             >
-                              {format(day, 'd')}
-                            </span>
-                          </div>
-                        ))}
+                              <span className={cn('text-[11px] font-semibold uppercase tracking-[0.06em]', today ? 'text-primary' : 'text-muted-foreground')}>
+                                {format(day, 'EEE')}
+                              </span>
+                              <span
+                                className={cn(
+                                  'flex size-8 items-center justify-center rounded-full text-lg font-semibold tabular-nums',
+                                  today ? 'bg-primary text-white shadow-primary' : 'text-text',
+                                )}
+                              >
+                                {format(day, 'd')}
+                              </span>
+                            </button>
+                          );
+                        })}
                       </div>
 
-                      <div className="relative flex pt-5" style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}>
-                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] relative sticky left-0 z-10 bg-white">
-                          {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
-                            const hour = DAY_START_HOUR + i;
-                            const label = is12HourFormat
-                              ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
-                              : `${String(hour).padStart(2, '0')}:00`;
-                            const position = getTimePosition(hour);
-                            return (
-                              <div
-                                key={hour}
-                                className="absolute w-full pr-3 flex items-start justify-end"
-                                style={{ top: position - 9, height: HOUR_HEIGHT }}
-                              >
-                                <span className="text-[11px] font-medium text-[#7c8689] whitespace-nowrap">{label}</span>
-                              </div>
-                            );
-                          })}
+                      <div className="relative flex" style={{ height: DISPLAY_HOURS * HOUR_HEIGHT + 8 + END_GUTTER_Y }}>
+                        <div className="sticky left-0 z-20 w-[72px] flex-shrink-0 border-e border-border/70 bg-background">
+                          {hourMarks.map((hour) => (
+                            <div
+                              key={hour}
+                              className="absolute w-full pe-2.5 text-end"
+                              style={{ top: getTimePosition(hour) + 8 - 7 }}
+                            >
+                              {hour === DAY_END_HOUR ? (
+                                <span className="flex flex-col items-end leading-tight">
+                                  <span className="text-[11px] font-semibold text-foreground whitespace-nowrap">
+                                    {formatHour(hour, is12HourFormat)}
+                                  </span>
+                                  <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">End of day</span>
+                                </span>
+                              ) : (
+                                <span className="text-[11px] font-medium text-muted-foreground whitespace-nowrap">
+                                  {formatHour(hour, is12HourFormat)}
+                                </span>
+                              )}
+                            </div>
+                          ))}
                         </div>
 
-                        {displayDays.map((day) => {
-                          const dk = format(day, 'yyyy-MM-dd');
-                          const events = eventsByDay[dk] || [];
-                          const positioned = getEventsWithPositions(events);
-                          const isToday = isSameDay(day, new Date());
-
+                        {dayLayouts.map(({ day, key, positioned, minWidth }) => {
+                          const today = isSameDay(day, new Date());
                           return (
                             <div
-                              key={dk}
-                              className="flex-1 min-w-[160px] border-r border-[#ecedf0] relative overflow-visible"
-                              style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}
+                              key={key}
+                              className={cn('relative flex-1 border-e border-border/70', isWeekend(day) && 'bg-muted/30', today && 'bg-primary-soft/25')}
+                              style={{ minWidth }}
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(true); } : undefined}
                             >
-                              {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
-                                const hour = DAY_START_HOUR + i;
-                                const position = getTimePosition(hour);
-                                return (
-                                  <div key={i} className="absolute w-full border-t border-[#ecedf0]" style={{ top: position }} />
-                                );
-                              })}
-
                               <div
-                                className="absolute left-0 right-0 z-[10] bg-orange-100 border-y-2 border-orange-300 pointer-events-none flex items-center justify-center"
-                                style={{
-                                  top: getTimePosition(BREAK_START_HOUR),
-                                  height: BREAK_DURATION * HOUR_HEIGHT
-                                }}
-                              >
-                                <span className="text-[11px] font-semibold text-orange-600 uppercase tracking-wide">
-                                  Break
-                                </span>
-                              </div>
+                                className={cn('pointer-events-none absolute inset-x-0 bottom-0 bg-muted/70', BREAK_PATTERN)}
+                                style={{ top: 8 + getTimePosition(DAY_END_HOUR) }}
+                                aria-hidden
+                              />
+                              <div className="absolute inset-x-0" style={{ top: 8, height: DISPLAY_HOURS * HOUR_HEIGHT }}>
+                                {hourMarks.map((hour) => (
+                                  <div
+                                    key={hour}
+                                    className={cn(
+                                      'absolute w-full border-t',
+                                      hour === DAY_END_HOUR ? 'border-t-2 border-foreground/25' : 'border-border/60',
+                                    )}
+                                    style={{ top: getTimePosition(hour) }}
+                                  />
+                                ))}
+                                {hourMarks.slice(0, -1).map((hour) => (
+                                  <div key={`h${hour}`} className="absolute w-full border-t border-dashed border-border/35" style={{ top: getTimePosition(hour + 0.5) }} />
+                                ))}
 
-                              {isToday && <div className="absolute inset-0 bg-[#7a9705]/[0.02] pointer-events-none" />}
-                              {positioned.map((ev) => renderEventCard(ev))}
+                                <div
+                                  className={cn('pointer-events-none absolute inset-x-0 z-[1] flex items-center justify-center', BREAK_PATTERN)}
+                                  style={{ top: getTimePosition(BREAK_START_HOUR), height: BREAK_DURATION * HOUR_HEIGHT }}
+                                >
+                                  <span className="rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                                    Lunch
+                                  </span>
+                                </div>
+
+                                {positioned.map((ev) => renderEventCard(ev))}
+
+                                {today && showTimeIndicator && (
+                                  <div className="pointer-events-none absolute inset-x-0 z-[4]" style={{ top: getTimePosition(nowHour) }}>
+                                    <div className="relative h-0.5 bg-destructive">
+                                      <span className="absolute -start-1 -top-[3px] size-2 rounded-full bg-destructive" />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           );
                         })}
@@ -915,36 +1267,48 @@ const ShopCalendarPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* ─── Time-row view (axis swapped) with sticky headers ─── */}
+                  {/* ─── Day / Week: timeline (days as rows, time across) ─── */}
                   {viewMode !== 'month' && isAxisSwapped && (
                     <div className="min-w-max">
-                      <div className="flex border-b border-[#e2e4ed] bg-white sticky top-0 z-10">
-                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] sticky left-0 z-30 bg-white" />
-                        <div className="relative" style={{ minWidth: DISPLAY_HOURS * HOUR_WIDTH, height: 50 }}>
-                          {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
-                            const hour = DAY_START_HOUR + i;
-                            const label = is12HourFormat
-                              ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
-                              : `${String(hour).padStart(2, '0')}:00`;
-                            const position = getHorizontalPosition(hour);
-                            return (
-                              <div
-                                key={hour}
-                                className="absolute top-0 bottom-0 border-r border-[#ecedf0] flex items-center justify-center px-1"
-                                style={{ left: position, width: HOUR_WIDTH, overflow: 'visible' }}
-                              >
-                                <span className="text-[10px] font-medium text-[#7c8689] whitespace-nowrap text-center">{label}</span>
-                              </div>
-                            );
-                          })}
+                      <div className="sticky top-0 z-30 flex border-b border-border/80 bg-background">
+                        <div className="sticky left-0 z-30 w-[88px] flex-shrink-0 border-e border-border/70 bg-background" />
+                        <div className="relative" style={{ minWidth: DISPLAY_HOURS * HOUR_WIDTH + END_GUTTER_X, height: 40 }}>
+                          <div
+                            className="absolute inset-y-0 flex flex-col justify-center border-s-2 border-foreground/25 ps-2 leading-tight"
+                            style={{ left: getHorizontalPosition(DAY_END_HOUR), width: END_GUTTER_X }}
+                          >
+                            <span className="text-[11px] font-semibold text-foreground whitespace-nowrap">
+                              {formatHour(DAY_END_HOUR, is12HourFormat)}
+                            </span>
+                            <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">End of day</span>
+                          </div>
+                          {hourMarks.slice(0, -1).map((hour) => (
+                            <div
+                              key={hour}
+                              className="absolute inset-y-0 flex items-center border-s border-border/70 ps-2"
+                              style={{ left: getHorizontalPosition(hour), width: HOUR_WIDTH }}
+                            >
+                              {hour === DAY_END_HOUR ? (
+                                <span className="flex flex-col items-end leading-tight">
+                                  <span className="text-[11px] font-semibold text-foreground whitespace-nowrap">
+                                    {formatHour(hour, is12HourFormat)}
+                                  </span>
+                                  <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">End of day</span>
+                                </span>
+                              ) : (
+                                <span className="text-[11px] font-medium text-muted-foreground whitespace-nowrap">
+                                  {formatHour(hour, is12HourFormat)}
+                                </span>
+                              )}
+                            </div>
+                          ))}
                         </div>
                       </div>
 
                       {displayDays.map((day) => {
                         const dk = format(day, 'yyyy-MM-dd');
                         const dayEvents = eventsByDay[dk] || [];
-                        const ROW_LANE_H = 70;
-                        const GAP = 0;
+                        const today = isSameDay(day, new Date());
 
                         const sorted = [...dayEvents].sort(
                           (a, b) => new Date(a.scheduled_start_date).getTime() - new Date(b.scheduled_start_date).getTime(),
@@ -960,94 +1324,135 @@ const ShopCalendarPage: React.FC = () => {
                           }
                           if (!placed) lanes.push([ev]);
                         });
-                        const rowHeight = Math.max(lanes.length, 1) * (ROW_LANE_H + GAP) + GAP;
+                        const rowHeight = Math.max(lanes.length, 1) * (ROW_LANE_H + LANE_GAP) + LANE_GAP;
 
                         return (
-                          <div key={dk} className="flex border-b border-[#e2e4ed]" style={{ minHeight: rowHeight }}>
-                            <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] sticky left-0 z-10 bg-white flex flex-col justify-center items-center py-2 gap-0">
-                              <span className="text-[10px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
+                          <div
+                            key={dk}
+                            className={cn('flex border-b border-border/70', isWeekend(day) && 'bg-muted/30', today && 'bg-primary-soft/25')}
+                            style={{ minHeight: rowHeight }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => viewMode === 'week' && openDay(day)}
+                              className={cn(
+                                'sticky left-0 z-20 flex w-[88px] flex-shrink-0 flex-col items-center justify-center gap-0.5 border-e border-border/70 bg-background py-2',
+                                viewMode === 'week' ? 'cursor-pointer hover:bg-accent' : 'cursor-default',
+                              )}
+                              title={viewMode === 'week' ? `Open ${format(day, 'EEEE, MMM d')}` : undefined}
+                            >
+                              <span className={cn('text-[11px] font-semibold uppercase tracking-[0.06em]', today ? 'text-primary' : 'text-muted-foreground')}>
+                                {format(day, 'EEE')}
+                              </span>
                               <span
-                                className={`text-[18px] font-semibold w-8 h-8 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'}`}
+                                className={cn(
+                                  'flex size-8 items-center justify-center rounded-full text-base font-semibold tabular-nums',
+                                  today ? 'bg-primary text-white shadow-primary' : 'text-text',
+                                )}
                               >
                                 {format(day, 'd')}
                               </span>
-                            </div>
+                              {dayEvents.length > 0 && (
+                                <span className="text-[10px] text-muted-foreground tabular-nums">
+                                  {new Set(dayEvents.map((e) => e._planId ?? e.id)).size} plans
+                                </span>
+                              )}
+                            </button>
 
                             <div
-                              className="relative overflow-visible"
-                              style={{ height: rowHeight, minWidth: DISPLAY_HOURS * HOUR_WIDTH }}
+                              className="relative"
+                              style={{ height: rowHeight, minWidth: DISPLAY_HOURS * HOUR_WIDTH + END_GUTTER_X }}
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(false); } : undefined}
                             >
-                              {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
-                                const hour = DAY_START_HOUR + i;
-                                const position = getHorizontalPosition(hour);
-                                return (
-                                  <div key={i} className="absolute border-l border-[#ecedf0]" style={{ top: 0, bottom: -1, left: position }} />
-                                );
-                              })}
+                              {hourMarks.map((hour) => (
+                                <div
+                                  key={hour}
+                                  className={cn(
+                                    'absolute inset-y-0 border-s',
+                                    hour === DAY_END_HOUR ? 'border-s-2 border-foreground/25' : 'border-border/60',
+                                  )}
+                                  style={{ left: getHorizontalPosition(hour) }}
+                                />
+                              ))}
+                              <div
+                                className={cn('pointer-events-none absolute inset-y-0 bg-muted/70', BREAK_PATTERN)}
+                                style={{ left: getHorizontalPosition(DAY_END_HOUR) + 2, width: END_GUTTER_X - 2 }}
+                                aria-hidden
+                              />
 
                               <div
-                                className="absolute z-[10] bg-orange-100 border-x-2 border-orange-300 pointer-events-none flex items-center justify-center"
-                                style={{
-                                  top: 0,
-                                  bottom: -1,
-                                  left: getHorizontalPosition(BREAK_START_HOUR),
-                                  width: BREAK_DURATION * HOUR_WIDTH,
-                                }}
+                                className={cn('pointer-events-none absolute inset-y-0 z-[1] flex items-center justify-center', BREAK_PATTERN)}
+                                style={{ left: getHorizontalPosition(BREAK_START_HOUR), width: BREAK_DURATION * HOUR_WIDTH }}
                               >
-                                <span className="text-[11px] font-semibold text-orange-600 uppercase tracking-wide [writing-mode:vertical-rl]">Break</span>
+                                <span className="rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                                  Lunch
+                                </span>
                               </div>
 
                               {lanes.map((lane, laneIdx) =>
                                 lane.map((ev) => {
                                   const startDt = new Date(ev.scheduled_start_date);
                                   const startH = startDt.getHours() + startDt.getMinutes() / 60;
-                                  const endH = startH + ev.estimated_hours;
-
                                   const left = getHorizontalPosition(startH);
                                   const right = getVisualEndPosition(startH, ev.estimated_hours, HOUR_WIDTH);
-                                  const width = right - left;
-
+                                  const width = Math.max(HOUR_WIDTH * 0.5, right - left) - LANE_GAP;
                                   const { bg, border, text } = getColorForFab(ev.fab_id, ev.fab_type);
+                                  const pendingRevision = !!ev?.has_pending_shop_revision;
+
                                   return (
-                                    <Tooltip key={ev.id} delayDuration={300}>
+                                    <Tooltip key={eventKey(ev)} delayDuration={250}>
                                       <TooltipTrigger asChild>
-                                        <div
-                                          className="absolute rounded-[10px] border overflow-hidden cursor-pointer transition-opacity hover:opacity-90"
+                                        <button
+                                          type="button"
+                                          className={cn(
+                                            'absolute z-[2] cursor-pointer overflow-hidden rounded-lg border text-start shadow-[0_1px_2px_rgb(0_0_0/0.06)] transition-[box-shadow,transform] hover:z-[3] hover:-translate-y-px hover:shadow-card-hover focus-visible:z-[3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                            pendingRevision && 'ring-2 ring-destructive ring-offset-1',
+                                          )}
                                           style={{
-                                            left: Math.max(0, left) + GAP,
-                                            width: Math.max(HOUR_WIDTH * 0.5, width) - GAP * 2,
-                                            top: laneIdx * (ROW_LANE_H + GAP) + GAP,
+                                            left: Math.max(0, left) + LANE_GAP / 2,
+                                            width,
+                                            top: laneIdx * (ROW_LANE_H + LANE_GAP) + LANE_GAP,
                                             height: ROW_LANE_H,
                                             backgroundColor: bg,
-                                            borderColor: ev?.has_pending_shop_revision ? '#ff0000' : border,
-                                            borderWidth: ev?.has_pending_shop_revision ? 2 : 1,
+                                            borderColor: border,
                                           }}
                                           onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
+                                          aria-label={`FAB ${ev.fab_id}, ${ev.plan_name ?? ''}, ${timeRange(ev)}`}
                                         >
-                                          <div className="px-2 py-1 h-full flex flex-col justify-center overflow-hidden">
-                                            <p className="text-[12px] font-semibold truncate" style={{ color: text }}> {ev.fab_id} {ev.plan_name ? `• ${ev.plan_name}` : ''} {ev.operator_name ? `• ${ev.operator_name}` : ''}</p>
-                                            <p className="text-[10px] truncate" style={{ color: text, opacity: 0.7 }}>{ev.work_percentage ?? 0}%</p>
+                                          <div className="flex h-full flex-col justify-center gap-0.5 px-2.5 py-1.5" style={{ color: text }}>
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                              {pendingRevision && <AlertTriangle className="size-3 shrink-0 text-destructive" />}
+                                              <span className="truncate text-[12px] font-semibold">
+                                                <span className="tabular-nums">#{ev.fab_id}</span>
+                                                {ev.plan_name ? ` · ${ev.plan_name}` : ''}
+                                              </span>
+                                              <span className="ms-auto shrink-0 text-[10px] font-semibold tabular-nums opacity-70">
+                                                {ev.work_percentage ?? 0}%
+                                              </span>
+                                            </div>
+                                            <p className="truncate text-[11px] opacity-75">
+                                              {[ev.operator_name, timeRange(ev)].filter(Boolean).join(' · ')}
+                                            </p>
+                                            <div className="mt-0.5">
+                                              <ProgressBar value={ev.work_percentage} color={border} />
+                                            </div>
                                           </div>
-                                        </div>
+                                        </button>
                                       </TooltipTrigger>
-                                      <TooltipContent side="right" className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
-                                        <div className="space-y-1">
-                                          <p><span className="font-semibold">FAB ID:</span> {ev.fab_id}</p>
-                                          <p><span className="font-semibold">Operator:</span> {ev.operator_name || 'N/A'}</p>
-                                          <p><span className="font-semibold">Workstation:</span> {ev.workstation_name || 'N/A'}</p>
-                                          <p><span className="font-semibold">Est. Hours:</span> {ev.estimated_hours ?? 'N/A'}</p>
-                                          <p><span className="font-semibold">% Complete:</span> {ev.work_percentage ?? 0}%</p>
-                                          <p><span className="font-semibold">Job:</span> {`${ev.job_name}-${ev.job_number}` || 'N/A'}</p>
-                                          <p><span className="font-semibold">Job No:</span> {ev.job_number || 'N/A'}</p>
-                                          <p><span className="font-semibold">Account Name:</span> {ev.account_name || 'N/A'}</p>
-                                          <p><span className="font-semibold">Plan:</span> {ev.plan_name}</p>
-                                          {ev.notes && <p><span className="font-semibold">Notes:</span> {ev.notes}</p>}
-                                        </div>
+                                      <TooltipContent side="bottom" variant="light" className="p-3">
+                                        <EventDetails ev={ev} />
                                       </TooltipContent>
                                     </Tooltip>
                                   );
                                 })
+                              )}
+
+                              {today && showTimeIndicator && (
+                                <div className="pointer-events-none absolute inset-y-0 z-[4]" style={{ left: getHorizontalPosition(nowHour) }}>
+                                  <div className="relative h-full w-0.5 bg-destructive">
+                                    <span className="absolute -start-[3px] -top-1 size-2 rounded-full bg-destructive" />
+                                  </div>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -1056,12 +1461,18 @@ const ShopCalendarPage: React.FC = () => {
                     </div>
                   )}
                 </div>
-              </TooltipProvider>
-            </>
+              </div>
+            </TooltipProvider>
           )}
-        </div>
-      </div>
-    </div>
+        </Card>
+
+        <p className="mt-3 hidden text-xs text-muted-foreground lg:block">
+          Tip: <Kbd size="xs" className="bg-background font-sans">←</Kbd> <Kbd size="xs" className="bg-background font-sans">→</Kbd> move between periods,{' '}
+          <Kbd size="xs" className="bg-background font-sans">T</Kbd> jumps to today,{' '}
+          <Kbd size="xs" className="bg-background font-sans">D</Kbd> <Kbd size="xs" className="bg-background font-sans">W</Kbd> <Kbd size="xs" className="bg-background font-sans">M</Kbd> switch views. Click a day heading to open it.
+        </p>
+      </Container>
+    </>
   );
 };
 
