@@ -72,7 +72,7 @@ export function BrandedLayout() {
           </div>
 
           <div className="flex flex-1 items-center justify-center py-8">
-            <div className="w-full max-w-[400px] animate-fade-up [&_button[type=submit]]:h-11 [&_button[type=submit]]:text-[15px]">
+            <div className="w-full max-w-[400px] animate-fade-in [&_button[type=submit]]:h-11 [&_button[type=submit]]:text-[15px]">
               {isSignIn && (
                 <div className="mb-8 space-y-2">
                   <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.015em] text-foreground">

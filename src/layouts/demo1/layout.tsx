@@ -76,7 +76,7 @@ export function Demo1Layout() {
         <Header />
         <OfflineBanner />
 
-        <main className="grow pt-6 pb-10 animate-fade-up" role="main">
+        <main className="grow pt-6 pb-10 animate-fade-in" role="main">
           <Outlet />
         </main>
       </div>

@@ -216,6 +216,8 @@
   --animate-collapsible-up: collapsible-up 0.2s ease-out;
   --animate-caret-blink: caret-blink 1.25s ease-out infinite;
   --animate-fade-up: fade-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* Opacity-only: safe on layout containers (a transform would trap position:fixed descendants) */
+  --animate-fade-in: fade-in 0.3s ease-out;
   --animate-shimmer: shimmer 1.6s linear infinite;
 
   @keyframes fade-up {
@@ -227,6 +229,16 @@
     to {
       opacity: 1;
       transform: none;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
     }
   }
 

@@ -21,7 +21,7 @@ import {
 } from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { Documents } from '@/pages/shop/components/files';
-import { FileViewer } from './components/FileViewer';
+import { FileViewer } from '../drafters/components/FileViewer';
 import { SubmissionModal } from './components/SubmissionModal';
 import { useSelector } from 'react-redux';
 import { X, Plus } from 'lucide-react';
