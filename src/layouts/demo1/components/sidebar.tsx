@@ -35,7 +35,7 @@ export function Sidebar() {
         <button
           type="button"
           onClick={toggleCollapse}
-          className="group flex h-10 w-full items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+          className="group flex h-10 w-full items-center gap-3 rounded-lg px-3 text-[14px] font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
           title={collapsed ? 'Keep sidebar expanded' : 'Collapse sidebar'}
         >
           {collapsed ? (

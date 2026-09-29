@@ -1040,7 +1040,8 @@ const ShopCalendarPage: React.FC = () => {
             </div>
           ) : (
             <TooltipProvider>
-              <div className="relative">
+              {/* isolate: keep the sticky headers/overlays' z-indices from stacking above the app sidebar/header */}
+              <div className="relative isolate">
                 {isFetching && (
                   <div className="pointer-events-none absolute inset-0 z-40 bg-background/50 backdrop-blur-[1px]" aria-hidden />
                 )}
