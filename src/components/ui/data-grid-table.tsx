@@ -126,15 +126,42 @@ function DataGridTableHeadRowCell<TData>({
     size: props.tableLayout?.dense ? 'dense' : 'default',
   });
 
+  // Fixed layouts pin each column to its configured size, which can be narrower than a
+  // single header word (e.g. "REVISED?"). Widen the column just enough to fit it rather
+  // than splitting the word across lines.
+  const isFixed = props.tableLayout?.width === 'fixed';
+  const thRef = React.useRef<HTMLTableCellElement | null>(null);
+  const [fitWidth, setFitWidth] = React.useState(0);
+  const width = Math.max(header.getSize(), fitWidth);
+
+  const setThRef = React.useCallback(
+    (node: HTMLTableCellElement | null) => {
+      thRef.current = node;
+      if (typeof dndRef === 'function') dndRef(node);
+      else if (dndRef) (dndRef as React.MutableRefObject<HTMLTableCellElement | null>).current = node;
+    },
+    [dndRef],
+  );
+
+  React.useLayoutEffect(() => {
+    const th = thRef.current;
+    if (!isFixed || !th) return;
+    let deficit = 0;
+    th.querySelectorAll<HTMLElement>('[data-slot="column-header-title"]').forEach((el) => {
+      deficit = Math.max(deficit, el.scrollWidth - el.clientWidth);
+    });
+    if (deficit > 0) setFitWidth(Math.ceil(th.getBoundingClientRect().width + deficit));
+  });
+
   return (
     <th
       key={header.id}
-      ref={dndRef}
+      ref={setThRef}
       style={{
-        ...(props.tableLayout?.width === 'fixed' && {
-          width: `${header.getSize()}px`,
-          minWidth: `${header.getSize()}px`,
-          maxWidth: `${header.getSize()}px`,
+        ...(isFixed && {
+          width: `${width}px`,
+          minWidth: `${width}px`,
+          maxWidth: `${width}px`,
         }),
         ...(props.tableLayout?.columnsPinnable && column.getCanPin() && getPinningStyles(column)),
         ...(dndStyle ? dndStyle : null),
@@ -142,7 +169,7 @@ function DataGridTableHeadRowCell<TData>({
       data-pinned={isPinned || undefined}
       data-last-col={isLastLeftPinned ? 'left' : isFirstRightPinned ? 'right' : undefined}
       className={cn(
-        'relative min-h-6 text-left rtl:text-right align-middle text-xs font-medium tracking-[0.01em] text-muted-foreground [&:has([role=checkbox])]:pe-0 break-words whitespace-normal',
+        'relative min-h-6 text-left rtl:text-right align-middle text-xs font-medium tracking-[0.01em] text-muted-foreground [&:has([role=checkbox])]:pe-0 break-normal whitespace-normal',
         headerCellSpacing,
         props.tableLayout?.cellBorder && 'border-e',
         props.tableLayout?.columnsPinnable &&

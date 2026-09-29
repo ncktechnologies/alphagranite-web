@@ -100,7 +100,7 @@ function DataGridTableDndRows<TData>({
 
                     return (
                       <DataGridTableHeadRowCell header={header} key={index}>
-                        <div className="min-w-0 w-full break-words hyphens-auto word-wrap-break-word leading-snug"> {/* Added leading-snug for better line height */}
+                        <div className="min-w-0 w-full break-normal leading-snug">
                           {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                         </div>
                         {props.tableLayout?.columnsResizable && column.getCanResize() && (
