@@ -757,7 +757,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                 </div>
                             )}
                             {materialInfo.length > 0 && (
-                                <div className="flex-1 min-w-0 text-right">
+                                <div className="shrink-0 max-w-[45%] text-right">
                                     {materialInfo.map((info, idx) => <div key={idx} className="truncate text-gray-600">{info}</div>)}
                                 </div>
                             )}
