@@ -483,7 +483,7 @@ export function OperatorDashboard() {
                                 <button
                                     key={mode}
                                     onClick={() => setViewMode(mode)}
-                                    className={`px-[15px] py-[8px] rounded-[4px] font-['Proxima_Nova:Semibold',sans-serif] text-[16px] leading-[21px] font-semibold capitalize transition-all ${viewMode === mode
+                                    className={`px-[15px] py-[8px] rounded-[4px] font-proxima text-[16px] leading-[21px] font-semibold capitalize transition-all ${viewMode === mode
                                         ? 'bg-white text-black shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
                                         : 'text-[#78829d]'
                                         }`}
