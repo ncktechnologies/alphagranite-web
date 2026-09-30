@@ -619,7 +619,7 @@ export const JobTable = ({
                         <Button
                             variant="outline"
                             size="sm"
-                            className="h-6 px-2 text-[11px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
+                            className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
                             onClick={e => {
                                 e.stopPropagation();
                                 setDrafterColumnVisible(true);
@@ -652,7 +652,7 @@ export const JobTable = ({
                         <Button
                             variant="outline"
                             size="sm"
-                            className="h-6 px-2 text-[11px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
+                            className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
                             onClick={e => {
                                 e.stopPropagation();
                                 onReassignCNCClick(row.original);
@@ -684,7 +684,7 @@ export const JobTable = ({
                         <Button
                             variant="outline"
                             size="sm"
-                            className="h-6 px-2 text-[11px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
+                            className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
                             onClick={e => {
                                 e.stopPropagation();
                                 onReassignSlabSmithClick(row.original);
@@ -726,7 +726,7 @@ export const JobTable = ({
                         <Button
                             variant="outline"
                             size="sm"
-                            className="h-6 px-2 text-[11px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
+                            className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
                             onClick={e => {
                                 e.stopPropagation();
                                 onReassignRevisorClick(row.original);
