@@ -58,7 +58,7 @@ export const FabInfoCell: React.FC<FabInfoCellProps> = ({ data, className = "" }
                 </div>
             )}
             {materialInfo.length > 0 && (
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 text-right">
                     {materialInfo.map((info, idx) => (
                         <div key={idx} className="truncate text-gray-600" title={info}>
                             {info}
