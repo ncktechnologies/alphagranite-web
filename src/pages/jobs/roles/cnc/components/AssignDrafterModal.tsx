@@ -9,9 +9,10 @@ import { useGetRolesQuery } from '@/store/api/role';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useCreateCNCDraftingMutation, useUpdateCNCDraftingMutation, useGetCNCByFabIdQuery } from '@/store/api/job';
 import { toast } from 'sonner';
+import { toServerDate } from '@/lib/app-timezone';
 
 // Helper to get today's date in YYYY-MM-DD format
-const getTodayDate = () => new Date().toISOString().split('T')[0];
+const getTodayDate = () => toServerDate(new Date());
 
 interface AssignDrafterModalProps {
   open: boolean;

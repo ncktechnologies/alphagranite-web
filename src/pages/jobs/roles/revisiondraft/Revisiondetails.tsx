@@ -50,9 +50,10 @@ import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UniversalUploadModal } from '@/components/universal-upload';
 import { stageConfig } from '@/utils/note-utils';
+import { toServerDateTime } from '@/lib/app-timezone';
 
 // Helper functions
-const formatTimestamp = (date: Date) => date.toISOString().replace('Z', '');
+const formatTimestamp = (date: Date) => toServerDateTime(date);
 const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
 
 const getFabStatusInfo = (statusId: number | undefined) => {

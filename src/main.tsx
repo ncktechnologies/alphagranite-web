@@ -1,3 +1,4 @@
+import '@/lib/install-app-clock'; // must stay first: locks the app clock to America/Chicago
 import '@/components/keenicons/assets/styles.css';
 import './css/styles.css';
 import { StrictMode } from 'react'

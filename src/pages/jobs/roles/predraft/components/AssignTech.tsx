@@ -26,6 +26,8 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { useGetEmployeesQuery } from "@/store/api/employee"; // Import employees query
 import { useGetDepartmentsQuery } from "@/store/api/department"; // Import departments query
 import { useNavigate } from "react-router"; // Import navigate
+import { parseISO } from 'date-fns';
+import { toServerDate } from '@/lib/app-timezone';
 
 const assignDrafterSchema = z.object({
   drafter: z.string().optional(), // Make drafter optional
@@ -110,9 +112,9 @@ export function AssignTechnicianModal({
                   <FormControl>
                     <DateTimePicker
                       mode="date"
-                      value={field.value ? new Date(field.value) : undefined}
+                      value={field.value ? parseISO(field.value) : undefined}
                       onChange={(date) => {
-                        const formatted = date?.toISOString().split("T")[0] // "YYYY-MM-DD"
+                        const formatted = date ? toServerDate(date) : undefined // "YYYY-MM-DD"
                         field.onChange(formatted)
                       }}
                       placeholder="Schedule date"

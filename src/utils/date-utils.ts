@@ -1,5 +1,6 @@
 import { format, parseISO, isValid } from 'date-fns';
 import { enUS } from 'date-fns/locale';
+import { isZonedIsoString, toAppWallClock, toServerDate, toServerDateTime } from '@/lib/app-timezone';
 
 // Get user's timezone offset in minutes (native JS method)
 export const getTimezoneOffsetMinutes = (): number => {
@@ -17,7 +18,7 @@ export const getUserTimezone = (): string => {
 
 // Unified date formats for the entire application
 export const DATE_FORMATS = {
-  // Display formats - adjusted for timezone
+  // Display formats (America/Chicago wall-clock; see lib/app-timezone)
   DISPLAY_SHORT: 'MMM d, yyyy',           // Jan 15, 2024
   DISPLAY_MEDIUM: 'MMMM d, yyyy',         // January 15, 2024
   DISPLAY_LONG: 'PPP',                    // Full localized date
@@ -25,40 +26,31 @@ export const DATE_FORMATS = {
   DISPLAY_TIME_ONLY: 'h:mm a',            // 2:30 PM
   DISPLAY_US_FORMAT: 'MM/dd/yyyy',        // 10/12/2026
   
-  // Input/API formats - UTC based
+  // Input/API formats - America/Chicago wall-clock
   ISO_DATE: 'yyyy-MM-dd',                 // 2024-01-15
   ISO_DATETIME: "yyyy-MM-dd'T'HH:mm:ss",  // 2024-01-15T14:30:00
   
-  // Backend formats - UTC
+  // Backend formats - naive America/Chicago wall-clock
   BACKEND_DATE: 'yyyy-MM-dd',
-  BACKEND_DATETIME: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+  BACKEND_DATETIME: "yyyy-MM-dd'T'HH:mm:ss",
 } as const;
 
-// Format date for display with timezone awareness
+// Format date for display (Dates already hold America/Chicago wall-clock time)
 export const formatForDisplay = (date: Date | string | null | undefined, formatType: keyof typeof DATE_FORMATS = 'DISPLAY_MEDIUM'): string => {
   if (!date) return '';
   
   try {
-    const dateObj = typeof date === 'string' ? parseISO(date) : date;
+    const dateObj = typeof date === 'string' ? parseISO(isZonedIsoString(date) ? toAppWallClock(date) : date) : date;
     if (!isValid(dateObj)) return '';
     
-    // Apply timezone offset correction for consistent display
-    const offsetMinutes = getTimezoneOffsetMinutes();
-    const correctedDate = new Date(dateObj.getTime() - (offsetMinutes * 60 * 1000));
-    
-    // For US format, don't apply timezone correction as it might affect the date
-    if (formatType === 'DISPLAY_US_FORMAT') {
-      return format(dateObj, DATE_FORMATS[formatType], { locale: enUS });
-    }
-    
-    return format(correctedDate, DATE_FORMATS[formatType], { locale: enUS });
+    return format(dateObj, DATE_FORMATS[formatType], { locale: enUS });
   } catch (error) {
     console.warn('Invalid date format for display:', date, error);
     return '';
   }
 };
 
-// Format date for backend (convert to UTC-like representation)
+// Format date for backend as an America/Chicago calendar date
 export const formatForBackend = (date: Date | string | null | undefined): string => {
   if (!date) return '';
   
@@ -66,15 +58,14 @@ export const formatForBackend = (date: Date | string | null | undefined): string
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     if (!isValid(dateObj)) return '';
     
-    // For backend storage, use the date as-is (assuming it's already in proper timezone)
-    return format(dateObj, DATE_FORMATS.BACKEND_DATE);
+    return toServerDate(dateObj);
   } catch (error) {
     console.warn('Invalid date for backend:', date, error);
     return '';
   }
 };
 
-// Format datetime for backend with timezone consideration
+// Format datetime for backend as naive America/Chicago wall-clock
 export const formatDateTimeForBackend = (date: Date | string | null | undefined): string => {
   if (!date) return '';
   
@@ -82,7 +73,7 @@ export const formatDateTimeForBackend = (date: Date | string | null | undefined)
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     if (!isValid(dateObj)) return '';
     
-    return format(dateObj, DATE_FORMATS.BACKEND_DATETIME);
+    return toServerDateTime(dateObj);
   } catch (error) {
     console.warn('Invalid datetime for backend:', date, error);
     return '';
@@ -94,9 +85,9 @@ export const formatDateTimeForBackend = (date: Date | string | null | undefined)
  * Parse a timestamp from the API into a valid Date, or `undefined`.
  *
  * Accepts every shape the backend has sent for session times:
- *   "2026-09-27T14:03:22.123456"        (naive — treated as UTC, the historical format)
- *   "2026-09-27T14:03:22.123456Z"       (explicit UTC)
- *   "2026-09-27T14:03:22.123456+00:00"  (explicit offset)
+ *   "2026-09-27T14:03:22.123456"        (naive — America/Chicago wall-clock)
+ *   "2026-09-27T14:03:22.123456-05:00"  (explicit offset; converted to Chicago wall-clock)
+ *   "2026-09-27T14:03:22.123456Z"       (explicit UTC; converted to Chicago wall-clock)
  *   "2026-09-27 14:03:22"               (space separator)
  * plus epoch numbers and Date objects. Fractional seconds are trimmed to
  * milliseconds because some browsers (Safari) reject longer fractions.
@@ -125,9 +116,8 @@ export const parseServerDateTime = (value: string | number | Date | null | undef
   // Trim fractional seconds to 3 digits
   str = str.replace(/(\.\d{3})\d+/, '$1');
 
-  const hasTime = /T\d{2}:\d{2}/.test(str);
-  const hasZone = /(Z|[+-]\d{2}:?\d{2})$/i.test(str);
-  if (hasTime && !hasZone) str += 'Z'; // naive timestamps from the API are UTC
+  // Zoned values become Chicago wall-clock; naive values already are (parsed as local).
+  if (isZonedIsoString(str)) str = toAppWallClock(str);
 
   const d = new Date(str);
   return isNaN(d.getTime()) ? undefined : d;

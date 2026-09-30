@@ -3,6 +3,7 @@ import axios from 'axios';
 import type { AxiosRequestConfig, AxiosError } from 'axios';
 import { toast } from 'sonner';
 import qs from 'qs';
+import { fromServerPayload, toServerPayload } from '@/lib/app-timezone';
 
 declare module 'qs';
 
@@ -61,11 +62,16 @@ instance.interceptors.request.use((config) => {
   if (config.data instanceof FormData) {
     delete config.headers['Content-Type'];
   }
+  // Send dates as America/Chicago wall-clock (see lib/app-timezone)
+  if (config.data !== undefined) config.data = toServerPayload(config.data);
+  if (config.params !== undefined) config.params = toServerPayload(config.params);
   return config;
 });
 
 instance.interceptors.response.use(
   (response) => {
+    // Show server timestamps as America/Chicago wall-clock (see lib/app-timezone)
+    response.data = fromServerPayload(response.data);
     return response;
   },
   async (err) => {

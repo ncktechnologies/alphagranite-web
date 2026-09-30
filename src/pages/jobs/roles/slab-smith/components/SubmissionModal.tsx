@@ -11,6 +11,7 @@ import { useForm } from 'react-hook-form';
 import { useUpdateSlabSmithMutation, useAddFilesToSlabSmithMutation, useCreateSlabSmithMutation, useCreateFabNoteMutation, useMarkSlabSmithCompletedMutation } from "@/store/api/job";
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
+import { toServerDateTime } from '@/lib/app-timezone';
 
 const submissionSchema = z.object({
   draftNotes: z.string().optional(),
@@ -70,8 +71,8 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
           fab_id: fabId,
           slab_smith_type: 'standard',
           drafter_id: fabData.drafter_id,
-          start_date: fabData?.templating_schedule_start_date || new Date().toISOString().substring(0, 19),
-          end_date: new Date().toISOString().substring(0, 19),
+          start_date: fabData?.templating_schedule_start_date || toServerDateTime(new Date()),
+          end_date: toServerDateTime(new Date()),
           total_sqft_completed: String(fabData?.total_sqft || values.totalSqFt || "0")
         }).unwrap();
 
@@ -147,8 +148,8 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
 
       // Update slab smith with other data
       const payload: any = {
-        start_date: draftStart ? draftStart.toISOString().substring(0, 19) : null,
-        end_date: draftEnd ? draftEnd.toISOString().substring(0, 19) : null,
+        start_date: draftStart ? toServerDateTime(draftStart) : null,
+        end_date: draftEnd ? toServerDateTime(draftEnd) : null,
         total_hours_completed: calculateTotalHours(draftStart || null, draftEnd || null), // Fix type issue
         notes: values.draftNotes || null,
         mentions: values.mentions || null,

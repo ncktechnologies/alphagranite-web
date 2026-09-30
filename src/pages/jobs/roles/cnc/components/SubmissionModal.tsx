@@ -15,11 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useGetEmployeeSalesPersonsQuery } from '@/store/api/employee';
 import { Can } from '@/components/permission';
 import { useNavigate } from 'react-router';
+import { toServerDateTime } from '@/lib/app-timezone';
 
-// Helper function to format timestamp without 'Z'
-const formatTimestamp = (date: Date) => {
-  return date.toISOString().slice(0, -1);
-};
+// Timestamps are sent as naive America/Chicago wall-clock
+const formatTimestamp = (date: Date) => toServerDateTime(date);
 
 const submissionSchema = z.object({
   totalSqFt: z

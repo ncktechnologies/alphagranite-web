@@ -38,6 +38,7 @@ import { UniversalUploadModal } from '@/components/universal-upload';
 import { FileViewer } from '../drafters/components';
 import { stageConfig } from '@/utils/note-utils';
 import { SlabSmithSessionHistory } from './components/SessionHistory';
+import { toServerDateTime } from '@/lib/app-timezone';
 
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return '0 Bytes';
@@ -166,7 +167,7 @@ export function SlabSmithDetailsPage() {
             fab_id: fabId,
             slab_smith_type: 'standard',
             drafter_id: currentEmployeeId,
-            start_date: startDate.toISOString().substring(0, 19),
+            start_date: toServerDateTime(startDate),
             total_sqft_completed: String(fabData?.total_sqft || '0'),
           }).unwrap();
           currentSlabSmithId = createResponse.id;
