@@ -335,25 +335,28 @@ export const CutListTableWithCalculations = ({
                     </div>
                 ),
                 enableSorting: false,
-                size: 120,
+                size: 56,
                 meta: { format: () => '' }, // skip export
             },
             {
                 id: 'fab_type', accessorKey: 'fab_type',
                 header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
                 cell: ({ row }) => <span className="text-sm uppercase">{row.original.fab_type}</span>,
+                size: 120,
                 meta: { format: (value: string) => value?.toUpperCase() || '' },
             },
             {
                 id: 'fab_id', accessorKey: 'fab_id',
                 header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.fab_id}</span>,
+                size: 80,
                 meta: { format: (value: string) => value || '' },
             },
             {
                 id: 'job_name', accessorKey: 'job_name',
                 header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
-                cell: ({ row }) => <span className="text-sm truncate block max-w-[200px]">{row.original.job_name}</span>,
+                cell: ({ row }) => <span className="text-sm truncate block max-w-[180px]" title={row.original.job_name}>{row.original.job_name}</span>,
+                size: 200,
                 meta: { format: (value: string) => value || '' },
             },
             {
@@ -364,6 +367,7 @@ export const CutListTableWithCalculations = ({
                         {row.original.job_no}
                     </Link>
                 ) : <span className="text-sm">{row.original.job_no}</span>,
+                size: 90,
                 meta: { format: (value: string) => value || '' },
             },
             {
@@ -382,14 +386,14 @@ export const CutListTableWithCalculations = ({
                                 </div>
                             )}
                             {materialInfo.length > 0 && (
-                                <div className="flex-1 min-w-0">
+                                <div className="shrink-0 max-w-[45%] text-right">
                                     <div className="truncate text-gray-600" title={materialInfo.join(' - ')}>{materialInfo.join(' - ')}</div>
                                 </div>
                             )}
                         </div>
                     );
                 },
-                size: 300,
+                size: 360,
                 meta: {
                     format: (value: any, row: CalculatedCutListData) => {
                         const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row);
@@ -407,30 +411,35 @@ export const CutListTableWithCalculations = ({
                             : 'Not Completed'}
                     </span>
                 ),
+                size: 130,
                 meta: { format: (value: any, row: CalculatedCutListData) => formatDateForExport(row.final_programming_completed_date) },
             },
             {
                 id: 'shop_ready', accessorKey: 'shop_ready',
                 header: ({ column }) => <DataGridColumnHeader title="SHOP READY" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.shop_ready === 'Yes' ? 'Yes' : '-'}</span>,
+                size: 120,
                 meta: { format: (value: string) => value === 'Yes' ? 'Yes' : '-' },
             },
             {
                 id: 'no_of_pcs', accessorKey: 'no_of_pcs',
                 header: ({ column }) => <DataGridColumnHeader title="NO OF PCS" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.no_of_pcs.toLocaleString()}</span>,
+                size: 110,
                 meta: { format: (value: number) => formatNumber(value, 0) },
             },
             {
                 id: 'total_sq_ft', accessorKey: 'total_sq_ft',
                 header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.total_sq_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                size: 120,
                 meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
                 id: 'wl_ln_ft', accessorKey: 'wl_ln_ft',
                 header: ({ column }) => <DataGridColumnHeader title="CUT WJ:LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.wl_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                size: 120,
                 meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
@@ -438,24 +447,28 @@ export const CutListTableWithCalculations = ({
                 header: ({ column }) => <DataGridColumnHeader title="WJ MITER:LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.wj_miter_lnft?.toFixed(2) ?? '0.00'}</span>,
                 enableSorting: true,
+                size: 125,
                 meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
                 id: 'edging_ln_ft', accessorKey: 'edging_ln_ft',
                 header: ({ column }) => <DataGridColumnHeader title="EDGING: LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.edging_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                size: 120,
                 meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
                 id: 'cnc_ln_ft', accessorKey: 'cnc_ln_ft',
                 header: ({ column }) => <DataGridColumnHeader title="CNC: LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.cnc_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                size: 110,
                 meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
                 id: 'milter_ln_ft', accessorKey: 'milter_ln_ft',
                 header: ({ column }) => <DataGridColumnHeader title="MITER:LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.milter_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                size: 115,
                 meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
@@ -463,6 +476,7 @@ export const CutListTableWithCalculations = ({
                 header: ({ column }) => <DataGridColumnHeader title="CUT SAW:LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.saw_cut_lnft?.toFixed(2) ?? '0.00'}</span>,
                 enableSorting: true,
+                size: 125,
                 meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
@@ -470,30 +484,35 @@ export const CutListTableWithCalculations = ({
                 header: ({ column }) => <DataGridColumnHeader title="SAW MITER:LIN FT" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">{row.original.saw_miter_lnft?.toFixed(2) ?? '0.00'}</span>,
                 enableSorting: true,
+                size: 130,
                 meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
                 id: 'cost_of_stone', accessorKey: 'cost_of_stone',
                 header: ({ column }) => <DataGridColumnHeader title="COST OF STONE" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">${row.original.cost_of_stone.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                size: 120,
                 meta: { format: (value: number) => formatCurrency(value) },
             },
             {
                 id: 'revenue', accessorKey: 'revenue',
                 header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
                 cell: ({ row }) => <span className="text-sm block">${row.original.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                size: 110,
                 meta: { format: (value: number) => formatCurrency(value) },
             },
             {
                 id: 'cip', accessorKey: 'cip',
                 header: ({ column }) => <DataGridColumnHeader title="GP" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.cip}</span>,
+                size: 80,
                 meta: { format: (value: string) => value || '' },
             },
             {
                 id: 'sales_person', accessorKey: 'sales_person',
                 header: ({ column }) => <DataGridColumnHeader title="SALES PERSON" column={column} />,
                 cell: ({ row }) => <span className="text-sm">{row.original.sales_person || 'N/A'}</span>,
+                size: 140,
                 meta: { format: (value: string) => value || 'N/A' },
             },
             {

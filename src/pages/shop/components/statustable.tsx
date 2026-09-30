@@ -622,7 +622,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'estimated_completion_date',
             accessorFn: (r) => r.type === 'fab' ? r.data.shop_est_completion_date : null,
-            header: ({ column }) => <DataGridColumnHeader title="EST. COMPLETION DATE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="EST. COMPLETION DATE" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'plan') {
                     return <span className="text-xs text-gray-500 pl-4 font-semibold">{row.original.plan.plan_name} · {row.original.plan.workstation_name} · {row.original.plan.operator_name}</span>;
@@ -643,7 +643,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'cut_date_scheduled',
             accessorFn: (r) => r.type === 'fab' ? r.data.cut_date_scheduled : null,
-            header: ({ column }) => <DataGridColumnHeader title="CUT DATE SCHEDULED" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="CUT DATE SCHEDULED" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const date = row.original.data.shop_date_schedule;
@@ -672,7 +672,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'install_date',
             accessorFn: (r) => r.type === 'fab' ? r.data.install_date : null,
-            header: ({ column }) => <DataGridColumnHeader title="INSTALL DATE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="INSTALL DATE" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const date = row.original.data.install_date;
@@ -694,7 +694,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'fab_id',
             accessorFn: (r) => r.type === 'fab' ? r.data.fab_id : null,
-            header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     return (
@@ -717,7 +717,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'job_no',
             accessorFn: (r) => r.type === 'fab' ? r.data.job_no : null,
-            header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     return row.original.data.job_id ? (
@@ -741,7 +741,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'fab_info',
-            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const f = row.original.data;
@@ -794,7 +794,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'total_sq_ft',
             accessorFn: (r) => r.type === 'fab' ? r.data.total_sq_ft : null,
-            header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d]">{row.original.data.total_sq_ft.toFixed(2)}</span>;
                 return null;
@@ -810,7 +810,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'cut',
-            header: ({ column }) => <DataGridColumnHeader title="CUT SAW" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="CUT SAW" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.cut_progress;
@@ -837,7 +837,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'wj',
-            header: ({ column }) => <DataGridColumnHeader title="CUT WJ" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="CUT WJ" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.wj_progress;
@@ -864,7 +864,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'edging',
-            header: ({ column }) => <DataGridColumnHeader title="EDGING" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="EDGING" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.edging_progress;
@@ -891,7 +891,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'miter',
-            header: ({ column }) => <DataGridColumnHeader title="MITER" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="MITER" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.miter_progress;
@@ -918,7 +918,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'cnc',
-            header: ({ column }) => <DataGridColumnHeader title="CNC" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="CNC" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.cnc_progress;
@@ -945,7 +945,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'handwork',
-            header: ({ column }) => <DataGridColumnHeader title="HANDWORK" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="HANDWORK" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.touchup_progress;
@@ -973,7 +973,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'percent_complete',
             accessorFn: (r) => r.type === 'fab' ? r.data.percent_complete : null,
-            header: ({ column }) => <DataGridColumnHeader title="% COMPLETE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="% COMPLETE" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d]">{row.original.data.percent_complete.toFixed(2)}%</span>;
                 if (row.original.type === 'plan') return <span className="text-xs text-gray-500">{row.original.stage_percent.toFixed(1)}%</span>;
@@ -992,7 +992,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'fab_type',
             accessorFn: (r) => r.type === 'fab' ? r.data.fab_type : null,
-            header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d] whitespace-nowrap">{row.original.data.fab_type}</span>;
                 return null;
@@ -1009,7 +1009,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'pieces',
             accessorFn: (r) => r.type === 'fab' ? r.data.pieces : null,
-            header: ({ column }) => <DataGridColumnHeader title="NO. OF PIECES" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="NO. OF PIECES" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d]">{row.original.data.pieces}</span>;
                 return null;
@@ -1246,7 +1246,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                     {!monthCollapsed && renderTotalsRow(
                                                         `${monthGroup.monthDisplay} `,
                                                         monthGroup.totals,
-                                                        'bg-[#f0f7e0] text-[11px] font-medium',
+                                                        'bg-[#f0f7e0] text-[12px] font-medium',
                                                     )}
 
                                                     {!monthCollapsed && monthGroup.days.map(dayGroup => {
@@ -1258,7 +1258,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                                 {!dayCollapsed && renderTotalsRow(
                                                                     `${dayGroup.dayDisplay} `,
                                                                     dayGroup.totals,
-                                                                    'bg-[#f9f9f9] text-[10px]',
+                                                                    'bg-[#f9f9f9] text-[11px]',
                                                                 )}
 
                                                                 {/* ── FAB rows for this day ── */}

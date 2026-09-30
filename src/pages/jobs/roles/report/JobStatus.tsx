@@ -81,7 +81,7 @@ export interface JobStatusRow {
 const StageCell: React.FC<{ needed: boolean; date: string | null | undefined }> = ({ needed, date }) => {
     if (!needed) {
         return (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-400 whitespace-nowrap">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-400 whitespace-nowrap">
                 Not Needed
             </span>
         );
@@ -94,7 +94,7 @@ const StageCell: React.FC<{ needed: boolean; date: string | null | undefined }> 
 
 const YesNoBadge: React.FC<{ value: boolean }> = ({ value }) => (
     <span className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold',
+        'inline-flex items-center px-2 py-0.5 rounded text-[12px] font-semibold',
         value ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
     )}>
         {value ? 'Yes' : 'No'}
