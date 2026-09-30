@@ -185,7 +185,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="border-b">
-            <DialogTitle className="text-[15px] font-semibold py-2">Submit Slab Smith Work</DialogTitle>
+            <DialogTitle className="text-[17px] font-semibold py-2">Submit Slab Smith Work</DialogTitle>
             <span className="ml-3 text-sm font-normal text-gray-500">
               FAB ID: {fabId}
             </span>

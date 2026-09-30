@@ -798,8 +798,8 @@ const EditFabIdForm = () => {
                                 <CardToolbar>
                                     {existingFab?.id && (
                                         <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 ">
-                                            <span className="text-[13px] text-[#4a4d59]">FAB ID</span>
-                                            <span className="text-[20px] text-[#7a9705] font-semibold">#{existingFab.id}</span>
+                                            <span className="text-[15px] text-[#4a4d59]">FAB ID</span>
+                                            <span className="text-[22px] text-[#7a9705] font-semibold">#{existingFab.id}</span>
                                         </div>
                                     )}
                                 </CardToolbar>

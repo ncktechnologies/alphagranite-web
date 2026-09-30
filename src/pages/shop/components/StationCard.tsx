@@ -50,7 +50,7 @@ export const StationCard = ({ role, isSelected, onClick }: StationCardProps) => 
       <CardContent className="p-4">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className={` ${isSelected  ? 'text-lg font-normal ' : 'font-bold text-[16px]'} text-black   `}>{role.workstationName}</h3>
+            <h3 className={` ${isSelected  ? 'text-lg font-normal ' : 'font-bold text-[18px]'} text-black   `}>{role.workstationName}</h3>
             <div className="flex items-center gap-2">
               <Badge 
               //   variant={role.status === 'Active' ? 'default' : 'secondary'}

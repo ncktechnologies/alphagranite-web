@@ -98,7 +98,7 @@ function StagePill({ label, color }: { label: string; color?: string }) {
     const hue = color?.match(/^text-([a-z]+)-\d{2,3}$/)?.[1]
     if (hue && STAGE_PILLS[hue]) {
         return (
-            <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset', STAGE_PILLS[hue])}>
+            <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[13px] font-semibold ring-1 ring-inset', STAGE_PILLS[hue])}>
                 {label}
             </span>
         )
@@ -107,7 +107,7 @@ function StagePill({ label, color }: { label: string; color?: string }) {
     const c = color && !color.startsWith('text-') ? color : '#C026D3'
     return (
         <span
-            className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset"
+            className="inline-flex items-center rounded-full px-2 py-0.5 text-[13px] font-semibold ring-1 ring-inset"
             style={{
                 color: c,
                 backgroundColor: `color-mix(in oklab, ${c} 10%, white)`,
@@ -158,9 +158,9 @@ function SectionHeader({ icon: Icon, title, count }: { icon: LucideIcon; title?:
     return (
         <div className="mb-3 flex items-center gap-2">
             <Icon className="size-4 text-muted-foreground" strokeWidth={1.9} />
-            <h3 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-text">{title}</h3>
+            <h3 className="text-[15px] font-semibold uppercase tracking-[0.06em] text-text">{title}</h3>
             {count !== undefined && count > 0 && (
-                <span className="ms-auto rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground tabular-nums">
+                <span className="ms-auto rounded-full bg-muted px-2 py-0.5 text-[13px] font-semibold text-muted-foreground tabular-nums">
                     {count}
                 </span>
             )}
@@ -204,9 +204,9 @@ function NoteItem({ note, isLast }: { note: Note; isLast: boolean }) {
             <div className="min-w-0 flex-1 pb-1">
                 {(hasAuthor || note.timestamp) && (
                     <div className="flex min-h-7 items-center justify-between gap-2">
-                        <span className="truncate text-[13px] font-semibold text-foreground">{hasAuthor ? note.author : 'Note'}</span>
+                        <span className="truncate text-[15px] font-semibold text-foreground">{hasAuthor ? note.author : 'Note'}</span>
                         {note.timestamp && (
-                            <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">{note.timestamp}</span>
+                            <span className="shrink-0 text-[13px] text-muted-foreground tabular-nums">{note.timestamp}</span>
                         )}
                     </div>
                 )}
@@ -219,7 +219,7 @@ function NoteItem({ note, isLast }: { note: Note; isLast: boolean }) {
                     )}
                     <p
                         className={cn(
-                            'text-[13px] leading-5 text-text break-words [&_a]:text-primary [&_a]:underline',
+                            'text-[15px] leading-5 text-text break-words [&_a]:text-primary [&_a]:underline',
                             long && !expanded && 'line-clamp-4',
                         )}
                         dangerouslySetInnerHTML={{ __html: note.content }}
@@ -312,7 +312,7 @@ export default function GraySidebar({ sections, className = '', jobId }: GraySid
                                                             {Icon ? <Icon className="size-3.5" strokeWidth={1.9} /> : <span className="size-1 rounded-full bg-current" />}
                                                         </span>
                                                         <div className="min-w-0 flex-1">
-                                                            <dt className="truncate text-[11px] font-medium uppercase tracking-[0.05em] text-muted-foreground" title={item.label}>
+                                                            <dt className="truncate text-[13px] font-medium uppercase tracking-[0.05em] text-muted-foreground" title={item.label}>
                                                                 {item.label}
                                                             </dt>
                                                             <dd

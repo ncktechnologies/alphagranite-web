@@ -100,10 +100,10 @@ export function Header() {
               >
                 <SheetHeader className="p-0 space-y-0">
                   <SheetTitle className="sr-only">Navigation</SheetTitle>
-                  <div className="flex h-16 items-center border-b border-white/10 px-5">
+                  <div className="flex h-16 items-center bg-white px-5">
                     <img
-                      src={toAbsoluteUrl('/images/logo/ody/white-odyssey-logo.png')}
-                      className="h-[56px] w-auto -ms-2"
+                      src={toAbsoluteUrl('/images/logo/ody-logo.png')}
+                      className="h-[73px] w-auto -ms-2"
                       alt="The Odyssey Tracker"
                     />
                   </div>

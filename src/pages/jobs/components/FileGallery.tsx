@@ -261,7 +261,7 @@ function FileCard({
           {/* Name + meta */}
           <div className="flex-1 min-w-0 w-full">
             <p
-              className="text-[14px] text-black font-bold truncate cursor-pointer hover:text-primary"
+              className="text-[16px] text-black font-bold truncate cursor-pointer hover:text-primary"
               title={file.name}
               onClick={() => onView?.(file)}
             >
@@ -391,12 +391,12 @@ function FileRow({
       <td className="py-3 px-4">
         <div className="flex flex-col gap-1">
           {fileType && (
-            <span className="text-[11px] font-medium text-gray-700 bg-gray-100 px-2 py-0.5 rounded w-fit uppercase">
+            <span className="text-[13px] font-medium text-gray-700 bg-gray-100 px-2 py-0.5 rounded w-fit uppercase">
               {fileType}
             </span>
           )}
           {fileDesign && (
-            <span className="text-[11px] text-gray-500 bg-blue-50 px-2 py-0.5 rounded w-fit">
+            <span className="text-[13px] text-gray-500 bg-blue-50 px-2 py-0.5 rounded w-fit">
               {fileDesign.replace(/_/g, ' ')}
             </span>
           )}
@@ -418,7 +418,7 @@ function FileRow({
             <span className="text-xs text-gray-700">
               {new Date(file.uploadedAt).toLocaleDateString()}
             </span>
-            <span className="text-[11px] text-gray-400">
+            <span className="text-[13px] text-gray-400">
               {new Date(file.uploadedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>

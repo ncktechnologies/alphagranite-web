@@ -111,7 +111,7 @@ function ToolbarHeading({ title = '', description }: ToolbarHeadingProps) {
 
   return (
     <div className="flex flex-col justify-center gap-1.5 min-w-0">
-      <h1 className="text-2xl lg:text-[28px] font-semibold leading-tight tracking-[-0.015em] text-foreground">
+      <h1 className="text-2xl lg:text-[30px] font-semibold leading-tight tracking-[-0.015em] text-foreground">
         {resolvedTitle}
       </h1>
       {description && (

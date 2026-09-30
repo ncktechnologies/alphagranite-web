@@ -111,7 +111,7 @@ export function CommandPalette() {
       onOpenChange={setOpen}
       className="sm:max-w-[640px] top-[12vh] translate-y-0"
     >
-      <CommandInput placeholder="Search pages, actions and settings…" className="h-12 text-[15px]" />
+      <CommandInput placeholder="Search pages, actions and settings…" className="h-12 text-[17px]" />
       <CommandList className="max-h-[min(60vh,440px)] py-1">
         <CommandEmpty>
           <div className="flex flex-col items-center gap-1 py-4">
@@ -164,7 +164,7 @@ export function CommandPalette() {
                 <span className="truncate text-xs text-muted-foreground">in {entry.parent}</span>
               )}
               {entry.path === pathname && (
-                <span className="ms-auto rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary-accent">
+                <span className="ms-auto rounded-full bg-primary-soft px-2 py-0.5 text-[13px] font-medium text-primary-accent">
                   Current
                 </span>
               )}

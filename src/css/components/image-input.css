@@ -11,7 +11,7 @@
     @apply bg-background border-border absolute end-0.25 top-0.25 z-[1] flex size-5 cursor-pointer items-center justify-center rounded-full border shadow-sm;
 
     i {
-      @apply text-muted-foreground text-[11px];
+      @apply text-muted-foreground text-[13px];
     }
 
     svg {

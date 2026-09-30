@@ -31,7 +31,7 @@ export function KpiTile({ icon, iconBg, label, value, footer, className, interac
         </span>
       </div>
       <div className="mt-auto flex flex-col gap-2">
-        <span className="text-[30px] leading-none font-semibold tracking-tight text-foreground tabular-nums">
+        <span className="text-[32px] leading-none font-semibold tracking-tight text-foreground tabular-nums">
           {value}
         </span>
         {footer && <div className="text-xs text-muted-foreground">{footer}</div>}

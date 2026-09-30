@@ -72,7 +72,7 @@ export const StopModal = ({ open, onClose, jobId, jobNumber, templaterId, onStop
       <DialogContent className="max-w-md">
         <DialogHeader>
           <div className="border-b">
-            <DialogTitle className="text-[15px] font-semibold py-2">
+            <DialogTitle className="text-[17px] font-semibold py-2">
               Submit Job
               <span className="ml-3 text-sm font-normal text-gray-500">
                 Job No: {jobNumber || jobId}

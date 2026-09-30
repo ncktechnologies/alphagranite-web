@@ -16,7 +16,7 @@ const githubButtonVariants = cva(
         outline: 'bg-background text-accent-foreground border border-input hover:bg-accent',
       },
       size: {
-        default: 'h-8.5 rounded-md px-3 gap-2 text-[0.8125rem] leading-none [&_svg]:size-4 gap-2',
+        default: 'h-8.5 rounded-md px-3 gap-2 text-[0.9375rem] leading-none [&_svg]:size-4 gap-2',
         sm: 'h-7 rounded-md px-2.5 gap-1.5 text-xs leading-none [&_svg]:size-3.5 gap-1.5',
         lg: 'h-10 rounded-md px-4 gap-2.5 text-sm leading-none [&_svg]:size-5 gap-2.5',
       },

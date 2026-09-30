@@ -258,7 +258,7 @@ function ReportRenderer({ useQueryHook, title, groupBy, reportId }: { useQueryHo
                 id: key,
                 accessorKey: key,
                 size: key === 'fab_info' ? 450 : 180,
-                header: ({ column }) => <DataGridColumnHeader title={formatLabel(key).toUpperCase()} column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+                header: ({ column }) => <DataGridColumnHeader title={formatLabel(key).toUpperCase()} column={column} className="text-[#7c8689] text-[17px] font-normal" />,
                 cell: ({ row, getValue }) => {
                     let val = getValue();
                     const isTotalRow = row.original?._isTotalRow;

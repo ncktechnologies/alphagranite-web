@@ -62,10 +62,10 @@ const STATE_STYLES: Record<TimerState, { pill: string; dot: string; chip: string
 function TimeUnit({ value, label }: { value: string; label: string }) {
     return (
         <div className="flex flex-col items-center gap-2">
-            <span className="text-[52px] sm:text-[76px] leading-none font-semibold tracking-[-0.03em] text-foreground tabular-nums">
+            <span className="text-[54px] sm:text-[78px] leading-none font-semibold tracking-[-0.03em] text-foreground tabular-nums">
                 {value}
             </span>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</span>
+            <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</span>
         </div>
     );
 }
@@ -226,13 +226,13 @@ export function OperatorTimerComponent({
                         {time.days > 0 && (
                             <>
                                 <TimeUnit value={String(time.days)} label={time.days === 1 ? t('TIMER.DAY') : t('TIMER.DAYS')} />
-                                <span className="text-[52px] sm:text-[76px] leading-none font-light text-foreground/25">·</span>
+                                <span className="text-[54px] sm:text-[78px] leading-none font-light text-foreground/25">·</span>
                             </>
                         )}
                         <TimeUnit value={String(time.hours).padStart(2, '0')} label={t('TIMER.HRS')} />
                         <span
                             className={cn(
-                                'text-[52px] sm:text-[76px] leading-none font-light text-foreground/30 transition-opacity duration-300',
+                                'text-[54px] sm:text-[78px] leading-none font-light text-foreground/30 transition-opacity duration-300',
                                 ticking && time.seconds % 2 === 1 && 'opacity-30',
                             )}
                             aria-hidden
@@ -242,7 +242,7 @@ export function OperatorTimerComponent({
                         <TimeUnit value={String(time.minutes).padStart(2, '0')} label={t('TIMER.MIN')} />
                         <span
                             className={cn(
-                                'text-[52px] sm:text-[76px] leading-none font-light text-foreground/30 transition-opacity duration-300',
+                                'text-[54px] sm:text-[78px] leading-none font-light text-foreground/30 transition-opacity duration-300',
                                 ticking && time.seconds % 2 === 1 && 'opacity-30',
                             )}
                             aria-hidden
@@ -304,7 +304,7 @@ export function OperatorTimerComponent({
                                     size="lg"
                                     onClick={onStart}
                                     disabled={disabled}
-                                    className="h-12 w-full sm:w-auto sm:min-w-44 rounded-xl text-[15px]"
+                                    className="h-12 w-full sm:w-auto sm:min-w-44 rounded-xl text-[17px]"
                                 >
                                     <Play className="size-5! fill-current" />
                                     {t('TIMER.START_BUTTON')}
@@ -318,7 +318,7 @@ export function OperatorTimerComponent({
                                     size="lg"
                                     onClick={onPause}
                                     disabled={disabled}
-                                    className="h-12 w-full sm:w-auto sm:min-w-44 rounded-xl border-amber-300 bg-amber-50 text-[15px] text-amber-900 hover:bg-amber-100 hover:border-amber-400"
+                                    className="h-12 w-full sm:w-auto sm:min-w-44 rounded-xl border-amber-300 bg-amber-50 text-[17px] text-amber-900 hover:bg-amber-100 hover:border-amber-400"
                                 >
                                     <Pause className="size-5! fill-current text-amber-700" />
                                     {t('TIMER.PAUSE_BUTTON')}
@@ -331,7 +331,7 @@ export function OperatorTimerComponent({
                                     size="lg"
                                     onClick={onResume}
                                     disabled={disabled}
-                                    className="h-12 w-full sm:w-auto sm:min-w-44 rounded-xl text-[15px]"
+                                    className="h-12 w-full sm:w-auto sm:min-w-44 rounded-xl text-[17px]"
                                 >
                                     <Play className="size-5! fill-current" />
                                     {t('TIMER.RESUME_BUTTON')}
@@ -346,7 +346,7 @@ export function OperatorTimerComponent({
                             size="lg"
                             onClick={finishAction.onClick}
                             disabled={finishAction.disabled}
-                            className="h-12 w-full sm:w-auto sm:min-w-44 rounded-xl text-[15px]"
+                            className="h-12 w-full sm:w-auto sm:min-w-44 rounded-xl text-[17px]"
                         >
                             <CheckCircle2 className="size-5! text-primary" />
                             {finishAction.label ?? t('TIMER.FINISH_SUBMIT')}

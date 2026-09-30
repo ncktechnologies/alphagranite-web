@@ -148,14 +148,14 @@ function EventDetails({ ev }: { ev: any }) {
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-semibold text-foreground">FAB #{ev.fab_id}</span>
         {ev.fab_type && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-text">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[13px] font-medium text-text">
             <span className="size-2 rounded-full" style={{ backgroundColor: bg }} />
             {ev.fab_type}
           </span>
         )}
       </div>
       {ev.has_pending_shop_revision && (
-        <div className="flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1 text-[11px] font-medium text-destructive">
+        <div className="flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1 text-[13px] font-medium text-destructive">
           <AlertTriangle className="size-3.5" /> Pending shop revision
         </div>
       )}
@@ -168,7 +168,7 @@ function EventDetails({ ev }: { ev: any }) {
         ))}
       </dl>
       <div>
-        <div className="mb-1 flex justify-between text-[11px] text-muted-foreground">
+        <div className="mb-1 flex justify-between text-[13px] text-muted-foreground">
           <span>Progress</span>
           <span className="tabular-nums text-foreground">{pct}%</span>
         </div>
@@ -739,21 +739,21 @@ const ShopCalendarPage: React.FC = () => {
             <div className="@container flex h-full flex-col gap-0.5 px-2 py-1.5" style={{ color: text }}>
               <div className="flex items-center gap-1 min-w-0">
                 {pendingRevision && <AlertTriangle className="size-3 shrink-0 text-destructive" />}
-                <span className="truncate text-[12px] font-semibold tabular-nums">#{event.fab_id}</span>
+                <span className="truncate text-[14px] font-semibold tabular-nums">#{event.fab_id}</span>
                 {h >= 48 && (
-                  <span className="ms-auto hidden shrink-0 text-[10px] font-semibold tabular-nums opacity-70 @[104px]:inline">
+                  <span className="ms-auto hidden shrink-0 text-[12px] font-semibold tabular-nums opacity-70 @[104px]:inline">
                     {event.work_percentage ?? 0}%
                   </span>
                 )}
               </div>
               {h >= 48 && (
-                <p className="truncate text-[11px] font-medium opacity-80">
+                <p className="truncate text-[13px] font-medium opacity-80">
                   {[event.plan_name, event.operator_name].filter(Boolean).join(' · ')}
                 </p>
               )}
-              {h >= 84 && <p className="truncate text-[10px] opacity-70">{timeRange(event)}</p>}
+              {h >= 84 && <p className="truncate text-[12px] opacity-70">{timeRange(event)}</p>}
               {h >= 110 && event.workstation_name && (
-                <p className="truncate text-[10px] opacity-70">{event.workstation_name}</p>
+                <p className="truncate text-[12px] opacity-70">{event.workstation_name}</p>
               )}
               {h >= 40 && (
                 <div className="mt-auto">
@@ -1073,7 +1073,7 @@ const ShopCalendarPage: React.FC = () => {
                       <div className="sticky top-0 z-20 grid border-b border-border/80 bg-background" style={{ gridTemplateColumns: '56px repeat(7, minmax(0, 1fr))' }}>
                         <div />
                         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-                          <div key={d} className="border-s border-border/70 px-2 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                          <div key={d} className="border-s border-border/70 px-2 py-2.5 text-[13px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                             {d}
                           </div>
                         ))}
@@ -1081,7 +1081,7 @@ const ShopCalendarPage: React.FC = () => {
                       <div className="grid" style={{ gridTemplateColumns: '56px repeat(7, minmax(0, 1fr))' }}>
                         {monthWeeks.map((week, wi) => (
                           <React.Fragment key={wi}>
-                            <div className="border-b border-border/70 px-2 py-2 text-end text-[11px] font-medium text-muted-foreground tabular-nums">
+                            <div className="border-b border-border/70 px-2 py-2 text-end text-[13px] font-medium text-muted-foreground tabular-nums">
                               W{format(week[0], 'w')}
                             </div>
                             {week.map((day) => {
@@ -1128,7 +1128,7 @@ const ShopCalendarPage: React.FC = () => {
                                         type="button"
                                         onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
                                         className={cn(
-                                          'flex h-5 w-full items-center gap-1 truncate rounded-[5px] px-1.5 text-start text-[11px] font-medium transition-[filter] hover:brightness-95',
+                                          'flex h-5 w-full items-center gap-1 truncate rounded-[5px] px-1.5 text-start text-[13px] font-medium transition-[filter] hover:brightness-95',
                                           ev.has_pending_shop_revision && 'ring-1 ring-destructive',
                                         )}
                                         style={{ backgroundColor: c.bg, color: c.text }}
@@ -1140,7 +1140,7 @@ const ShopCalendarPage: React.FC = () => {
                                     );
                                   })}
                                   {evs.length > 3 && (
-                                    <span className="px-1.5 text-[11px] font-medium text-muted-foreground group-hover/cell:text-foreground">
+                                    <span className="px-1.5 text-[13px] font-medium text-muted-foreground group-hover/cell:text-foreground">
                                       +{evs.length - 3} more
                                     </span>
                                   )}
@@ -1173,7 +1173,7 @@ const ShopCalendarPage: React.FC = () => {
                               style={{ minWidth }}
                               title={viewMode === 'week' ? `Open ${format(day, 'EEEE, MMM d')}` : undefined}
                             >
-                              <span className={cn('text-[11px] font-semibold uppercase tracking-[0.06em]', today ? 'text-primary' : 'text-muted-foreground')}>
+                              <span className={cn('text-[13px] font-semibold uppercase tracking-[0.06em]', today ? 'text-primary' : 'text-muted-foreground')}>
                                 {format(day, 'EEE')}
                               </span>
                               <span
@@ -1199,13 +1199,13 @@ const ShopCalendarPage: React.FC = () => {
                             >
                               {hour === DAY_END_HOUR ? (
                                 <span className="flex flex-col items-end leading-tight">
-                                  <span className="text-[11px] font-semibold text-foreground whitespace-nowrap">
+                                  <span className="text-[13px] font-semibold text-foreground whitespace-nowrap">
                                     {formatHour(hour, is12HourFormat)}
                                   </span>
-                                  <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">End of day</span>
+                                  <span className="text-[12px] font-medium text-muted-foreground whitespace-nowrap">End of day</span>
                                 </span>
                               ) : (
-                                <span className="text-[11px] font-medium text-muted-foreground whitespace-nowrap">
+                                <span className="text-[13px] font-medium text-muted-foreground whitespace-nowrap">
                                   {formatHour(hour, is12HourFormat)}
                                 </span>
                               )}
@@ -1246,7 +1246,7 @@ const ShopCalendarPage: React.FC = () => {
                                   className={cn('pointer-events-none absolute inset-x-0 z-[1] flex items-center justify-center', BREAK_PATTERN)}
                                   style={{ top: getTimePosition(BREAK_START_HOUR), height: BREAK_DURATION * HOUR_HEIGHT }}
                                 >
-                                  <span className="rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                                  <span className="rounded-full bg-background/80 px-2 py-0.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                                     Lunch
                                   </span>
                                 </div>
@@ -1278,10 +1278,10 @@ const ShopCalendarPage: React.FC = () => {
                             className="absolute inset-y-0 flex flex-col justify-center border-s-2 border-foreground/25 ps-2 leading-tight"
                             style={{ left: getHorizontalPosition(DAY_END_HOUR), width: END_GUTTER_X }}
                           >
-                            <span className="text-[11px] font-semibold text-foreground whitespace-nowrap">
+                            <span className="text-[13px] font-semibold text-foreground whitespace-nowrap">
                               {formatHour(DAY_END_HOUR, is12HourFormat)}
                             </span>
-                            <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">End of day</span>
+                            <span className="text-[12px] font-medium text-muted-foreground whitespace-nowrap">End of day</span>
                           </div>
                           {hourMarks.slice(0, -1).map((hour) => (
                             <div
@@ -1291,13 +1291,13 @@ const ShopCalendarPage: React.FC = () => {
                             >
                               {hour === DAY_END_HOUR ? (
                                 <span className="flex flex-col items-end leading-tight">
-                                  <span className="text-[11px] font-semibold text-foreground whitespace-nowrap">
+                                  <span className="text-[13px] font-semibold text-foreground whitespace-nowrap">
                                     {formatHour(hour, is12HourFormat)}
                                   </span>
-                                  <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">End of day</span>
+                                  <span className="text-[12px] font-medium text-muted-foreground whitespace-nowrap">End of day</span>
                                 </span>
                               ) : (
-                                <span className="text-[11px] font-medium text-muted-foreground whitespace-nowrap">
+                                <span className="text-[13px] font-medium text-muted-foreground whitespace-nowrap">
                                   {formatHour(hour, is12HourFormat)}
                                 </span>
                               )}
@@ -1342,7 +1342,7 @@ const ShopCalendarPage: React.FC = () => {
                               )}
                               title={viewMode === 'week' ? `Open ${format(day, 'EEEE, MMM d')}` : undefined}
                             >
-                              <span className={cn('text-[11px] font-semibold uppercase tracking-[0.06em]', today ? 'text-primary' : 'text-muted-foreground')}>
+                              <span className={cn('text-[13px] font-semibold uppercase tracking-[0.06em]', today ? 'text-primary' : 'text-muted-foreground')}>
                                 {format(day, 'EEE')}
                               </span>
                               <span
@@ -1354,7 +1354,7 @@ const ShopCalendarPage: React.FC = () => {
                                 {format(day, 'd')}
                               </span>
                               {dayEvents.length > 0 && (
-                                <span className="text-[10px] text-muted-foreground tabular-nums">
+                                <span className="text-[12px] text-muted-foreground tabular-nums">
                                   {new Set(dayEvents.map((e) => e._planId ?? e.id)).size} plans
                                 </span>
                               )}
@@ -1385,7 +1385,7 @@ const ShopCalendarPage: React.FC = () => {
                                 className={cn('pointer-events-none absolute inset-y-0 z-[1] flex items-center justify-center', BREAK_PATTERN)}
                                 style={{ left: getHorizontalPosition(BREAK_START_HOUR), width: BREAK_DURATION * HOUR_WIDTH }}
                               >
-                                <span className="rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                                <span className="rounded-full bg-background/80 px-2 py-0.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                                   Lunch
                                 </span>
                               </div>
@@ -1423,15 +1423,15 @@ const ShopCalendarPage: React.FC = () => {
                                           <div className="flex h-full flex-col justify-center gap-0.5 px-2.5 py-1.5" style={{ color: text }}>
                                             <div className="flex items-center gap-1.5 min-w-0">
                                               {pendingRevision && <AlertTriangle className="size-3 shrink-0 text-destructive" />}
-                                              <span className="truncate text-[12px] font-semibold">
+                                              <span className="truncate text-[14px] font-semibold">
                                                 <span className="tabular-nums">#{ev.fab_id}</span>
                                                 {ev.plan_name ? ` · ${ev.plan_name}` : ''}
                                               </span>
-                                              <span className="ms-auto shrink-0 text-[10px] font-semibold tabular-nums opacity-70">
+                                              <span className="ms-auto shrink-0 text-[12px] font-semibold tabular-nums opacity-70">
                                                 {ev.work_percentage ?? 0}%
                                               </span>
                                             </div>
-                                            <p className="truncate text-[11px] opacity-75">
+                                            <p className="truncate text-[13px] opacity-75">
                                               {[ev.operator_name, timeRange(ev)].filter(Boolean).join(' · ')}
                                             </p>
                                             <div className="mt-0.5">

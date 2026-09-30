@@ -99,7 +99,7 @@ export const ScheduleCuttingModal = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-[15px] text-text font-semibold py-2 border-b">
+          <DialogTitle className="text-[17px] text-text font-semibold py-2 border-b">
             Schedule cutting
           </DialogTitle>
         </DialogHeader>

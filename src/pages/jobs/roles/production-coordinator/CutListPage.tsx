@@ -139,14 +139,14 @@ const CutListPage = () => {
             </Container>
 
             {/* <div className="flex flex-wrap gap-x-3 items-center">
-                <div className="pl-5 text-[#4B5675] text-[14px]">Total SQ. FT: {stageTotals?.total_sqft || 0}</div>
-                <div className="pl-5 text-[#4B5675] text-[14px]">WJ: LIN FT: {stageTotals?.wj_linft || 0}</div>
-                <div className="pl-5 text-[#4B5675] text-[14px]">Edging: LIN FT: {stageTotals?.edging_linft || 0}</div>
-                <div className="pl-5 text-[#4B5675] text-[14px]">TCNC: LIN FT: {stageTotals?.cnc_linft || 0}</div>
-                <div className="pl-5 text-[#4B5675] text-[14px]">Miter: LIN FT: {stageTotals?.miter_linft || 0}</div>
-                <div className="pl-5 text-[#4B5675] text-[14px]">No. of Pieces: {stageTotals?.no_of_pieces || 0}</div>
-                <div className="pl-5 text-[#4B5675] text-[14px]">GP: {stageTotals?.gp || 0}</div>
-                <div className="pl-5 text-[#4B5675] text-[14px]">Revenue: ${totalRevenue.toLocaleString()}</div>
+                <div className="pl-5 text-[#4B5675] text-[16px]">Total SQ. FT: {stageTotals?.total_sqft || 0}</div>
+                <div className="pl-5 text-[#4B5675] text-[16px]">WJ: LIN FT: {stageTotals?.wj_linft || 0}</div>
+                <div className="pl-5 text-[#4B5675] text-[16px]">Edging: LIN FT: {stageTotals?.edging_linft || 0}</div>
+                <div className="pl-5 text-[#4B5675] text-[16px]">TCNC: LIN FT: {stageTotals?.cnc_linft || 0}</div>
+                <div className="pl-5 text-[#4B5675] text-[16px]">Miter: LIN FT: {stageTotals?.miter_linft || 0}</div>
+                <div className="pl-5 text-[#4B5675] text-[16px]">No. of Pieces: {stageTotals?.no_of_pieces || 0}</div>
+                <div className="pl-5 text-[#4B5675] text-[16px]">GP: {stageTotals?.gp || 0}</div>
+                <div className="pl-5 text-[#4B5675] text-[16px]">Revenue: ${totalRevenue.toLocaleString()}</div>
             </div> */}
 
             <Container className="mt-6">

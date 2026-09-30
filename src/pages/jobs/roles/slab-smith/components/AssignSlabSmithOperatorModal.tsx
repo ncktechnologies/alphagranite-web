@@ -147,7 +147,7 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-[12px] w-[500px] max-w-[90vw] shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-[20px] border-b border-[#ebedf3]">
-          <h2 className="text-[1.22rem] font-semibold text-[#181c32]">
+          <h2 className="text-[1.345rem] font-semibold text-[#181c32]">
             {isReassignMode ? 'Reassign SlabSmith Operator' : `Assign SlabSmith Operator to ${fabIdsToAssign.length} FAB(s)`}
           </h2>
           <button onClick={onClose} className="text-[#99a1b7] hover:text-[#181c32]">
@@ -190,7 +190,7 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
                 {fabIdsToAssign.map(fabId => (
                   <span
                     key={fabId}
-                    className="inline-flex items-center px-2.5 py-1 rounded-[4px] text-[11px] font-medium bg-[#e8f3ff] text-[#5d70ea]"
+                    className="inline-flex items-center px-2.5 py-1 rounded-[4px] text-[13px] font-medium bg-[#e8f3ff] text-[#5d70ea]"
                   >
                     {fabId}
                   </span>

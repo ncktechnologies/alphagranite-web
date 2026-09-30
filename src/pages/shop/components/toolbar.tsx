@@ -97,7 +97,7 @@ function ToolbarHeading({ title = '', description }: ToolbarHeadingProps) {
 
   return (
     <div className="flex flex-col justify-center gap-2">
-      <h1 className="text-[20px] font-normal leading-[28px] text-black">
+      <h1 className="text-[22px] font-normal leading-[28px] text-black">
         {title || item?.title || 'Untitled'}
       </h1>
       {description && (

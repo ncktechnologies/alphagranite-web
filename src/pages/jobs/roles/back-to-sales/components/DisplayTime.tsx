@@ -34,7 +34,7 @@ export const TimeDisplay = ({ startTime, endTime, totalTime }: TimeDisplayProps)
                 </div>
                  <div>
                 <span className="text-sm text-text-foreground">Start time & Date:</span>
-                <p className="text-[16px] text-text font-semibold">
+                <p className="text-[18px] text-text font-semibold">
                     {formatTime(startTime)}
                 </p>
             </div>
@@ -44,13 +44,13 @@ export const TimeDisplay = ({ startTime, endTime, totalTime }: TimeDisplayProps)
             {/* End Time */}
             <div>
                 <span className="text-sm text-text-foreground">End time & Date:</span>
-                <p className="text-[16px] text-text font-semibold">
+                <p className="text-[18px] text-text font-semibold">
                     {formatTime(endTime)}
                 </p>
             </div>
 
             {/* Total Time */}
-            <div className="bg-[#FF8D28] px-10 py-2 rounded-[6px] text-white text-[12px]">
+            <div className="bg-[#FF8D28] px-10 py-2 rounded-[6px] text-white text-[14px]">
                 <span className="text-sm font-medium text-[#EEEEEE]">
                     Total hour spent
                 </span>

@@ -71,7 +71,7 @@ export const PauseModal = ({ open, onClose, jobId, jobNumber, templaterId, onPau
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <div className="border-b">
-                        <DialogTitle className="text-[15px] font-semibold py-2">
+                        <DialogTitle className="text-[17px] font-semibold py-2">
                             Pause Timer
                             <span className="ml-3 text-sm font-normal text-gray-500">
                                 Job No: {jobNumber || jobId}

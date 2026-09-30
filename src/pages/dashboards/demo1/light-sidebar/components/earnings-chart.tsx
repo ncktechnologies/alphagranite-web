@@ -84,7 +84,7 @@ export const EarningsChart = ({
       },
       tooltip: { enabled: false },
       labels: {
-        style: { colors: '#6F777B', fontSize: '12px' },
+        style: { colors: '#6F777B', fontSize: '14px' },
       },
     },
     yaxis: {
@@ -92,7 +92,7 @@ export const EarningsChart = ({
       max: axis.max,
       tickAmount: axis.ticks,
       labels: {
-        style: { colors: '#6F777B', fontSize: '12px' },
+        style: { colors: '#6F777B', fontSize: '14px' },
         formatter: (v) => numberFmt.format(Math.round(v)),
       },
     },

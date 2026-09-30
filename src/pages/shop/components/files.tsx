@@ -391,7 +391,7 @@ export function Documents({
                   {getFileIcon(file)}
                 </div>
                 <div className="flex-1 min-w-0 w-full text-left">
-                  <p className="text-[14px] text-black font-bold truncate" title={file.name}>
+                  <p className="text-[16px] text-black font-bold truncate" title={file.name}>
                     {file.name}
                   </p>
                   <div className="flex flex-wrap justify-start items-center gap-2 mt-1">
