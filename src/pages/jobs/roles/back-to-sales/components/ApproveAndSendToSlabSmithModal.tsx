@@ -101,7 +101,7 @@ export const ApproveAndSendToSlabSmithModal = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-[17px] font-semibold py-2 border-b">
+          <DialogTitle className="text-[16px] font-semibold py-2 border-b">
             Approve and Send to Slab Smith
           </DialogTitle>
         </DialogHeader>

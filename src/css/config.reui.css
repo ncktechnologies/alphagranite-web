@@ -307,30 +307,28 @@
   }
 }
 
-/** Custom Font Size (all sizes +2px over Tailwind defaults) **/
+/** Custom Font Size (all sizes +1px over Tailwind defaults) **/
 @theme {
-  --text-2sm: 0.9375rem;
-  --text-2sm--line-height: calc(1.2 / 0.9375);
-
-  --text-2xs: 0.8125rem;
-  --text-2xs--line-height: calc(0.95 / 0.8125);
-
-  --text-xs: 0.875rem;
-  --text-xs--line-height: calc(1.125 / 0.875);
-  --text-sm: 1rem;
-  --text-sm--line-height: calc(1.375 / 1);
-  --text-base: 1.125rem;
-  --text-base--line-height: calc(1.625 / 1.125);
-  --text-lg: 1.25rem;
-  --text-lg--line-height: calc(1.875 / 1.25);
-  --text-xl: 1.375rem;
-  --text-xl--line-height: calc(1.875 / 1.375);
-  --text-2xl: 1.625rem;
-  --text-2xl--line-height: calc(2.125 / 1.625);
-  --text-3xl: 2rem;
-  --text-3xl--line-height: calc(2.375 / 2);
-  --text-4xl: 2.375rem;
-  --text-4xl--line-height: calc(2.625 / 2.375);
+  --text-2sm: 0.875rem;
+  --text-2sm--line-height: calc(1.1375 / 0.875);
+  --text-2xs: 0.75rem;
+  --text-2xs--line-height: calc(0.8875 / 0.75);
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: calc(1.0625 / 0.8125);
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: calc(1.3125 / 0.9375);
+  --text-base: 1.0625rem;
+  --text-base--line-height: calc(1.5625 / 1.0625);
+  --text-lg: 1.1875rem;
+  --text-lg--line-height: calc(1.8125 / 1.1875);
+  --text-xl: 1.3125rem;
+  --text-xl--line-height: calc(1.8125 / 1.3125);
+  --text-2xl: 1.5625rem;
+  --text-2xl--line-height: calc(2.0625 / 1.5625);
+  --text-3xl: 1.9375rem;
+  --text-3xl--line-height: calc(2.3125 / 1.9375);
+  --text-4xl: 2.3125rem;
+  --text-4xl--line-height: calc(2.5625 / 2.3125);
 }
 
 

@@ -146,7 +146,7 @@ export function MegaMenuMobile() {
           key={index}
           value={item.path || `child-${level}-${index}`}
         >
-          <AccordionMenuSubTrigger className="text-[15px]">
+          <AccordionMenuSubTrigger className="text-[14px]">
             {item.icon && <item.icon data-slot="accordion-menu-icon" />}
             {item.collapse ? (
               <span className="text-muted-foreground">
@@ -186,7 +186,7 @@ export function MegaMenuMobile() {
         <AccordionMenuItem
           key={index}
           value={item.path || ''}
-          className="text-[15px]"
+          className="text-[14px]"
         >
           <Link to={item.path || '#'}>
             {item.icon && <item.icon data-slot="accordion-menu-icon" />}

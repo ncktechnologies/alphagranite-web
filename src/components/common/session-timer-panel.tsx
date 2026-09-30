@@ -54,7 +54,7 @@ export function formatSessionDuration(seconds: number) {
 function Moment({ label, date, emptyText }: { label: string; date?: Date | null; emptyText?: string }) {
   return (
     <div className="min-w-0">
-      <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
+      <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
       {isValid(date) ? (
         <p className="mt-1 whitespace-nowrap">
           <span className="text-base font-semibold text-foreground tabular-nums">{format(date, 'h:mm a')}</span>
@@ -121,7 +121,7 @@ export function SessionTimerPanel({
   // Also shown while paused (the original hid it), so the accumulated time stays visible.
   const showTotal = ((isActive && !hasEnded) || hasEnded || isPaused) && totalSeconds > 0;
 
-  const primaryBtn = 'h-11 min-w-36 rounded-xl text-[17px]';
+  const primaryBtn = 'h-11 min-w-36 rounded-xl text-[16px]';
   const pauseBtn = cn(primaryBtn, 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 hover:border-amber-400');
   const holdBtn = cn(primaryBtn, 'min-w-0 border-orange-300 bg-background text-orange-700 hover:bg-orange-50 hover:border-orange-400');
 
@@ -183,7 +183,7 @@ export function SessionTimerPanel({
             <span
               role="status"
               aria-live="polite"
-              className={cn('mt-1 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[13px] font-semibold ring-1 ring-inset', s.pill)}
+              className={cn('mt-1 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[12px] font-semibold ring-1 ring-inset', s.pill)}
             >
               <span className="relative flex size-1.5">
                 {state === 'running' && (
@@ -203,7 +203,7 @@ export function SessionTimerPanel({
           {!isPaused && hasEnded && <Moment label="Ended" date={endTime} />}
           {showTotal && (
             <div className="min-w-0">
-              <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Time spent</p>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Time spent</p>
               <p className="mt-0.5 whitespace-nowrap text-2xl font-semibold leading-tight tracking-tight text-foreground tabular-nums">
                 {formatSessionDuration(totalSeconds)}
               </p>

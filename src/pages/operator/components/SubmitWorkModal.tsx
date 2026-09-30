@@ -148,7 +148,7 @@ export function SubmitWorkModal({
             <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <div className="border-b pb-3">
-                        <DialogTitle className="text-[17px] font-semibold">
+                        <DialogTitle className="text-[16px] font-semibold">
                             Complete
                             {fabId && (
                                 <span className="ml-3 text-sm font-normal text-gray-500">
@@ -250,7 +250,7 @@ export function SubmitWorkModal({
                                                 disabled={!isFullyComplete}
                                             />
                                         </FormControl>
-                                        <FormLabel className={`text-[18px] font-semibold ${field.value ? 'text-green-600' : 'text-gray-600'}`}>
+                                        <FormLabel className={`text-[17px] font-semibold ${field.value ? 'text-green-600' : 'text-gray-600'}`}>
                                             Mark task as completed
                                         </FormLabel>
                                     </div>

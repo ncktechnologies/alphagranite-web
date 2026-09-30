@@ -88,7 +88,7 @@ const Contributions = ({ title, overallStats }: IContributionsProps) => {
             <div className="absolute inset-[10px] rounded-full border-[18px] border-muted" aria-hidden />
           )}
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-[30px] font-semibold leading-none tracking-tight text-foreground tabular-nums">
+            <span className="text-[29px] font-semibold leading-none tracking-tight text-foreground tabular-nums">
               {numberFmt.format(total)}
             </span>
             <span className="mt-1 text-xs text-muted-foreground">Total jobs</span>

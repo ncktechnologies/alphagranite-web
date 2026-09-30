@@ -9,7 +9,7 @@ export default function EmptyStateCard() {
               <div className="flex items-start gap-3">
                 <div>
                   <h3 className="font-bold text-black mb-1">What you need to know?</h3>
-                  <p className="text-[16px] leading-[20px] text-[#4B545D]">
+                  <p className="text-[15px] leading-[20px] text-[#4B545D]">
                     Role-Based Access Control (RBAC) is a method of regulating access to computer or network resources based on the roles of individual users within your organization.
                   </p>
                 </div>

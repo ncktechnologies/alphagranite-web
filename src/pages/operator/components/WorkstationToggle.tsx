@@ -28,14 +28,14 @@ export function WorkstationToggle({
 
     return (
         <div className="flex items-center gap-3">
-            <label className="text-[16px] font-semibold text-[#4b545d]">
+            <label className="text-[15px] font-semibold text-[#4b545d]">
                 Filter by Workstation:
             </label>
             <Select
                 value={selectedWorkstation?.toString() || 'all'}
                 onValueChange={(value) => onSelect(value === 'all' ? null : Number(value))}
             >
-                <SelectTrigger className="w-[200px] h-[40px] border border-[#e2e4ed] rounded-[8px] text-[16px] font-medium focus:border-[#9cc15e] focus:ring-1 focus:ring-[#9cc15e]">
+                <SelectTrigger className="w-[200px] h-[40px] border border-[#e2e4ed] rounded-[8px] text-[15px] font-medium focus:border-[#9cc15e] focus:ring-1 focus:ring-[#9cc15e]">
                     <SelectValue placeholder="Select workstation" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[200px] overflow-y-auto">

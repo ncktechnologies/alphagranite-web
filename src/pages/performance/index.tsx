@@ -41,7 +41,7 @@ export function PerformancePage() {
         return (
             <div className="">
                 <div className="border-b border-[#e5e7eb] pb-[32px]">
-                    <h1 className="font-proxima font-semibold text-[30px] leading-[32px] text-black px-[32px]">
+                    <h1 className="font-proxima font-semibold text-[29px] leading-[32px] text-black px-[32px]">
                         Performance
                     </h1>
                 </div>
@@ -62,7 +62,7 @@ export function PerformancePage() {
     return (
         <div className="">
             <div className="border-b border-[#e5e7eb] pb-[32px]">
-                <h1 className="font-proxima font-semibold text-[30px] leading-[32px] text-black px-[32px]">
+                <h1 className="font-proxima font-semibold text-[29px] leading-[32px] text-black px-[32px]">
                     Performance
                 </h1>
             </div>
@@ -76,7 +76,7 @@ export function PerformancePage() {
                                 className="bg-white w-full rounded-[8px] border border-[#e5e7eb] flex items-center px-[25px] py-[17px] text-left hover:bg-[#f9fafb] transition-colors cursor-pointer disabled:cursor-default"
                                 disabled={!report.path}
                             >
-                                <span className="flex-1 font-['Proxima_Nova',sans-serif] font-semibold text-[18px] text-black leading-[24px]">
+                                <span className="flex-1 font-['Proxima_Nova',sans-serif] font-semibold text-[17px] text-black leading-[24px]">
                                     {report.title}
                                 </span>
                                 <ChevronRight />

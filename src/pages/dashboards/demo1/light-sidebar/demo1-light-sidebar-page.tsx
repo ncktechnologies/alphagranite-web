@@ -35,7 +35,7 @@ function DashboardHeading({ firstName, subtitle }: { firstName?: string; subtitl
       <span className="text-xs font-semibold uppercase tracking-[0.08em] text-primary">
         {format(new Date(), 'EEEE, MMMM d')}
       </span>
-      <h1 className="text-2xl lg:text-[30px] font-semibold leading-tight tracking-[-0.015em] text-foreground">
+      <h1 className="text-2xl lg:text-[29px] font-semibold leading-tight tracking-[-0.015em] text-foreground">
         {greeting()}
         {firstName ? `, ${firstName}` : ''}
       </h1>

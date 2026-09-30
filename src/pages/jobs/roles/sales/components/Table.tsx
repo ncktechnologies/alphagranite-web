@@ -626,7 +626,7 @@ export const JobSalesTable = ({
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-6 px-2 text-[12px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap"
+                                className="h-6 px-2 text-[11px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap"
                                 onClick={e => {
                                     e.stopPropagation();
                                     setDrafterColumnVisible(true);
@@ -659,7 +659,7 @@ export const JobSalesTable = ({
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-6 px-2 text-[12px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap"
+                                className="h-6 px-2 text-[11px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap"
                                 onClick={e => {
                                     e.stopPropagation();
                                     onReassignCNCClick(row.original);

@@ -89,7 +89,7 @@ export function SidebarMenu() {
 
   // ─── Class names ──────────────────────────────────────────────────────
   const itemBase =
-    'relative h-10 px-3 gap-3 rounded-lg text-[18px] font-medium text-white/80 transition-colors ' +
+    'relative h-10 px-3 gap-3 rounded-lg text-[17px] font-medium text-white/80 transition-colors ' +
     'hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white ' +
     '[&_svg]:opacity-100 [&_svg]:text-current ' +
     'data-[selected=true]:bg-white/[0.16] data-[selected=true]:text-white ' +
@@ -100,18 +100,18 @@ export function SidebarMenu() {
   const classNames: AccordionMenuClassNames = {
     root: 'space-y-0.5',
     group: 'gap-px',
-    label: 'uppercase text-[15px] font-semibold tracking-[0.08em] text-white/55 px-3 pt-5 pb-2',
+    label: 'uppercase text-[14px] font-semibold tracking-[0.08em] text-white/55 px-3 pt-5 pb-2',
     separator: 'bg-white/10',
     item: itemBase,
     sub: '',
     subTrigger:
-      'h-10 px-3 gap-3 rounded-lg text-[18px] font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white [&_svg]:opacity-100 [&_[data-slot=accordion-menu-sub-indicator]]:text-white/60',
+      'h-10 px-3 gap-3 rounded-lg text-[17px] font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white [&_svg]:opacity-100 [&_[data-slot=accordion-menu-sub-indicator]]:text-white/60',
     subContent: 'py-0',
     indicator: 'text-white',
   };
 
   const childItemClass =
-    'h-9 px-3 gap-2 text-[17.5px] font-normal text-white/70 before:-start-[0.72rem] before:h-4 data-[selected=true]:font-semibold data-[selected=true]:bg-white/[0.12]';
+    'h-9 px-3 gap-2 text-[16.5px] font-normal text-white/70 before:-start-[0.72rem] before:h-4 data-[selected=true]:font-semibold data-[selected=true]:bg-white/[0.12]';
 
   // ─── Menu builders ────────────────────────────────────────────────────
   const buildMenu = (items: MenuConfig): JSX.Element[] => {
@@ -222,7 +222,7 @@ export function SidebarMenu() {
     if (item.children) {
       return (
         <AccordionMenuSub key={index} value={item.path || `child-${level}-${index}`}>
-          <AccordionMenuSubTrigger className="h-9 text-[17.5px] font-normal">
+          <AccordionMenuSubTrigger className="h-9 text-[16.5px] font-normal">
             {item.collapse ? (
               <span className="text-white/60">
                 <span className="hidden [[data-state=open]>span>&]:inline">

@@ -341,36 +341,36 @@ export function OperatorDashboard() {
                     >
                         <div className="px-2 py-1 h-full flex flex-col justify-start overflow-hidden gap-0.5">
                             <div className="flex items-center gap-1">
-                                <p className="text-[14px] font-bold truncate leading-tight shrink-0" style={{ color: text }}>
+                                <p className="text-[13px] font-bold truncate leading-tight shrink-0" style={{ color: text }}>
                                     {event.fab_id}
                                 </p>
                                 {event.job_name && (
-                                    <p className="text-[13px] font-medium truncate leading-tight" style={{ color: text, opacity: 0.85 }}>
+                                    <p className="text-[12px] font-medium truncate leading-tight" style={{ color: text, opacity: 0.85 }}>
                                         · {event.job_name}
                                     </p>
                                 )}
                             </div>
                             {event.account_name && (
-                                <p className="text-[12px] truncate leading-tight" style={{ color: text, opacity: 0.7 }}>
+                                <p className="text-[11px] truncate leading-tight" style={{ color: text, opacity: 0.7 }}>
                                     {event.account_name}
                                 </p>
                             )}
                             {event._height > 44 && (
                                 <div className="flex items-center gap-1.5">
                                     {event.workstation_name && (
-                                        <span className="text-[11px] font-semibold px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.5)', color: text }}>
+                                        <span className="text-[10px] font-semibold px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.5)', color: text }}>
                                             {event.workstation_name}
                                         </span>
                                     )}
                                     {event.planning_section_name && (
-                                        <span className="text-[11px] truncate" style={{ color: text, opacity: 0.65 }}>
+                                        <span className="text-[10px] truncate" style={{ color: text, opacity: 0.65 }}>
                                             {event.planning_section_name}
                                         </span>
                                     )}
                                 </div>
                             )}
                             {event._height > 58 && startTime && (
-                                <p className="text-[11px] leading-tight" style={{ color: text, opacity: 0.6 }}>
+                                <p className="text-[10px] leading-tight" style={{ color: text, opacity: 0.6 }}>
                                     {startTime}{endTime ? ` – ${endTime}` : ''}
                                     {tooltipHours ? ` · ${tooltipHours}h` : ''}
                                 </p>
@@ -380,7 +380,7 @@ export function OperatorDashboard() {
                                     <div className="flex-1 bg-white/50 rounded-full h-1">
                                         <div className="h-1 rounded-full" style={{ width: `${event.work_percentage}%`, backgroundColor: text }} />
                                     </div>
-                                    <span className="text-[11px] font-medium" style={{ color: text }}>{event.work_percentage}%</span>
+                                    <span className="text-[10px] font-medium" style={{ color: text }}>{event.work_percentage}%</span>
                                 </div>
                             )}
                         </div>
@@ -451,7 +451,7 @@ export function OperatorDashboard() {
                 <div className="border-b border-[#dfdfdf]">
                     <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
                         <div className="flex flex-col gap-2">
-                            <p className="text-[30px] leading-[32px] text-black font-semibold">
+                            <p className="text-[29px] leading-[32px] text-black font-semibold">
                                 {t('OPERATOR.MY_SCHEDULE')}
                             </p>
                         </div>
@@ -483,7 +483,7 @@ export function OperatorDashboard() {
                                 <button
                                     key={mode}
                                     onClick={() => setViewMode(mode)}
-                                    className={`px-[15px] py-[8px] rounded-[4px] font-proxima text-[16px] leading-[21px] font-semibold capitalize transition-all ${viewMode === mode
+                                    className={`px-[15px] py-[8px] rounded-[4px] font-proxima text-[15px] leading-[21px] font-semibold capitalize transition-all ${viewMode === mode
                                         ? 'bg-white text-black shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
                                         : 'text-[#78829d]'
                                         }`}
@@ -510,7 +510,7 @@ export function OperatorDashboard() {
                             <PopoverTrigger asChild>
                                 <button className="flex items-center gap-3 rounded-[6px] border border-[#e2e4ed] bg-white px-3 py-2 hover:bg-gray-50">
                                     <CalendarIcon className="size-5 text-[#4b545d]" strokeWidth={2} />
-                                    <span className="text-[22px] leading-[24px] text-[#4a4d59] font-semibold whitespace-nowrap">
+                                    <span className="text-[21px] leading-[24px] text-[#4a4d59] font-semibold whitespace-nowrap">
                                         {calLabel}
                                     </span>
                                 </button>
@@ -534,7 +534,7 @@ export function OperatorDashboard() {
                         {!shouldShowToday ?
                             (
                                 <button onClick={() => setCurrentDate(new Date())}
-                                    className="h-[44px] px-6 rounded-[8px] text-[16px] font-semibold text-white cursor-pointer transition-all hover:opacity-90"
+                                    className="h-[44px] px-6 rounded-[8px] text-[15px] font-semibold text-white cursor-pointer transition-all hover:opacity-90"
                                     style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
 
                                 >
@@ -544,7 +544,7 @@ export function OperatorDashboard() {
                             (
                                 <button
                                     onClick={() => setCurrentDate(new Date())}
-                                    className="h-[44px] px-6 rounded-[8px] text-[16px] font-semibold text-white"
+                                    className="h-[44px] px-6 rounded-[8px] text-[15px] font-semibold text-white"
                                     style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
 
                                 >
@@ -561,7 +561,7 @@ export function OperatorDashboard() {
                             <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-[8px]">
                                 <div className="bg-white border border-[#e2e4ed] rounded-[8px] px-4 py-2 shadow-sm flex items-center gap-2">
                                     <div className="animate-spin border-2 border-[#7a9705] border-t-transparent rounded-full h-4 w-4" />
-                                    <span className="text-[15px] font-medium text-[#4b545d]">Updating calendar...</span>
+                                    <span className="text-[14px] font-medium text-[#4b545d]">Updating calendar...</span>
                                 </div>
                             </div>
                         )}
@@ -575,14 +575,14 @@ export function OperatorDashboard() {
                                         {hoursToRender.map((hour) => (
                                             <div
                                                 key={hour}
-                                                className="absolute text-[13px] text-[#7c8689] flex items-center justify-center font-medium"
+                                                className="absolute text-[12px] text-[#7c8689] flex items-center justify-center font-medium"
                                                 style={{ left: getTimePosition(hour), width: HOUR_WIDTH, height: TIME_LABEL_HEIGHT }}
                                             >
                                                 {format(setHoursLocal(new Date(), hour), 'h a')}
                                             </div>
                                         ))}
                                         <div
-                                            className="absolute text-[13px] text-[#7c8689] flex items-center justify-center font-medium"
+                                            className="absolute text-[12px] text-[#7c8689] flex items-center justify-center font-medium"
                                             style={{ left: getTimePosition(DAY_END_HOUR), width: HOUR_WIDTH, height: TIME_LABEL_HEIGHT }}
                                         >
                                             {format(setHoursLocal(new Date(), DAY_END_HOUR), 'h a')}
@@ -606,10 +606,10 @@ export function OperatorDashboard() {
                                                 className={`flex-shrink-0 flex flex-col items-center justify-center border-r border-[#e2e4ed] px-2 ${isToday ? 'bg-[#f0f4e8]' : 'bg-[#f9fafb]'}`}
                                                 style={{ width: DATE_LABEL_WIDTH }}
                                             >
-                                                <span className={`text-[13px] font-semibold ${isToday ? 'text-[#7a9705]' : 'text-[#4b545d]'}`}>
+                                                <span className={`text-[12px] font-semibold ${isToday ? 'text-[#7a9705]' : 'text-[#4b545d]'}`}>
                                                     {format(day, 'EEE')}
                                                 </span>
-                                                <span className={`text-[20px] font-bold leading-tight ${isToday ? 'text-[#7a9705]' : 'text-[#111827]'}`}>
+                                                <span className={`text-[19px] font-bold leading-tight ${isToday ? 'text-[#7a9705]' : 'text-[#111827]'}`}>
                                                     {format(day, 'd')}
                                                 </span>
                                             </div>
@@ -619,7 +619,7 @@ export function OperatorDashboard() {
                                                 style={{ height: Math.max(ROW_LANE_HEIGHT, rowHeight) }}
                                             >
                                                 <div className="absolute inset-y-0  flex items-center justify-center bg-orange-100/95 border-x border-orange-300 pointer-events-none" style={{ left: getTimePosition(BREAK_START_HOUR), width: HOUR_WIDTH }}>
-                                                    <span className="text-[12px] font-semibold uppercase text-orange-600 [writing-mode:vertical-rl]">Break</span>
+                                                    <span className="text-[11px] font-semibold uppercase text-orange-600 [writing-mode:vertical-rl]">Break</span>
                                                 </div>
                                                 {hoursToRender.map((hour, idx) => {
                                                     const left = getTimePosition(hour);
@@ -639,7 +639,7 @@ export function OperatorDashboard() {
                         {viewMode === 'month' && (
                             <div className="grid grid-cols-7 gap-px bg-[#e2e4ed]">
                                 {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => (
-                                    <div key={day} className="bg-[#f9fafb] py-2 text-center text-[15px] font-semibold text-[#4b545d]">
+                                    <div key={day} className="bg-[#f9fafb] py-2 text-center text-[14px] font-semibold text-[#4b545d]">
                                         {t(`CALENDAR.DAYS.${day}`)}
                                     </div>
                                 ))}
@@ -663,7 +663,7 @@ export function OperatorDashboard() {
                                                     className={`min-h-[120px] bg-white p-2 cursor-pointer hover:bg-gray-50 transition-colors ${!isCurrentMonth ? 'bg-[#f9fafb]' : ''}`}
                                                     onClick={goToDay}
                                                 >
-                                                    <div className={`text-[15px] mb-2 ${isToday ? 'text-[#7a9705] font-bold' : isCurrentMonth ? 'text-[#4b545d]' : 'text-[#9ca3af]'}`}>
+                                                    <div className={`text-[14px] mb-2 ${isToday ? 'text-[#7a9705] font-bold' : isCurrentMonth ? 'text-[#4b545d]' : 'text-[#9ca3af]'}`}>
                                                         {format(day, 'd')}
                                                     </div>
                                                     <div className="space-y-1">
@@ -683,18 +683,18 @@ export function OperatorDashboard() {
                                                                 <Tooltip key={event.task_id || event.id} delayDuration={300}>
                                                                     <TooltipTrigger asChild>
                                                                         <div
-                                                                            className="text-[13px] px-2 py-1 rounded cursor-pointer truncate"
+                                                                            className="text-[12px] px-2 py-1 rounded cursor-pointer truncate"
                                                                             style={{ backgroundColor: bg, borderColor: cardBorderColor, color: text, borderWidth: event.has_pending_shop_revision ? 2 : 1 }}
                                                                             onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
                                                                         >
                                                                             <div className="font-medium truncate">{event.fab_number || event.fab_id}</div>
-                                                                            {event.plan_name && <div className="text-[11px] opacity-70 truncate">{event.plan_name}</div>}
+                                                                            {event.plan_name && <div className="text-[10px] opacity-70 truncate">{event.plan_name}</div>}
                                                                             {event.work_percentage > 0 && (
                                                                                 <div className="flex items-center gap-1 mt-0.5">
                                                                                     <div className="flex-1 bg-white/50 rounded-full h-1">
                                                                                         <div className="h-1 rounded-full" style={{ width: `${event.work_percentage}%`, backgroundColor: text }} />
                                                                                     </div>
-                                                                                    <span className="text-[10px] font-medium">{event.work_percentage}%</span>
+                                                                                    <span className="text-[9px] font-medium">{event.work_percentage}%</span>
                                                                                 </div>
                                                                             )}
                                                                         </div>
@@ -720,7 +720,7 @@ export function OperatorDashboard() {
                                                             <button
                                                                 type="button"
                                                                 onClick={goToDay}
-                                                                className="text-[12px] text-[#7a9705] font-semibold pl-2 hover:underline"
+                                                                className="text-[11px] text-[#7a9705] font-semibold pl-2 hover:underline"
                                                             >
                                                                 +{events.length - 3} more
                                                             </button>
@@ -742,7 +742,7 @@ export function OperatorDashboard() {
                                 <FileText className="w-5 h-5 text-[#2563eb]" />
                             </div>
                             <div>
-                                <p className="text-[15px] text-[#4b545d]">{t('OPERATOR.TOTAL_TASKS')}</p>
+                                <p className="text-[14px] text-[#4b545d]">{t('OPERATOR.TOTAL_TASKS')}</p>
                                 <p className="text-2xl font-semibold text-black">{totalTasksCount}</p>
                             </div>
                         </div>
@@ -751,7 +751,7 @@ export function OperatorDashboard() {
                                 <MapPin className="w-5 h-5 text-[#7c3aed]" />
                             </div>
                             <div>
-                                <p className="text-[15px] text-[#4b545d]">{t('OPERATOR.WORKSTATIONS')}</p>
+                                <p className="text-[14px] text-[#4b545d]">{t('OPERATOR.WORKSTATIONS')}</p>
                                 <p className="text-2xl font-semibold text-black">{workstationCount}</p>
                             </div>
                         </div>

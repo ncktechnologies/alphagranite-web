@@ -82,7 +82,7 @@ export function UniversalUploadModal({
           
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-[17px] font-semibold py-2 border-b">
+              <DialogTitle className="text-[16px] font-semibold py-2 border-b">
                 {title}
               </DialogTitle>
             </DialogHeader>
@@ -103,7 +103,7 @@ export function UniversalUploadModal({
         <Dialog open={controlledOpen && !disabled} onOpenChange={handleOpenChange}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-[17px] font-semibold py-2 border-b">
+              <DialogTitle className="text-[16px] font-semibold py-2 border-b">
                 {title}
               </DialogTitle>
             </DialogHeader>

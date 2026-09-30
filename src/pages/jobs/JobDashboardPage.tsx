@@ -159,10 +159,10 @@ export function JobDashboardPage() {
           </div>
 
           <div className="flex flex-col gap-1 px-5 space-y-1 order-1">
-            <span className="text-[16px] leading-[14px] font-semibold text-text-foreground">
+            <span className="text-[15px] leading-[14px] font-semibold text-text-foreground">
               {widget.title}
             </span>
-            <span className="text-[34px] leading-[32px] pt-3 font-semibold text-black">
+            <span className="text-[33px] leading-[32px] pt-3 font-semibold text-black">
               {isStagesLoading ? '...' : fabCount}
             </span>
           </div>

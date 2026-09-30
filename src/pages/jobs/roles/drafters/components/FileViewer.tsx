@@ -438,7 +438,7 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
       </div>
 
       {isImage && !imageError && imageLoaded && (
-        <p className="hidden shrink-0 pb-2 text-center text-[13px] text-white/40 sm:block">
+        <p className="hidden shrink-0 pb-2 text-center text-[12px] text-white/40 sm:block">
           Scroll with Ctrl/⌘ or pinch to zoom · Double-click to toggle zoom · Drag to pan · R to rotate · Esc to close
         </p>
       )}

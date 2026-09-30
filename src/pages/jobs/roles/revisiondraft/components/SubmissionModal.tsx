@@ -209,7 +209,7 @@ export const RevisionForm = ({
               />
               <label 
                 htmlFor="revision-confirm"
-                className={`font-semibold text-[18px] leading-none ${
+                className={`font-semibold text-[17px] leading-none ${
                   uploadedFilesCount === 0 
                     ? 'text-gray-400 cursor-not-allowed' 
                     : isConfirmed 
@@ -239,7 +239,7 @@ export const RevisionForm = ({
               </FormControl>
               <label
                 htmlFor="revision-complete"
-                className="font-semibold text-[18px] leading-none"
+                className="font-semibold text-[17px] leading-none"
               >
                 Revision Complete
               </label>

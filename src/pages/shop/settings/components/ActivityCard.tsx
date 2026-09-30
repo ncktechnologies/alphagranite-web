@@ -30,7 +30,7 @@ export const ActivityCard = ({
       <CardContent className="p-4">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className={`${isSelected ? 'text-lg font-normal' : 'font-bold text-[18px]'} text-black`}>
+            <h3 className={`${isSelected ? 'text-lg font-normal' : 'font-bold text-[17px]'} text-black`}>
               {plan_name}
             </h3>
             <Badge 

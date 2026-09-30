@@ -109,7 +109,7 @@ export function OtpVerifyPage() {
             {/* Form content goes here */}
             <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-[#DFDFDF]">
                 <CardContent className="px-6 py-12">
-                    <h4 className="text-secondary text-[18px] pb-3">Verification code</h4>
+                    <h4 className="text-secondary text-[17px] pb-3">Verification code</h4>
                     <div className="flex justify-center gap-2">
                         {codeInputs.map((value, index) => (
                             <div key={index} className="">

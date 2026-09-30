@@ -892,7 +892,7 @@ export function RevisionDetailsPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="border-b">
-              <DialogTitle className="text-[17px] font-semibold py-2">
+              <DialogTitle className="text-[16px] font-semibold py-2">
                 Submit Revision
                 <span className="ml-3 text-sm font-normal text-gray-500">
                   FAB ID: {fabId}

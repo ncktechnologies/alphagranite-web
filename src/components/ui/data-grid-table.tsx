@@ -54,7 +54,7 @@ function DataGridTableBase({ children }: { children: ReactNode }) {
       data-slot="data-grid-table"
       data-dense={props.tableLayout?.dense || undefined}
       className={cn(
-        'w-full align-middle caption-bottom text-left rtl:text-right text-text font-normal text-[17px] leading-[15px]',
+        'w-full align-middle caption-bottom text-left rtl:text-right text-text font-normal text-[16px] leading-[15px]',
         !props.tableLayout?.columnsDraggable && 'border-separate border-spacing-0',
         props.tableLayout?.width === 'fixed' ? 'table-fixed' : 'table-auto',
         props.tableClassNames?.base,
@@ -633,9 +633,9 @@ function DataGridTable<TData extends object>() {
                         return (
                           <th key={header.id} style={{ width: header.getSize() }} className="px-2 py-1 text-left font-normal">
                             {isFirst ? (
-                              <span className="text-[16px] font-semibold text-text whitespace-nowrap">{month}</span>
+                              <span className="text-[15px] font-semibold text-text whitespace-nowrap">{month}</span>
                             ) : showTotal ? (
-                              <span className="text-[14px] font-medium text-text">{monthTotals[colId]?.toFixed(2)}</span>
+                              <span className="text-[13px] font-medium text-text">{monthTotals[colId]?.toFixed(2)}</span>
                             ) : null}
                           </th>
                         );
@@ -671,7 +671,7 @@ function DataGridTable<TData extends object>() {
                                 return (
                                   <th key={header.id} style={{ width: header.getSize() }} className="px-2 py-1 text-left font-normal">
                                     {isFirst ? (
-                                      <span className="text-[15px] font-medium text-text whitespace-nowrap">
+                                      <span className="text-[14px] font-medium text-text whitespace-nowrap">
                                         {(() => {
                                           try {
                                             const parsed = typeof dateStr === 'string' ? parseISO(dateStr) : dateStr;
@@ -680,7 +680,7 @@ function DataGridTable<TData extends object>() {
                                         })()}
                                       </span>
                                     ) : showTotal ? (
-                                      <span className="text-[13px] font-medium text-text">{dateTotals[colId]?.toFixed(2)}</span>
+                                      <span className="text-[12px] font-medium text-text">{dateTotals[colId]?.toFixed(2)}</span>
                                     ) : null}
                                   </th>
                                 );
@@ -747,7 +747,7 @@ function DataGridTable<TData extends object>() {
                           className="px-2 py-1 text-left font-normal"
                         >
                           {isFirstColumn ? (
-                            <span className="text-[17px] leading-[15px] text-text whitespace-nowrap">
+                            <span className="text-[16px] leading-[15px] text-text whitespace-nowrap">
                               {(() => {
                                 // Try to format the date as US format if it's a valid date
                                 try {
@@ -762,7 +762,7 @@ function DataGridTable<TData extends object>() {
                               })()}
                             </span>
                           ) : shouldShowTotal ? (
-                            <span className="text-[15px] leading-[13px] font-medium text-text">
+                            <span className="text-[14px] leading-[13px] font-medium text-text">
                               {columnTotals[columnId]?.toFixed(2)}
                             </span>
                           ) : null}

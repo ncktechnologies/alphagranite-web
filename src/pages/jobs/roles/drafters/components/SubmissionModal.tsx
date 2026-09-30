@@ -217,7 +217,7 @@ export const SubmissionModal = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="border-b">
-            <DialogTitle className="text-[17px] font-semibold py-2">
+            <DialogTitle className="text-[16px] font-semibold py-2">
               Submit Draft
               <span className="ml-3 text-sm font-normal text-gray-500">
                 FAB ID: {fabId}
@@ -302,7 +302,7 @@ export const SubmissionModal = ({
                 onCheckedChange={(v) => setIsConfirmed(Boolean(v))}
                 disabled={false}
               />
-              <label className={`font-semibold text-[18px] ${isConfirmed ? 'text-green-600' : 'text-gray-600'}`}>
+              <label className={`font-semibold text-[17px] ${isConfirmed ? 'text-green-600' : 'text-gray-600'}`}>
                 CAD Drafting Complete 
               </label>
             </div>
