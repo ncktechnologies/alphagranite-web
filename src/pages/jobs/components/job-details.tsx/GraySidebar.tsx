@@ -135,6 +135,16 @@ const toneFor = (seed: string) => {
 
 const plainTextLength = (html: string) => html.replace(/<[^>]*>/g, '').trim().length
 
+/** Note HTML as a string. Some pages pass the raw note object (`{ note, ... }`) instead of its text. */
+const noteHtml = (content: unknown): string => {
+    if (typeof content === 'string') return content
+    if (typeof content === 'number') return String(content)
+    if (content && typeof content === 'object' && typeof (content as { note?: unknown }).note === 'string') {
+        return (content as { note: string }).note
+    }
+    return ''
+}
+
 /** Best-effort text of a simple node (string, number, or an element wrapping them). */
 const textOf = (node: React.ReactNode): string | null => {
     if (node === null || node === undefined || typeof node === 'boolean') return ''
@@ -170,7 +180,8 @@ function SectionHeader({ icon: Icon, title, count }: { icon: LucideIcon; title?:
 
 function NoteItem({ note, isLast }: { note: Note; isLast: boolean }) {
     const [expanded, setExpanded] = useState(false)
-    const long = plainTextLength(note.content || '') > 180
+    const html = noteHtml(note.content)
+    const long = plainTextLength(html) > 180
     const hasAuthor = !!note.author?.trim()
 
     return (
@@ -222,7 +233,7 @@ function NoteItem({ note, isLast }: { note: Note; isLast: boolean }) {
                             'text-[14px] leading-5 text-text break-words [&_a]:text-primary [&_a]:underline',
                             long && !expanded && 'line-clamp-4',
                         )}
-                        dangerouslySetInnerHTML={{ __html: note.content }}
+                        dangerouslySetInnerHTML={{ __html: html }}
                     />
                     {long && (
                         <button
