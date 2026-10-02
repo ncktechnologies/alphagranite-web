@@ -87,11 +87,18 @@ export const MENU_SIDEBAR: MenuConfig = [
     permissionKey: 'employees',
   },
   {
-    title: 'Department',
+    title: 'Accounts',
+    icon: BriefcaseBusiness,
+    path: '/accounts',
+    permissionKey: 'account',
+  },
+  {
+    title: 'Departments',
     icon: Network,
     path: '/departments',
     permissionKey: 'department',
   },
+  
   {
     title: 'Jobs',
     icon: BriefcaseBusiness,

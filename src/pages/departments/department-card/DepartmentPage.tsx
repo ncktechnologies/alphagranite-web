@@ -13,7 +13,7 @@ export function DepartmentPage() {
             <Container>
                 <Toolbar className=' '>
 
-                    <ToolbarHeading title=" Department" description="Manage all Alpha Granite departments" />
+                    <ToolbarHeading title=" Departments" description="Manage all Alpha Granite departments" />
 
                     <ToolbarActions>
                         <Can action="create" on="department">

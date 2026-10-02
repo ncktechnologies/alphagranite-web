@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { exportTableToCSV } from '@/lib/exportToCsv';
-import { useToggleFabOnHoldMutation } from '@/store/api/job';
+import { useGetFabTypesQuery, useToggleFabOnHoldMutation } from '@/store/api/job';
 import { Switch } from '@/components/ui/switch';
 import { useNavigate, Link } from 'react-router-dom';
 import { JOB_STAGES, STAGE_DISPLAY_MAP, STAGE_ORDER, getStageDisplayName } from '@/hooks/use-job-stage';
@@ -203,10 +203,21 @@ export const JobSalesTable = ({
         if (selectedStage) navigate(selectedStage.route);
     };
 
-    const fabTypes = useMemo(() => {
-        return Array.from(new Set(jobs.map(job => job.fab_type).filter(Boolean))).sort();
-    }, [jobs]);
+    // const fabTypes = useMemo(() => {
+    //     return Array.from(new Set(jobs.map(job => job.fab_type).filter(Boolean))).sort();
+    // }, [jobs]);
+    const { data: fabTypesData = [] } = useGetFabTypesQuery();
 
+    const fabTypes = useMemo(() => {
+        return Array.from(
+            new Set(
+                (fabTypesData ?? [])
+                    .map((t: any) => (typeof t === 'string' ? t : t?.name ?? t?.fab_type))
+                    .filter(Boolean)
+            )
+        ).sort();
+    }, [fabTypesData]);
+    
     const uniqueSalesPersons = useMemo(() => {
         if (salesPersons && salesPersons.length > 0) {
             return salesPersons.map((sp: any) => {

@@ -88,6 +88,7 @@ import { PerformancePage } from '@/pages/performance';
 import { SlaSettings } from '@/pages/reports/SlaSettings';
 import { R } from 'node_modules/react-router/dist/development/index-react-server-client-2EDmGlsZ.d.mts';
 import { AuditTrails } from '@/pages/audit/auditTails';
+import AccountsPage from '@/pages/accounts';
 
 export function AppRoutingSetup() {
   return (
@@ -101,6 +102,7 @@ export function AppRoutingSetup() {
           <Route path="/settings/notifications" element={<NotificationsSection />} />
           <Route path="/settings/permissions" element={<PermissionsSection />} />
           <Route path="/settings/stone-types" element={<StoneTypesSection />} />
+            <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/create-jobs" element={<JobsSection />} />
           <Route path="/status-job-report" element={<JobStatusPage />} />
           <Route path="/need-to-invoice" element={<NeedToInvoicePage />} />

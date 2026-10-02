@@ -229,6 +229,17 @@ export interface AccountCreate {
     address?: string;
 }
 
+export interface AccountUpdate {
+    name?: string;
+    account_number?: string;
+    description?: string;
+    contact_person?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    status_id?: number;
+}
+
 export interface StoneType {
     id: number;
     name: string;
@@ -1397,6 +1408,29 @@ export const jobApi = createApi({
                 },
                 providesTags: ["Account"],
             }),
+            getAccountsAll: build.query<Account[], AccountListParams | void>({
+                query: (params) => {
+                    const queryParams = params || {};
+                    return {
+                        url: "/accounts/all",
+                        method: "get",
+                        params: {
+                            skip: queryParams.skip || 0,
+                            limit: queryParams.limit || 1000,
+                            ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
+                            ...(queryParams.search && { search: queryParams.search }),
+                        }
+                    };
+                },
+                transformResponse: (response: any) => {
+                    // Handle the response format with success, message, and data properties
+                    if (response && response.data) {
+                        return response.data;
+                    }
+                    return response;
+                },
+                providesTags: ["Account"],
+            }),
 
             getAccountById: build.query<Account, number>({
                 query: (id) => ({
@@ -1603,6 +1637,32 @@ export const jobApi = createApi({
                     url: "/accounts",
                     method: "post",
                     data
+                }),
+                invalidatesTags: ["Account"],
+            }),
+            updateAccount: build.mutation<Account, { id: number; data: AccountUpdate }>({
+                query: ({ id, data }) => ({
+                    url: `/accounts/${id}`,
+                    method: "put",
+                    data
+                }),
+                invalidatesTags: (_result, _error, { id }) => [{ type: "Account", id }, "Account"],
+            }),
+
+            // Toggle account active status
+            updateAccountStatus: build.mutation<any, { account_id: number; is_active: boolean }>({
+                query: ({ account_id, is_active }) => ({
+                    url: `/accounts/${account_id}/status`,
+                    method: 'patch',
+                    data: { is_active }
+                }),
+                invalidatesTags: (_result, _error, { account_id }) => [{ type: 'Account', id: account_id }, 'Account'],
+            }),
+
+            deleteAccount: build.mutation<void, number>({
+                query: (id) => ({
+                    url: `/accounts/${id}`,
+                    method: "delete"
                 }),
                 invalidatesTags: ["Account"],
             }),
@@ -2582,6 +2642,7 @@ export const {
     useDeleteFabMutation,
     useGetFabTypesQuery,
     useGetAccountsQuery,
+    useGetAccountsAllQuery,
     useGetAccountByIdQuery,
     useGetStoneTypesQuery,
     useGetStoneColorsQuery,
@@ -2596,6 +2657,9 @@ export const {
     useUpdateTemplatingMutation,
     // New mutation hooks
     useCreateAccountMutation,
+    useUpdateAccountMutation,
+    useDeleteAccountMutation,
+    useUpdateAccountStatusMutation,
     useCreateStoneTypeMutation,
     useUpdateStoneTypeMutation,
     useDeleteStoneTypeMutation,
