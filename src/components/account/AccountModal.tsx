@@ -100,17 +100,18 @@ export const AccountModal = ({ open, onClose, account }: AccountModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && !isSaving && onClose()}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[calc(100dvh-2rem)] p-5">
+        <DialogHeader className="mb-3">
           <DialogTitle>{isEdit ? 'Edit Account' : 'New Account'}</DialogTitle>
           <DialogDescription>
             {isEdit ? `Update the details for ${account?.name}.` : 'Add a new customer account.'}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} noValidate>
-          <DialogBody className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col min-h-0">
+          {/* Fields scroll on short screens so the header and actions stay visible */}
+          <DialogBody className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto min-h-0 -mx-1 px-1 py-1">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="account-name">
                 Account Name <span className="text-destructive">*</span>
               </Label>
@@ -123,7 +124,7 @@ export const AccountModal = ({ open, onClose, account }: AccountModalProps) => {
               />
               {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="account-number">Account Number</Label>
               <Input
                 id="account-number"
@@ -131,7 +132,7 @@ export const AccountModal = ({ open, onClose, account }: AccountModalProps) => {
                 onChange={(e) => setField('account_number')(e.target.value)}
               />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="account-contact">Contact Person</Label>
               <Input
                 id="account-contact"
@@ -139,7 +140,7 @@ export const AccountModal = ({ open, onClose, account }: AccountModalProps) => {
                 onChange={(e) => setField('contact_person')(e.target.value)}
               />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="account-phone">Phone</Label>
               <Input
                 id="account-phone"
@@ -148,7 +149,7 @@ export const AccountModal = ({ open, onClose, account }: AccountModalProps) => {
                 onChange={(e) => setField('phone')(e.target.value)}
               />
             </div>
-            <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <div className="flex flex-col gap-1 sm:col-span-2">
               <Label htmlFor="account-email">Email</Label>
               <Input
                 id="account-email"
@@ -159,7 +160,7 @@ export const AccountModal = ({ open, onClose, account }: AccountModalProps) => {
               />
               {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
             </div>
-            <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <div className="flex flex-col gap-1 sm:col-span-2">
               <Label htmlFor="account-address">Address</Label>
               <Input
                 id="account-address"
@@ -167,18 +168,18 @@ export const AccountModal = ({ open, onClose, account }: AccountModalProps) => {
                 onChange={(e) => setField('address')(e.target.value)}
               />
             </div>
-            <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <div className="flex flex-col gap-1 sm:col-span-2">
               <Label htmlFor="account-description">Description</Label>
               <Textarea
                 id="account-description"
-                rows={3}
+                rows={2}
                 value={form.description}
                 onChange={(e) => setField('description')(e.target.value)}
               />
             </div>
           </DialogBody>
 
-          <DialogFooter>
+          <DialogFooter className="pt-4 border-t mt-4 gap-2 sm:gap-0">
             <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
               Cancel
             </Button>
