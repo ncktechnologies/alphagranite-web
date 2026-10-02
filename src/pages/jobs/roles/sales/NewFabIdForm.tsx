@@ -209,7 +209,7 @@ const NewFabIdForm = () => {
     isLoading: isLoadingAccounts,
     isError: isAccountsError,
     error: accountsError
-  } = useGetAccountsQuery({ limit: 1000 });
+  } = useGetAccountsQuery();
 
   const {
     data: stoneTypesData,

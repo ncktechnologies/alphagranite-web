@@ -88,7 +88,7 @@ export const MENU_SIDEBAR: MenuConfig = [
   },
   {
     title: 'Accounts',
-    icon: BriefcaseBusiness,
+    icon: Building2,
     path: '/accounts',
     permissionKey: 'account',
   },

@@ -223,7 +223,7 @@ const EditFabIdForm = () => {
 
     // API hooks for dropdown data
     const { data: fabTypesData = [], isLoading: isLoadingFabTypes } = useGetFabTypesQuery();
-    const { data: accountsData = [], isLoading: isLoadingAccounts } = useGetAccountsQuery({ limit: 1000 });
+    const { data: accountsData = [], isLoading: isLoadingAccounts } = useGetAccountsQuery();
     const { data: stoneTypesData = [], isLoading: isLoadingStoneTypes } = useGetStoneTypesQuery({ limit: 1000 });
     const { data: stoneColorsData = [], isLoading: isLoadingStoneColors, isError: isStoneColorsError } = useGetStoneColorsQuery({ limit: 1000 });
     const { data: stoneThicknessesData = [], isLoading: isLoadingStoneThicknesses } = useGetStoneThicknessesQuery({ limit: 1000 });

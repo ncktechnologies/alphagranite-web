@@ -213,6 +213,7 @@ export interface Account {
     phone?: string;
     address?: string;
     status_id: number;
+    is_active?: boolean | number;
     created_at: string;
     created_by: number;
     updated_at?: string;
@@ -1393,7 +1394,8 @@ export const jobApi = createApi({
                         method: "get",
                         params: {
                             skip: queryParams.skip || 0,
-                            limit: queryParams.limit || 1000,
+                            // No limit unless the caller asks for one; the API returns every account by default
+                            ...(queryParams.limit !== undefined && { limit: queryParams.limit }),
                             ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
                             ...(queryParams.search && { search: queryParams.search }),
                         }
@@ -1416,7 +1418,8 @@ export const jobApi = createApi({
                         method: "get",
                         params: {
                             skip: queryParams.skip || 0,
-                            limit: queryParams.limit || 1000,
+                            // No limit unless the caller asks for one; the API returns every account by default
+                            ...(queryParams.limit !== undefined && { limit: queryParams.limit }),
                             ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
                             ...(queryParams.search && { search: queryParams.search }),
                         }

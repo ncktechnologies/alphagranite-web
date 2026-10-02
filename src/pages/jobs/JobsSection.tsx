@@ -150,7 +150,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
   }, [searchQuery, searchType, selectedStatus, pagination.pageIndex, pagination.pageSize]);
 
   const { data: jobsData, isLoading, refetch } = useGetJobsQuery(queryParams);
-  const { data: accountsData } = useGetAccountsQuery({ limit: 1000 });
+  const { data: accountsData } = useGetAccountsQuery();
 
   const [deleteJob] = useDeleteJobMutation();
   const [toggleNeedToInvoice] = useToggleNeedToInvoiceMutation();
