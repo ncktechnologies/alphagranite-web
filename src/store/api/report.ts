@@ -16,6 +16,48 @@ interface ReportQueryParams {
     start_date?: string;
     end_date?: string;
 }
+/** GET/PUT /api/v1/performance/static-data (derived values are calculated by the backend). */
+export interface PerformanceStaticData {
+    year: number;
+    total_expenses: number | null;
+    total_wages: number | null;
+    difference_overhead: number | null;
+    overhead_monthly: number | null;
+    overhead_weekly: number | null;
+    breakeven_gross_revenue: number | null;
+    breakeven_gross_profit: number | null;
+    breakeven_avg_revenue_per_day: number | null;
+    updated_at: string | null;
+    updated_by: number | null;
+}
+
+export interface PerformanceStaticDataInput {
+    year: number;
+    total_expenses: number | null;
+    total_wages: number | null;
+    breakeven_gross_revenue: number | null;
+}
+
+/** One report week; week_ending is the key the labor cost reports use. */
+export interface SubcontractorLaborWeek {
+    week_ending: string;
+    week_start: string;
+    month_number: number;
+    number_of_days: number;
+    total_labor_cost: number | null;
+    head_count: number | null;
+}
+
+export interface SubcontractorLaborYear {
+    year: number;
+    weeks: SubcontractorLaborWeek[];
+}
+
+export interface SubcontractorLaborInput {
+    year: number;
+    weeks: { week_ending: string; total_labor_cost: number | null; head_count: number | null }[];
+}
+
 export interface SlaRule {
     id: number;
     fab_type: string;
@@ -35,7 +77,7 @@ export interface UpdateSlaRuleDto {
 export const reportApi = createApi({
     reducerPath: "reportApi",
     baseQuery: axiosBaseQuery({ baseUrl }),
-    tagTypes: ["Report", "SlaSettings"],
+    tagTypes: ["Report", "SlaSettings", "PerformanceData"],
     keepUnusedDataFor: 0,
     endpoints(build) {
         return {
@@ -71,6 +113,44 @@ export const reportApi = createApi({
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
+            getWeeklyInstallerSubsLaborCost: build.query<any, { year?: number, month?: number } | void>({
+                query: (params) => ({
+                    url: "/api/v1/reports/owner/weekly-installer-labor-cost-subs",
+                    method: "get",
+                    params: params || getCurrentDateParams()
+                }),
+                transformResponse: (response: any) => response,
+                providesTags: ["Report"],
+            }),
+            getWeeklyInstallerCombinedLaborCost: build.query<any, { year?: number, month?: number } | void>({
+                query: (params) => ({
+                    url: "/api/v1/reports/owner/weekly-installer-labor-cost-combined",
+                    method: "get",
+                    params: params || getCurrentDateParams()
+                }),
+                transformResponse: (response: any) => response,
+                providesTags: ["Report"],
+            }),
+
+            // ─── Performance inputs (static data + weekly subcontractor labor) ──────
+            getPerformanceStaticData: build.query<{ data: PerformanceStaticData }, { year: number }>({
+                query: (params) => ({ url: "/api/v1/performance/static-data", method: "get", params }),
+                providesTags: ["PerformanceData"],
+            }),
+            updatePerformanceStaticData: build.mutation<{ data: PerformanceStaticData }, PerformanceStaticDataInput>({
+                query: (body) => ({ url: "/api/v1/performance/static-data", method: "put", data: body }),
+                // Reports take their overhead per week from this.
+                invalidatesTags: ["PerformanceData", "Report"],
+            }),
+            getSubcontractorLabor: build.query<{ data: SubcontractorLaborYear }, { year: number }>({
+                query: (params) => ({ url: "/api/v1/performance/subcontractor-labor", method: "get", params }),
+                providesTags: ["PerformanceData"],
+            }),
+            updateSubcontractorLabor: build.mutation<{ data: SubcontractorLaborYear }, SubcontractorLaborInput>({
+                query: (body) => ({ url: "/api/v1/performance/subcontractor-labor", method: "put", data: body }),
+                invalidatesTags: ["PerformanceData", "Report"],
+            }),
+
             getOwnerOverview: build.query<any, { start_date?: string; end_date?: string } | void>({
                 query: (params) => {
                     const searchParams = new URLSearchParams();
@@ -394,6 +474,12 @@ export const {
     useGetReportRedosQuery,
     useGetWeeklyFabricationLaborCostQuery,
     useGetWeeklyInstallerLaborCostQuery,
+    useGetWeeklyInstallerSubsLaborCostQuery,
+    useGetWeeklyInstallerCombinedLaborCostQuery,
+    useGetPerformanceStaticDataQuery,
+    useUpdatePerformanceStaticDataMutation,
+    useGetSubcontractorLaborQuery,
+    useUpdateSubcontractorLaborMutation,
     useGetOwnerOverviewQuery,
     useGetRedoAnalysisQuery,
     useGetShopStatusReportQuery,

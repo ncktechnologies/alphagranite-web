@@ -18,7 +18,10 @@ const REPORTS = [
     { title: 'Install & Template Trends', path: '/report/weekly-trends', permissionKey: 'install_template_trends' },
     { title: 'Turnaround Times', path: '/report/turnaround-times', permissionKey: 'turnaround_times' },
     { title: 'Shop Labor Costs - Weekly', path: '/report/weekly-fabrication-cost', permissionKey: 'shop_labor_costs_weekly' },
-    { title: 'Installer Labor Costs - Weekly', path: '/report/weekly-installer-cost', permissionKey: 'installer_labor_costs_weekly' },
+    { title: 'Installer Labor Costs - Weekly - Alpha Granite', path: '/report/weekly-installer-cost', permissionKey: 'installer_labor_costs_weekly' },
+    // Subs and Combined use the installer labor cost report permission.
+    { title: 'Installer Labor Costs - Weekly - Subs', path: '/report/weekly-installer-cost-subs', permissionKey: 'installer_labor_costs_weekly' },
+    { title: 'Installer Labor Costs - Weekly - Combined', path: '/report/weekly-installer-cost-combined', permissionKey: 'installer_labor_costs_weekly' },
 ];
 
 function ChevronRight() {

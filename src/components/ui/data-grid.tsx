@@ -12,6 +12,9 @@ declare module '@tanstack/react-table' {
     cellClassName?: string;
     skeleton?: ReactNode;
     expandedContent?: (row: TData) => ReactNode;
+    /** Value formatter used by exportTableToCSV (src/lib/exportToCsv.ts). */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    format?: (value: any, row: TData) => string;
   }
 }
 

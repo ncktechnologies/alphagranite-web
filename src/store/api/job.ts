@@ -825,6 +825,11 @@ export interface FinanceStats {
     revenue_installed: number;
     revenue_templated: number;
     gross_profit: number;
+    /** Gross profit minus breakeven gross profit for delta_period; null until static data is entered. */
+    gross_profit_delta: number | null;
+    breakeven_gross_profit: number | null;
+    delta_gross_profit: number;
+    delta_period: 'today' | 'this_week' | 'this_month';
 }
 
 export interface NewlyAssignedFab {

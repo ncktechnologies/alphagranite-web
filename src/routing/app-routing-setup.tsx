@@ -64,7 +64,9 @@ import { InstallerScheduleCards } from '@/pages/installer/InstallerDashboard';
 import CostOfStonePage from '@/pages/jobs/roles/cost_of_stone.tsx/CostOfStonePage';
 import { RedosReport } from '@/pages/reports/RedosReport';
 import { WeeklyFabricationCostReport } from '@/pages/reports/WeeklyFabCost';
-import { WeeklyInstallerCostReport } from '@/pages/reports/WeeklyInstallerCost';
+import { WeeklyInstallerCombinedCostReport, WeeklyInstallerCostReport, WeeklyInstallerSubsCostReport } from '@/pages/reports/WeeklyInstallerCost';
+import { PerformanceStaticDataPage } from '@/pages/performance/StaticData';
+import { SubcontractorLaborPage } from '@/pages/performance/SubcontractorLabor';
 import { InstallPerformance } from '@/pages/reports/InstallPerformance';
 import { ShopStatusReport } from '@/pages/reports/ShopStatus';
 import { TurnaroundTimesReport } from '@/pages/reports/TurnaroundTimes';
@@ -459,6 +461,8 @@ export function AppRoutingSetup() {
           <Route path="/performance/redos" element={<RedosReport />} />
           <Route path="/report/weekly-fabrication-cost" element={<WeeklyFabricationCostReport />} />
           <Route path="/report/weekly-installer-cost" element={<WeeklyInstallerCostReport />} />
+          <Route path="/report/weekly-installer-cost-subs" element={<WeeklyInstallerSubsCostReport />} />
+          <Route path="/report/weekly-installer-cost-combined" element={<WeeklyInstallerCombinedCostReport />} />
           <Route path="/report/install-performance" element={<InstallPerformance />} />
           <Route path="/report/shop-status" element={<ShopStatusReport />} />
           <Route path="/report/turnaround-times" element={<TurnaroundTimesReport />} />
@@ -488,6 +492,8 @@ export function AppRoutingSetup() {
               <SlaSettings />
             }
           />
+          <Route path="/performance/static-data" element={<PerformanceStaticDataPage />} />
+          <Route path="/performance/subcontractor-labor" element={<SubcontractorLaborPage />} />
 
 
           {/* Operator Routes */}

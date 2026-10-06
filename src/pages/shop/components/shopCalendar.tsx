@@ -132,9 +132,9 @@ function EventDetails({ ev }: { ev: any }) {
   const job = [ev.job_name, ev.job_number].filter(Boolean).join(' · ');
   const totalHours = ev._originalHours ?? ev.estimated_hours;
   const rows: [string, React.ReactNode][] = [
+    ['Workstation', ev.workstation_name || '—'],
     ['Time', timeRange(ev)],
     ['Operator', ev.operator_name || '—'],
-    ['Workstation', ev.workstation_name || '—'],
     ['Est. hours', totalHours ?? '—'],
     ['Job', job || '—'],
     ['Account', ev.account_name || '—'],
@@ -739,22 +739,27 @@ const ShopCalendarPage: React.FC = () => {
             <div className="@container flex h-full flex-col gap-0.5 px-2 py-1.5" style={{ color: text }}>
               <div className="flex items-center gap-1 min-w-0">
                 {pendingRevision && <AlertTriangle className="size-3 shrink-0 text-destructive" />}
-                <span className="truncate text-[13px] font-semibold tabular-nums">#{event.fab_id}</span>
+                <span className="truncate text-[13px] font-semibold tabular-nums">
+                  #{event.fab_id}
+                  {/* One-line cards: workstation sits next to the FAB number. */}
+                  {h < 48 && <span className="font-medium opacity-85"> · {event.workstation_name || 'No workstation'}</span>}
+                </span>
                 {h >= 48 && (
                   <span className="ms-auto hidden shrink-0 text-[11px] font-semibold tabular-nums opacity-70 @[104px]:inline">
                     {event.work_percentage ?? 0}%
                   </span>
                 )}
               </div>
+              {/* Workstation is always shown, ahead of the time (inline above for one-line cards). */}
               {h >= 48 && (
+                <p className="truncate text-[11px] font-semibold leading-tight opacity-85">{event.workstation_name || 'No workstation'}</p>
+              )}
+              {h >= 62 && (
                 <p className="truncate text-[12px] font-medium opacity-80">
                   {[event.plan_name, event.operator_name].filter(Boolean).join(' · ')}
                 </p>
               )}
               {h >= 84 && <p className="truncate text-[11px] opacity-70">{timeRange(event)}</p>}
-              {h >= 110 && event.workstation_name && (
-                <p className="truncate text-[11px] opacity-70">{event.workstation_name}</p>
-              )}
               {h >= 40 && (
                 <div className="mt-auto">
                   <ProgressBar value={event.work_percentage} color={border} />
@@ -1432,7 +1437,8 @@ const ShopCalendarPage: React.FC = () => {
                                               </span>
                                             </div>
                                             <p className="truncate text-[12px] opacity-75">
-                                              {[ev.operator_name, timeRange(ev)].filter(Boolean).join(' · ')}
+                                              <span className="font-semibold">{ev.workstation_name || 'No workstation'}</span>
+                                              {[ev.operator_name, timeRange(ev)].filter(Boolean).map((part) => ` · ${part}`).join('')}
                                             </p>
                                             <div className="mt-0.5">
                                               <ProgressBar value={ev.work_percentage} color={border} />

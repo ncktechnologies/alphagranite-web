@@ -1,0 +1,433 @@
+// pages/reports/WeeklyLaborCostReport.tsx
+//
+// Shared page for the weekly labor cost reports (Shop/Fabrication and the three
+// Installer variants). Rows, labels, number formats and row styles all come from
+// the backend's `metric_rows`, so this table and the PDF export always match.
+import { useMemo, useState } from 'react';
+import { flexRender, ColumnDef, getCoreRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table';
+import { format } from 'date-fns';
+import { CalendarDays, FileDown, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
+import { DataGrid } from '@/components/ui/data-grid';
+import { DataGridPagination } from '@/components/ui/data-grid-pagination';
+import { Card, CardHeader, CardToolbar, CardTable, CardFooter, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { exportTableToCSV } from '@/lib/exportToCsv';
+import { downloadPdf } from '@/lib/download-pdf';
+import { formatCurrency, formatMetric, MetricFormat } from '@/lib/report-format';
+import { reportRowClass } from '@/lib/report-row-styles';
+import { cn } from '@/lib/utils';
+import { BackButton } from '@/components/common/BackButton';
+
+/** One row of the report as described by the backend. */
+export interface MetricRow {
+    key: string;
+    label: string;
+    format: MetricFormat;
+    style: 'highlight' | 'bold' | null;
+}
+
+type MetricValues = Record<string, number | null | undefined>;
+
+/** Shape of the weekly labor cost report responses (backend reports.py). */
+export interface LaborCostReportData {
+    title?: string;
+    metric_rows?: MetricRow[];
+    display?: { total_employee?: number | null; default_overhead_per_week?: number | null; overhead_source?: string } | null;
+    monthly_report?: { weekly_breakdown?: (MetricValues & { week_ending: string })[]; totals?: MetricValues };
+    annual_monthly_summary?: (MetricValues & { month: string })[];
+}
+
+interface ReportQueryResult {
+    data?: { data?: LaborCostReportData };
+    isLoading: boolean;
+    isError: boolean;
+}
+
+/** One table row: a metric with a value per week (`week_<n>`) and the month total. */
+type TableRow = { metric: string; label: string; format: MetricFormat; style: MetricRow['style']; [weekOrTotal: string]: unknown };
+type AnnualRow = MetricValues & { month: string };
+
+const errorMessage = (error: unknown) => (error instanceof Error ? error.message : '');
+
+export interface WeeklyLaborCostReportProps {
+    /** Shown until the backend title arrives. */
+    title: string;
+    /** Backend report path, e.g. /api/v1/reports/owner/weekly-installer-labor-cost (PDF is `${apiPath}/pdf`). */
+    apiPath: string;
+    useReportQuery: (params: { year: number; month: number }) => ReportQueryResult;
+    /** File name prefix for CSV/PDF downloads. */
+    filePrefix: string;
+    /** Annual summary "GP less cost" column key (differs between shop and installer reports). */
+    gpLessCostKey: string;
+}
+
+// JS parses "YYYY-MM-DD" as UTC midnight; read the date part as a local date instead.
+const parseLocalDate = (value: string | null | undefined): Date | null => {
+    const match = value ? /^(\d{4})-(\d{2})-(\d{2})/.exec(value) : null;
+    return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : null;
+};
+
+const OVERHEAD_SOURCE_LABELS: Record<string, string> = {
+    performance_static_data: 'From Performance static data',
+    default: 'Default (no static data for this year)',
+    query: 'Set for this report',
+};
+
+export function WeeklyLaborCostReport({ title, apiPath, useReportQuery, filePrefix, gpLessCostKey }: WeeklyLaborCostReportProps) {
+    const now = useMemo(() => new Date(), []);
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date(now.getFullYear(), now.getMonth(), 1));
+    const [tempDate, setTempDate] = useState<Date | undefined>(selectedDate);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+    const [calendarMonth, setCalendarMonth] = useState<Date>(selectedDate || now);
+    const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 });
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const [annualPagination, setAnnualPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 });
+    const [annualSorting, setAnnualSorting] = useState<SortingState>([]);
+
+    const period = selectedDate ?? now;
+    const queryParams = useMemo(() => ({ year: period.getFullYear(), month: period.getMonth() + 1 }), [period]);
+    const { data, isLoading, isError } = useReportQuery(queryParams);
+
+    const report = data?.data;
+    const metricRows: MetricRow[] = useMemo(() => report?.metric_rows ?? [], [report]);
+    const weeklyData = useMemo(() => report?.monthly_report?.weekly_breakdown ?? [], [report]);
+    const monthTotals = useMemo(() => report?.monthly_report?.totals ?? {}, [report]);
+    const annualData: AnnualRow[] = useMemo(() => report?.annual_monthly_summary ?? [], [report]);
+    const display = report?.display ?? null;
+    const reportTitle: string = report?.title ?? title;
+    const periodLabel = format(period, 'MMMM yyyy');
+
+    // One table row per metric: label, a value per week, and the backend's month TOTAL
+    // (ratios there are recalculated from the month's sums, as in the PDF).
+    const tableRows = useMemo(
+        () =>
+            metricRows.map((metric) => {
+                const row: TableRow = { metric: metric.key, label: metric.label, format: metric.format, style: metric.style };
+                weeklyData.forEach((week, idx) => {
+                    row[`week_${idx}`] = week[metric.key];
+                });
+                row.total = monthTotals[metric.key];
+                return row;
+            }),
+        [metricRows, weeklyData, monthTotals],
+    );
+
+    const weekLabels = useMemo(
+        () => weeklyData.map((week) => {
+            const day = parseLocalDate(week.week_ending);
+            return day ? format(day, 'MMM dd') : '-';
+        }),
+        [weeklyData],
+    );
+
+    const columns = useMemo<ColumnDef<TableRow>[]>(() => {
+        const valueColumn = (id: string, header: string, size: number): ColumnDef<TableRow> => ({
+            id,
+            accessorKey: id,
+            header: ({ column }) => <DataGridColumnHeader title={header} column={column} />,
+            cell: ({ row }) => formatMetric(row.original[id], row.original.format),
+            size,
+            enableSorting: true,
+            meta: { format: (_value: unknown, row: TableRow) => formatMetric(row[id], row.format) },
+        });
+        return [
+            {
+                id: 'metric',
+                accessorKey: 'label',
+                header: ({ column }) => <DataGridColumnHeader title="METRIC" column={column} />,
+                cell: ({ row }) => row.original.label,
+                size: 280,
+                enableSorting: true,
+                meta: { format: (_value: unknown, row: TableRow) => row.label },
+            },
+            ...weekLabels.map((label, idx) => valueColumn(`week_${idx}`, label, 120)),
+            valueColumn('total', 'TOTAL', 160),
+        ];
+    }, [weekLabels]);
+
+    const table = useReactTable({
+        columns,
+        data: tableRows,
+        state: { pagination, sorting },
+        onPaginationChange: setPagination,
+        onSortingChange: setSorting,
+        getCoreRowModel: getCoreRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        enableColumnResizing: true,
+        columnResizeMode: 'onEnd',
+    });
+
+    const annualColumns = useMemo<ColumnDef<AnnualRow>[]>(() => {
+        const column = (key: string, header: string, fmt: MetricFormat, size: number): ColumnDef<AnnualRow> => ({
+            accessorKey: key,
+            header: ({ column: col }) => <DataGridColumnHeader title={header} column={col} />,
+            cell: ({ row }) => formatMetric(row.original[key], fmt),
+            size,
+            enableSorting: true,
+            meta: { format: (value: unknown) => formatMetric(value, fmt) },
+        });
+        return [
+            {
+                accessorKey: 'month',
+                header: ({ column }) => <DataGridColumnHeader title="MONTH" column={column} />,
+                cell: ({ row }) => <span className="font-medium">{row.original.month ?? '-'}</span>,
+                size: 120,
+                enableSorting: true,
+                meta: { format: (value: string) => value || '' },
+            },
+            column('number_of_weeks', 'WEEKS', 'days', 80),
+            column('completed_sqft', 'SQFT', 'number', 110),
+            column('gross_revenue', 'GROSS REVENUE', 'currency', 140),
+            column('gross_profit', 'GROSS PROFIT', 'currency', 130),
+            column('total_labor_cost', 'LABOR COST', 'currency', 130),
+            column('total_hours', 'TOTAL HRS', 'number', 100),
+            {
+                accessorKey: gpLessCostKey,
+                header: ({ column: col }) => <DataGridColumnHeader title="GP LESS COST/SQFT" column={col} />,
+                cell: ({ row }) => {
+                    const value = row.original[gpLessCostKey];
+                    if (value === null || value === undefined) return '-';
+                    return <span className={cn('font-medium', value < 0 ? 'text-destructive' : 'text-success')}>{formatCurrency(value)}</span>;
+                },
+                size: 170,
+                enableSorting: true,
+                meta: { format: (value: number) => formatCurrency(value) },
+            },
+        ];
+    }, [gpLessCostKey]);
+
+    const annualTable = useReactTable({
+        columns: annualColumns,
+        data: annualData,
+        state: { pagination: annualPagination, sorting: annualSorting },
+        onPaginationChange: setAnnualPagination,
+        onSortingChange: setAnnualSorting,
+        getCoreRowModel: getCoreRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+    });
+
+    const handleExportPdf = async () => {
+        setIsExportingPdf(true);
+        try {
+            await downloadPdf(`${apiPath}/pdf`, queryParams, `${filePrefix}-${format(period, 'yyyy-MM')}.pdf`);
+            toast.success('PDF downloaded');
+        } catch (error: unknown) {
+            toast.error(`Could not export the PDF: ${errorMessage(error) || 'please try again.'}`);
+        } finally {
+            setIsExportingPdf(false);
+        }
+    };
+
+    if (isLoading) return <div className="p-5 text-[#7c8689] dark:text-muted-foreground">Loading {title.toLowerCase()}...</div>;
+    if (isError) return <div className="p-5 text-red-500">Error loading report.</div>;
+
+    return (
+        <div className="flex flex-col gap-5 p-5">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+                <h1 className="text-2xl font-semibold text-[#4b545d] dark:text-foreground">{reportTitle}</h1>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" className={cn('w-[180px] justify-start text-left font-normal h-[34px]', !selectedDate && 'text-muted-foreground')}>
+                                <CalendarDays className="mr-2 h-4 w-4" />
+                                {selectedDate ? format(selectedDate, 'MMM yyyy') : 'Select Month'}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" month={calendarMonth} onMonthChange={setCalendarMonth} selected={tempDate} onSelect={setTempDate} initialFocus />
+                            <div className="flex justify-end gap-2 p-3 border-t">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setTempDate(undefined);
+                                        setSelectedDate(undefined);
+                                        setIsDatePickerOpen(false);
+                                    }}
+                                >
+                                    Reset
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    onClick={() => {
+                                        setSelectedDate(tempDate ? new Date(tempDate.getFullYear(), tempDate.getMonth(), 1) : undefined);
+                                        setIsDatePickerOpen(false);
+                                    }}
+                                >
+                                    Apply
+                                </Button>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    {selectedDate && (
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}>
+                            Clear
+                        </Button>
+                    )}
+                    <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(table, `${filePrefix}-${periodLabel}`)}>
+                        Export CSV
+                    </Button>
+                    <Button variant="outline" className="h-[34px]" onClick={handleExportPdf} disabled={isExportingPdf}>
+                        {isExportingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+                        {isExportingPdf ? 'Exporting…' : 'Export PDF'}
+                    </Button>
+                    <BackButton />
+                </div>
+            </div>
+
+            {display && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] dark:border-border rounded-[12px] bg-white dark:bg-card">
+                        <p className="text-xs text-[#7c8689] dark:text-muted-foreground font-medium uppercase tracking-wider">Total Employees</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d] dark:text-foreground">{display.total_employee ?? '-'}</p>
+                    </Card>
+                    {display.default_overhead_per_week != null && (
+                        <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] dark:border-border rounded-[12px] bg-white dark:bg-card">
+                            <p className="text-xs text-[#7c8689] dark:text-muted-foreground font-medium uppercase tracking-wider">Overhead / Week</p>
+                            <p className="text-2xl font-semibold mt-2 text-[#4b545d] dark:text-foreground">{formatCurrency(display.default_overhead_per_week)}</p>
+                            {display.overhead_source && (
+                                <p className="text-xs text-[#7c8689] dark:text-muted-foreground mt-1">{OVERHEAD_SOURCE_LABELS[display.overhead_source] ?? display.overhead_source}</p>
+                            )}
+                        </Card>
+                    )}
+                </div>
+            )}
+
+            <DataGrid table={table} recordCount={tableRows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
+                <Card className="border border-[#e2e4ed] dark:border-border rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                    <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] dark:border-border flex flex-row items-center justify-between bg-white dark:bg-card">
+                        <CardTitle className="text-base font-semibold text-[#4b545d] dark:text-foreground">Weekly Breakdown – {periodLabel}</CardTitle>
+                        <CardToolbar />
+                    </CardHeader>
+                    <CardTable>
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-5px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
+                            <div className="relative">
+                                <table className="w-full border-collapse table-fixed">
+                                    <thead className="sticky top-0 z-10 bg-white dark:bg-card">
+                                        {table.getHeaderGroups().map((headerGroup) => (
+                                            <tr key={headerGroup.id}>
+                                                {headerGroup.headers.map((header) => (
+                                                    <th
+                                                        key={header.id}
+                                                        className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] dark:text-muted-foreground border-b border-[#e2e4ed] dark:border-border bg-gray-50 dark:bg-muted"
+                                                        style={{ width: header.getSize() }}
+                                                    >
+                                                        {flexRender(header.column.columnDef.header, header.getContext())}
+                                                        {header.column.getCanResize() && (
+                                                            <div
+                                                                onDoubleClick={() => header.column.resetSize()}
+                                                                onMouseDown={header.getResizeHandler()}
+                                                                onTouchStart={header.getResizeHandler()}
+                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                            />
+                                                        )}
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </thead>
+                                    <tbody>
+                                        {table.getRowModel().rows.map((row) => (
+                                            <tr key={row.id} className="border-b border-[#e2e4ed] dark:border-border hover:bg-gray-50/50 dark:hover:bg-muted/40" data-row-style={row.original.style ?? undefined}>
+                                                {row.getVisibleCells().map((cell) => (
+                                                    <td
+                                                        key={cell.id}
+                                                        className={cn(
+                                                            'px-3 py-2 text-sm text-[#4b545d] dark:text-foreground border-r border-[#e2e4ed] dark:border-border last:border-r-0',
+                                                            cell.column.id === 'total' && 'font-semibold',
+                                                            // Row style from the backend, applied across the whole row.
+                                                            reportRowClass(row.original.style),
+                                                        )}
+                                                        style={{ width: cell.column.getSize() }}
+                                                    >
+                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                        {tableRows.length === 0 && (
+                                            <tr>
+                                                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-[#7c8689] dark:text-muted-foreground">
+                                                    No data available.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                        </ScrollArea>
+                    </CardTable>
+                    <CardFooter className="bg-white dark:bg-card border-t border-[#e2e4ed] dark:border-border px-4 py-2">
+                        <DataGridPagination />
+                    </CardFooter>
+                </Card>
+            </DataGrid>
+
+            <DataGrid table={annualTable} recordCount={annualData.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
+                <Card className="border border-[#e2e4ed] dark:border-border rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                    <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] dark:border-border flex flex-row items-center justify-between bg-white dark:bg-card">
+                        <CardTitle className="text-base font-semibold text-[#4b545d] dark:text-foreground">Annual Monthly Summary – {period.getFullYear()}</CardTitle>
+                        <CardToolbar />
+                    </CardHeader>
+                    <CardTable>
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-5px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
+                            <div className="relative">
+                                <table className="w-full border-collapse table-fixed">
+                                    <thead className="sticky top-0 z-10 bg-white dark:bg-card">
+                                        {annualTable.getHeaderGroups().map((headerGroup) => (
+                                            <tr key={headerGroup.id}>
+                                                {headerGroup.headers.map((header) => (
+                                                    <th
+                                                        key={header.id}
+                                                        className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] dark:text-muted-foreground border-b border-[#e2e4ed] dark:border-border bg-gray-50 dark:bg-muted"
+                                                        style={{ width: header.getSize() }}
+                                                    >
+                                                        {flexRender(header.column.columnDef.header, header.getContext())}
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </thead>
+                                    <tbody>
+                                        {annualTable.getRowModel().rows.map((row) => (
+                                            <tr key={row.id} className="border-b border-[#e2e4ed] dark:border-border hover:bg-gray-50/50 dark:hover:bg-muted/40">
+                                                {row.getVisibleCells().map((cell) => (
+                                                    <td
+                                                        key={cell.id}
+                                                        className="px-3 py-2 text-sm text-[#4b545d] dark:text-foreground border-r border-[#e2e4ed] dark:border-border last:border-r-0"
+                                                        style={{ width: cell.column.getSize() }}
+                                                    >
+                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                        {annualData.length === 0 && (
+                                            <tr>
+                                                <td colSpan={annualColumns.length} className="px-4 py-8 text-center text-sm text-[#7c8689] dark:text-muted-foreground">No annual summary data.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                        </ScrollArea>
+                    </CardTable>
+                    <CardFooter className="bg-white dark:bg-card border-t border-[#e2e4ed] dark:border-border px-4 py-2">
+                        <DataGridPagination />
+                    </CardFooter>
+                </Card>
+            </DataGrid>
+        </div>
+    );
+}

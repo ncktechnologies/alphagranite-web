@@ -198,6 +198,8 @@
   --color-success: #16A34A;
   --color-warning: #D97706;
   --color-info: #0284C7;
+  /* Darker info blue for filled rows with white text: 5.93:1 contrast (WCAG AA); --color-info is 4.10:1. */
+  --color-info-strong: #0369A1;
 
   --shadow-card: 0 1px 2px 0 rgb(20 28 12 / 0.04), 0 1px 3px 0 rgb(20 28 12 / 0.03);
   --shadow-card-hover: 0 4px 12px -2px rgb(20 28 12 / 0.08), 0 2px 4px -2px rgb(20 28 12 / 0.04);
