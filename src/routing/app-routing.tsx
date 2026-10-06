@@ -10,7 +10,7 @@ export function AppRouting() {
     shadow: false,
     waitingTime: 400,
     transitionTime: 200,
-    height: 2,
+    height: 3,
   });
 
   const { verify, setLoading } = useAuth();

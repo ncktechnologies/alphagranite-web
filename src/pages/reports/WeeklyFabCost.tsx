@@ -10,7 +10,6 @@ export function WeeklyFabricationCostReport() {
             apiPath="/api/v1/reports/owner/weekly-fabrication-labor-cost"
             useReportQuery={useGetWeeklyFabricationLaborCostQuery}
             filePrefix="shop-labor-cost"
-            gpLessCostKey="gross_profit_less_shop_total_cost_psf"
         />
     );
 }

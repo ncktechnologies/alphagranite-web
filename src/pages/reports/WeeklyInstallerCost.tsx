@@ -6,7 +6,6 @@ import {
 } from '@/store/api/report';
 import { WeeklyLaborCostReport } from './WeeklyLaborCostReport';
 
-const INSTALLER_GP_LESS_COST_KEY = 'gross_profit_less_installer_total_cost_psf';
 
 /** Installer Labor Costs - Weekly - Alpha Granite (HCP payroll installers). */
 export function WeeklyInstallerCostReport() {
@@ -16,7 +15,6 @@ export function WeeklyInstallerCostReport() {
             apiPath="/api/v1/reports/owner/weekly-installer-labor-cost"
             useReportQuery={useGetWeeklyInstallerLaborCostQuery}
             filePrefix="installer-labor-cost-alpha-granite"
-            gpLessCostKey={INSTALLER_GP_LESS_COST_KEY}
         />
     );
 }
@@ -29,7 +27,6 @@ export function WeeklyInstallerSubsCostReport() {
             apiPath="/api/v1/reports/owner/weekly-installer-labor-cost-subs"
             useReportQuery={useGetWeeklyInstallerSubsLaborCostQuery}
             filePrefix="installer-labor-cost-subs"
-            gpLessCostKey={INSTALLER_GP_LESS_COST_KEY}
         />
     );
 }
@@ -42,7 +39,6 @@ export function WeeklyInstallerCombinedCostReport() {
             apiPath="/api/v1/reports/owner/weekly-installer-labor-cost-combined"
             useReportQuery={useGetWeeklyInstallerCombinedLaborCostQuery}
             filePrefix="installer-labor-cost-combined"
-            gpLessCostKey={INSTALLER_GP_LESS_COST_KEY}
         />
     );
 }

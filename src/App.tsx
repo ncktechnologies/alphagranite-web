@@ -12,6 +12,7 @@ import { TooltipsProvider } from './providers/tooltips-provider';
 import { I18nProvider } from './providers/i18n-provider';
 import ReduxProvider from './hoc/redux-providor';
 import { PermissionManager } from '@/components/PermissionManager';
+import { DataLoadingBar } from '@/components/common/data-loading-bar';
 
 const { BASE_URL } = import.meta.env;
 
@@ -30,6 +31,7 @@ export function App() {
                     <LoadingBarContainer>
                       <BrowserRouter basename={BASE_URL}>
                         <Toaster />
+                        <DataLoadingBar />
                         <PermissionManager />
                         <AppRouting />
                       </BrowserRouter>
