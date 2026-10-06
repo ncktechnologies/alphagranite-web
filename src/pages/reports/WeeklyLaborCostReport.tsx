@@ -6,15 +6,14 @@
 import { useMemo, useState } from 'react';
 import { flexRender, ColumnDef, getCoreRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { CalendarDays, FileDown, Loader2 } from 'lucide-react';
+import { FileDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { DataGrid } from '@/components/ui/data-grid';
 import { DataGridPagination } from '@/components/ui/data-grid-pagination';
 import { Card, CardHeader, CardToolbar, CardTable, CardFooter, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { downloadPdf } from '@/lib/download-pdf';
@@ -72,6 +71,14 @@ const parseLocalDate = (value: string | null | undefined): Date | null => {
     return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : null;
 };
 
+const MONTHS = Array.from({ length: 12 }, (_, index) => format(new Date(2000, index, 1), 'MMMM'));
+
+/** Newest first: next year back to 2020 (imported history starts 2021), plus the selected year if outside that range. */
+const reportYears = (currentYear: number, selectedYear: number): number[] => {
+    const years = Array.from({ length: currentYear + 1 - 2020 + 1 }, (_, index) => currentYear + 1 - index);
+    return years.includes(selectedYear) ? years : [selectedYear, ...years].sort((a, b) => b - a);
+};
+
 const OVERHEAD_SOURCE_LABELS: Record<string, string> = {
     performance_static_data: 'From Performance static data',
     default: 'Default (no static data for this year)',
@@ -80,10 +87,10 @@ const OVERHEAD_SOURCE_LABELS: Record<string, string> = {
 
 export function WeeklyLaborCostReport({ title, apiPath, useReportQuery, filePrefix, gpLessCostKey }: WeeklyLaborCostReportProps) {
     const now = useMemo(() => new Date(), []);
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date(now.getFullYear(), now.getMonth(), 1));
-    const [tempDate, setTempDate] = useState<Date | undefined>(selectedDate);
-    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-    const [calendarMonth, setCalendarMonth] = useState<Date>(selectedDate || now);
+    // Reports are read month by month: pick a month and a year.
+    const [month, setMonth] = useState(now.getMonth() + 1);
+    const [year, setYear] = useState(now.getFullYear());
+    const isCurrentMonth = month === now.getMonth() + 1 && year === now.getFullYear();
     const [isExportingPdf, setIsExportingPdf] = useState(false);
 
     const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 });
@@ -91,8 +98,8 @@ export function WeeklyLaborCostReport({ title, apiPath, useReportQuery, filePref
     const [annualPagination, setAnnualPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 });
     const [annualSorting, setAnnualSorting] = useState<SortingState>([]);
 
-    const period = selectedDate ?? now;
-    const queryParams = useMemo(() => ({ year: period.getFullYear(), month: period.getMonth() + 1 }), [period]);
+    const period = useMemo(() => new Date(year, month - 1, 1), [year, month]);
+    const queryParams = useMemo(() => ({ year, month }), [year, month]);
     const { data, isLoading, isError } = useReportQuery(queryParams);
 
     const report = data?.data;
@@ -235,42 +242,40 @@ export function WeeklyLaborCostReport({ title, apiPath, useReportQuery, filePref
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d] dark:text-foreground">{reportTitle}</h1>
                 <div className="flex items-center gap-2 flex-wrap">
-                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn('w-[180px] justify-start text-left font-normal h-[34px]', !selectedDate && 'text-muted-foreground')}>
-                                <CalendarDays className="mr-2 h-4 w-4" />
-                                {selectedDate ? format(selectedDate, 'MMM yyyy') : 'Select Month'}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" month={calendarMonth} onMonthChange={setCalendarMonth} selected={tempDate} onSelect={setTempDate} initialFocus />
-                            <div className="flex justify-end gap-2 p-3 border-t">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                        setTempDate(undefined);
-                                        setSelectedDate(undefined);
-                                        setIsDatePickerOpen(false);
-                                    }}
-                                >
-                                    Reset
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    onClick={() => {
-                                        setSelectedDate(tempDate ? new Date(tempDate.getFullYear(), tempDate.getMonth(), 1) : undefined);
-                                        setIsDatePickerOpen(false);
-                                    }}
-                                >
-                                    Apply
-                                </Button>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-                    {selectedDate && (
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}>
-                            Clear
+                    <Select value={String(month)} onValueChange={(value) => setMonth(Number(value))}>
+                        <SelectTrigger className="w-[140px] h-[34px]" aria-label="Month">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {MONTHS.map((name, index) => (
+                                <SelectItem key={name} value={String(index + 1)}>
+                                    {name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={String(year)} onValueChange={(value) => setYear(Number(value))}>
+                        <SelectTrigger className="w-[100px] h-[34px]" aria-label="Year">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {reportYears(now.getFullYear(), year).map((option) => (
+                                <SelectItem key={option} value={String(option)}>
+                                    {option}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {!isCurrentMonth && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                                setMonth(now.getMonth() + 1);
+                                setYear(now.getFullYear());
+                            }}
+                        >
+                            This month
                         </Button>
                     )}
                     <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(table, `${filePrefix}-${periodLabel}`)}>
