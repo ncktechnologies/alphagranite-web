@@ -15,6 +15,12 @@ const isBlank = (value: unknown): boolean =>
 const grouped = (value: number, decimals: number): string =>
   value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 
+/** "1,234.56" (rounded to 2 decimal places by default), or "-" when there is no value. */
+export function formatNumber(value: unknown, decimals = 2): string {
+  if (isBlank(value)) return '-';
+  return grouped(Number(value), decimals);
+}
+
 /** "$1,234.56", "-$1,234.56", or "-" when there is no value. */
 export function formatCurrency(value: unknown, decimals = 2): string {
   if (isBlank(value)) return '-';
@@ -33,6 +39,25 @@ export function formatSignedCurrency(value: unknown, decimals = 0): string {
 /** Text color for a signed delta: red below zero, the regular (black) text color otherwise. */
 export function deltaToneClass(value: unknown): string {
   return !isBlank(value) && Number(value) < 0 ? 'text-destructive' : 'text-foreground';
+}
+
+/**
+ * Text color for a breakeven delta widget: green when the delta is on the good
+ * side, red when on the bad side, regular text at zero or without a value.
+ * Revenue deltas are good when positive; wage deltas are good when negative.
+ */
+export function breakevenDeltaToneClass(value: unknown, goodWhen: 'positive' | 'negative' | null | undefined): string {
+  if (!goodWhen || isBlank(value) || Number(value) === 0) return 'text-foreground';
+  const isGood = goodWhen === 'positive' ? Number(value) > 0 : Number(value) < 0;
+  return isGood ? 'text-success' : 'text-destructive';
+}
+
+/** Signed percentage-point delta: "+10.00%", "-2.50%", "0.00%". */
+export function formatSignedPercent(value: unknown): string {
+  if (isBlank(value)) return '-';
+  const number = Number(value);
+  const sign = number > 0 ? '+' : number < 0 ? '-' : '';
+  return `${sign}${grouped(Math.abs(number), 2)}%`;
 }
 
 /** Formats one report value according to its metric format. */

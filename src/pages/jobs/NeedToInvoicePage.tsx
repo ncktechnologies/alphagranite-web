@@ -70,7 +70,7 @@ const formatCurrency = (value: any): string => {
   if (value == null || value === 'N/A' || value === '') return 'N/A';
   const num = Number(value);
   if (isNaN(num)) return 'N/A';
-  return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+  return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 // Update the ExtendedJob interface to include API fields
@@ -283,7 +283,7 @@ export const NeedToInvoicePage = () => {
       header: ({ column }) => <DataGridColumnHeader title="PROJECT VALUE" column={column} />,
       cell: ({ row }) => (
         <span className="text-sm text-text">
-          {row.original.project_value ? `$${row.original.project_value}` : 'N/A'}
+          {formatCurrency(row.original.project_value)}
         </span>
       ),
       enableSorting: true,

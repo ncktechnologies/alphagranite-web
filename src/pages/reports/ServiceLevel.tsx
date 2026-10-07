@@ -27,6 +27,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { isSameFabType, useFabTypeNames } from '@/hooks/use-fab-type-names';
 
 // Helper for external job number link
 const getJobNumberLink = (jobNumber: string) => {
@@ -117,13 +118,7 @@ export function ServiceLevelReport() {
     const agingBacklog: AgingBacklogRow[] = useMemo(() => apiData?.aging_backlog ?? [], [apiData]);
 
     // ─── Extract filter options ────────────────────────────────────────────
-    const fabTypeOptions = useMemo(() => {
-        const types = new Set<string>();
-        fabStatusRows.forEach(row => {
-            if (row.fab_type) types.add(row.fab_type);
-        });
-        return Array.from(types).sort();
-    }, [fabStatusRows]);
+    const fabTypeOptions = useFabTypeNames();
 
     const stageOptions = useMemo(() => {
         const stages = new Set<string>();
@@ -152,7 +147,7 @@ export function ServiceLevelReport() {
     // ─── Apply filters and search ──────────────────────────────────────────
     const filteredFabRows = useMemo(() => {
         return fabStatusRows.filter(row => {
-            const matchFabType = fabTypeFilter === 'all' || row.fab_type === fabTypeFilter;
+            const matchFabType = fabTypeFilter === 'all' || isSameFabType(row.fab_type, fabTypeFilter);
             const matchStage = stageFilter === 'all' || row.current_stage === stageFilter;
             const matchRisk = riskFilter === 'all' || row.risk_color === riskFilter;
             const matchStatus = statusFilter === 'all' || row.status === statusFilter;

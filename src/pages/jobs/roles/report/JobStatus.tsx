@@ -34,6 +34,7 @@ import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useGetFabsQuery } from '@/store/api/job';
 import { _includes } from 'zod/v4/core';
+import { useFabTypeNames } from '@/hooks/use-fab-type-names';
 
 // ─────────────────────────────────────────────────────────
 // Types (unchanged from original)
@@ -212,10 +213,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
     }, [tableData, searchQuery, searchType, fabTypeFilter, dateRange]);
 
     // ── Fab types for filter dropdown ─────────────────────
-    const fabTypes = useMemo(
-        () => Array.from(new Set(tableData.map(r => r.fab_type).filter(t => t && t !== 'N/A'))).sort(),
-        [tableData]
-    );
+    const fabTypes = useFabTypeNames();
 
     // ── Columns ──────────────────────────────────────────
     const columns = useMemo<ColumnDef<JobStatusRow>[]>(() => [

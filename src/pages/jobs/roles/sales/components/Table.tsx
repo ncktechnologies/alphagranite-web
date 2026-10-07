@@ -42,6 +42,7 @@ import ActionsCell from './action';
 import { formatStage } from '@/pages/reports/OwnerReview';
 import { format } from 'date-fns';
 import { IJob } from '@/pages/jobs/components/job';
+import { formatNumber } from '@/lib/report-format';
 
 // ─── Robust date parser ──────────────────────────────────────────────────────
 const parseDateForDisplay = (s: string | undefined): Date | undefined => {
@@ -692,7 +693,7 @@ export const JobSalesTable = ({
             id: "total_sq_ft",
             accessorKey: "total_sq_ft",
             header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Total Sq ft" column={column} />,
-            cell: ({ row }) => <span className="text-xs break-words max-w-[100px]">{row.original.total_sq_ft}</span>,
+            cell: ({ row }) => <span className="text-xs break-words max-w-[100px]">{formatNumber(row.original.total_sq_ft)}</span>,
             size: 100,
             enableSorting: true,
             meta: { format: (value: string) => value || '' },

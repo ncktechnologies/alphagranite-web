@@ -24,6 +24,16 @@ import { useGetFabsQuery } from '@/store/api/job';
 import { formatForDisplay } from '@/utils/date-utils';
 import { IJob } from '../jobs/components/job';
 import { DateRange } from 'react-day-picker';
+import { formatNumber } from '@/lib/report-format';
+import { type DateFilterOption, orderDateFilterOptions } from '@/lib/date-filter-options';
+
+// Date filter choices; shown with the selected one first, then All Date (orderDateFilterOptions).
+const DATE_FILTER_OPTIONS: DateFilterOption[] = [
+    { value: 'today', label: 'Today' },
+    { value: 'next_day', label: 'Next Day' },
+    { value: 'previous_job', label: 'Previous Days' },
+    { value: 'all', label: 'All Date' },
+];
 
 // Helper: format date to "08 Oct, 2025"
 const formatDate = (dateString?: string): string => {
@@ -235,10 +245,9 @@ export function InstallerScheduleCards() {
                             <SelectValue placeholder="Filter by date" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="today">Today</SelectItem>
-                            <SelectItem value="next_day">Next Day</SelectItem>
-                            <SelectItem value="previous_job">Previous Days</SelectItem>
-                            <SelectItem value="all">All Date</SelectItem>
+                            {orderDateFilterOptions(DATE_FILTER_OPTIONS, dateFilter).map((option) => (
+                                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
 
@@ -345,7 +354,7 @@ export function InstallerScheduleCards() {
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-[#7c8689]">Total SQ FT</span>
-                                <span className="text-sm font-semibold text-[#4b545d]">{job.total_sq_ft}</span>
+                                <span className="text-sm font-semibold text-[#4b545d]">{formatNumber(job.total_sq_ft)}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-[#7c8689]">Installation Date</span>

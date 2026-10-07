@@ -37,6 +37,20 @@ import { Switch } from '@/components/ui/switch';
 import { useToggleFabOnHoldMutation } from '@/store/api/job';
 import { NotesModal } from "@/components/common/NotesModal";
 import ActionsCell from './components/action';
+import { type DateFilterOption, orderDateFilterOptions } from '@/lib/date-filter-options';
+
+// Date filter choices; shown with the selected one first, then All Date (orderDateFilterOptions).
+const DATE_FILTER_OPTIONS: DateFilterOption[] = [
+    { value: 'all', label: 'All Time' },
+    { value: 'today', label: 'Today' },
+    { value: 'this_week', label: 'This Week' },
+    { value: 'last_week', label: 'Last Week' },
+    { value: 'this_month', label: 'This Month' },
+    { value: 'last_month', label: 'Last Month' },
+    { value: 'next_week', label: 'Next Week' },
+    { value: 'next_month', label: 'Next Month' },
+    { value: 'custom', label: 'Custom' },
+];
 
 // ── Helper functions for formatting ──────────────────────────────────────
 const formatDateForExport = (value: any): string => {
@@ -711,15 +725,9 @@ export const CutListTableWithCalculations = ({
                                             <SelectValue placeholder="Install Date" />
                                         </SelectTrigger>
                                         <SelectContent className="w-48">
-                                            <SelectItem value="all">All Time</SelectItem>
-                                            <SelectItem value="today">Today</SelectItem>
-                                            <SelectItem value="this_week">This Week</SelectItem>
-                                            <SelectItem value="last_week">Last Week</SelectItem>
-                                            <SelectItem value="this_month">This Month</SelectItem>
-                                            <SelectItem value="last_month">Last Month</SelectItem>
-                                            <SelectItem value="next_week">Next Week</SelectItem>
-                                            <SelectItem value="next_month">Next Month</SelectItem>
-                                            <SelectItem value="custom">Custom</SelectItem>
+                                            {orderDateFilterOptions(DATE_FILTER_OPTIONS, effectiveDateFilter).map((option) => (
+                                                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
 

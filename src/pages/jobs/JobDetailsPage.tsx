@@ -25,6 +25,7 @@ import { FileViewer } from './roles/drafters/components';
 import { FileGallery } from '@/pages/jobs/components/FileGallery';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
 import { formatStage } from '../reports/OwnerReview';
+import { formatCurrency, formatNumber } from '@/lib/report-format';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -77,7 +78,7 @@ export function JobDetailsPage() {
       { label: 'Job Name', value: job.name },
       { label: 'Account', value: job.account_name || 'N/A' },
       { label: 'Account Number', value: job.account_number || 'N/A' },
-      ...(isSuperAdmin ? [{ label: 'Project Value', value: job.project_value ? `$${job.project_value.toLocaleString()}` : 'N/A' }] : []),
+      ...(isSuperAdmin ? [{ label: 'Project Value', value: job.project_value ? formatCurrency(job.project_value) : 'N/A' }] : []),
       { label: 'Sales Person', value: job.sales_person_name || 'N/A' },
       { label: 'Priority', value: job.priority || 'N/A' },
       { label: 'Status', value: getStatusText(job.status_id) },
@@ -329,7 +330,7 @@ export function JobDetailsPage() {
                         <div>
                           <h4 className="font-semibold">{fab.input_area}</h4>
                           <p className="text-sm text-gray-600">
-                            {fab.total_sqft} sq ft · {fab.stone_type_name || 'N/A'} · {fab.stone_color_name || 'N/A'} . {fab.fab_type || 'N/A'}
+                            {formatNumber(fab.total_sqft)} sq ft · {fab.stone_type_name || 'N/A'} · {fab.stone_color_name || 'N/A'} . {fab.fab_type || 'N/A'}
                           </p>
                           <div className="flex items-center space-x-2 mt-1">
                             <Badge

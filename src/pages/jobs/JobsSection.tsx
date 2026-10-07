@@ -70,7 +70,14 @@ const formatCurrency = (value: any): string => {
   if (value == null || value === 'N/A' || value === '') return 'N/A';
   const num = Number(value);
   if (isNaN(num)) return 'N/A';
-  return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+  return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+const formatSqFt = (value: unknown): string => {
+  if (value == null || value === 'N/A' || value === '') return 'N/A';
+  const num = Number(value);
+  if (isNaN(num)) return 'N/A';
+  return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 const formatBoolean = (value: any): string => {
@@ -341,7 +348,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           header: ({ column }) => <DataGridColumnHeader title="PROJECT VALUE" column={column} />,
           cell: ({ row }) => (
             <span className="text-sm text-text">
-              {row.original.project_value ? `$${row.original.project_value}` : 'N/A'}
+              {formatCurrency(row.original.project_value)}
             </span>
           ),
           enableSorting: true,
@@ -352,10 +359,10 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           id: 'sq_ft',
           accessorFn: (row) => row.sq_ft,
           header: ({ column }) => <DataGridColumnHeader title="SQUARE FOOT" column={column} />,
-          cell: ({ row }) => <span className="text-sm text-text">{row.original.sq_ft || 'N/A'}</span>,
+          cell: ({ row }) => <span className="text-sm text-text">{formatSqFt(row.original.sq_ft)}</span>,
           enableSorting: true,
           size: 130,
-          meta: { format: (value: any) => value || 'N/A' },
+          meta: { format: (value: any) => formatSqFt(value) },
         },
         {
           id: 'created_at',

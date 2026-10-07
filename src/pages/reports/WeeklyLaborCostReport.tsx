@@ -17,7 +17,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { downloadPdf } from '@/lib/download-pdf';
-import { formatCurrency, formatMetric, MetricFormat } from '@/lib/report-format';
+import {
+    breakevenDeltaToneClass,
+    formatCurrency,
+    formatMetric,
+    formatSignedCurrency,
+    formatSignedPercent,
+    MetricFormat,
+} from '@/lib/report-format';
 import { reportRowClass } from '@/lib/report-row-styles';
 import { cn } from '@/lib/utils';
 import { BackButton } from '@/components/common/BackButton';
@@ -33,10 +40,30 @@ export interface MetricRow {
 type MetricValues = Record<string, number | null | undefined>;
 
 /** Shape of the weekly labor cost report responses (backend reports.py). */
+/**
+ * A widget at the top of a report, built by the backend
+ * (src/app/service/labor_cost_report_widgets.py). Delta widgets compare the
+ * month's total with the breakeven from Static Data; overhead widgets are a plain figure.
+ */
+export interface ReportWidget {
+    key: string;
+    group: 'revenue' | 'wages' | 'overhead';
+    label: string;
+    value: number | null;
+    format: 'currency' | 'percent';
+    breakeven: number | null;
+    /** Which side of breakeven is good (shown green); null for plain figures. */
+    good_when: 'positive' | 'negative' | null;
+    /** Why a delta widget has no breakeven, e.g. Static Data not entered for the year. */
+    note: string | null;
+}
+
 export interface LaborCostReportData {
     title?: string;
     metric_rows?: MetricRow[];
     display?: { total_employee?: number | null; default_overhead_per_week?: number | null; overhead_source?: string } | null;
+    /** Widgets for this report only, in display order (none for Subs). */
+    widgets?: ReportWidget[];
     monthly_report?: { weekly_breakdown?: (MetricValues & { week_ending: string })[]; totals?: MetricValues };
     /** Same shape as the weekly rows, one per month, plus the year's totals. */
     annual_report?: { year?: number; monthly_breakdown?: (MetricValues & { month: string })[]; totals?: MetricValues };
@@ -80,11 +107,37 @@ const reportYears = (currentYear: number, selectedYear: number): number[] => {
     return years.includes(selectedYear) ? years : [selectedYear, ...years].sort((a, b) => b - a);
 };
 
+// Notes under Overhead / Week; the usual source (Performance static data) needs none.
 const OVERHEAD_SOURCE_LABELS: Record<string, string> = {
-    performance_static_data: 'From Performance static data',
     default: 'Default (no static data for this year)',
     query: 'Set for this report',
 };
+
+function ReportWidgetCard({ widget, note }: { widget: ReportWidget; note?: string }) {
+    const isDelta = widget.good_when !== null;
+    const value = !isDelta
+        ? formatCurrency(widget.value)
+        : widget.format === 'percent' ? formatSignedPercent(widget.value) : formatSignedCurrency(widget.value, 2);
+    const breakeven = widget.format === 'percent' ? formatMetric(widget.breakeven, 'percent') : formatCurrency(widget.breakeven);
+    return (
+        <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] dark:border-border rounded-[12px] bg-white dark:bg-card">
+            <p className="text-xs text-[#7c8689] dark:text-muted-foreground font-medium uppercase tracking-wider">{widget.label}</p>
+            <p className={cn('text-2xl font-semibold mt-2 tabular-nums', isDelta ? breakevenDeltaToneClass(widget.value, widget.good_when) : 'text-[#4b545d] dark:text-foreground')}>
+                {value}
+            </p>
+            {isDelta && (
+                <p className="text-xs text-[#7c8689] dark:text-muted-foreground mt-1">
+                    {widget.breakeven !== null ? `Break even ${breakeven}` : widget.note}
+                </p>
+            )}
+            {note && <p className="text-xs text-[#7c8689] dark:text-muted-foreground mt-1">{note}</p>}
+        </Card>
+    );
+}
+
+const METRIC_COLUMN_ID = 'metric';
+// The metric (row heading) column stays in view while the period columns scroll sideways.
+const FROZEN_COLUMN_CLASS = 'sticky left-0 z-20 shadow-[inset_-1px_0_0_0_#e2e4ed] dark:shadow-[inset_-1px_0_0_0_var(--color-border)]';
 
 /**
  * Metric rows (from the backend) as table rows, one column per period (week or
@@ -119,7 +172,7 @@ function usePivotTable(metricRows: MetricRow[], columnLabels: string[], columnVa
         });
         return [
             {
-                id: 'metric',
+                id: METRIC_COLUMN_ID,
                 accessorKey: 'label',
                 header: ({ column }) => <DataGridColumnHeader title="METRIC" column={column} />,
                 cell: ({ row }) => row.original.label,
@@ -173,7 +226,10 @@ function PivotTableCard({ title, pivot, className, toolbar }: {
                                             {headerGroup.headers.map((header) => (
                                                 <th
                                                     key={header.id}
-                                                    className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] dark:text-muted-foreground border-b border-[#e2e4ed] dark:border-border bg-gray-50 dark:bg-muted"
+                                                    className={cn(
+                                                        'px-3 py-2 text-left text-xs font-semibold text-[#7c8689] dark:text-muted-foreground border-b border-[#e2e4ed] dark:border-border bg-gray-50 dark:bg-muted',
+                                                        header.column.id === METRIC_COLUMN_ID && FROZEN_COLUMN_CLASS,
+                                                    )}
                                                     style={{ width: header.getSize() }}
                                                 >
                                                     {flexRender(header.column.columnDef.header, header.getContext())}
@@ -199,6 +255,8 @@ function PivotTableCard({ title, pivot, className, toolbar }: {
                                                     className={cn(
                                                         'px-3 py-2 text-sm text-[#4b545d] dark:text-foreground border-r border-[#e2e4ed] dark:border-border last:border-r-0',
                                                         cell.column.id === 'total' && 'font-semibold',
+                                                        // Frozen cells need their own background so values scroll underneath.
+                                                        cell.column.id === METRIC_COLUMN_ID && cn(FROZEN_COLUMN_CLASS, 'z-[1] bg-white dark:bg-card'),
                                                         // Row style from the backend, applied across the whole row.
                                                         reportRowClass(row.original.style),
                                                     )}
@@ -253,6 +311,7 @@ export function WeeklyLaborCostReport({ title, apiPath, useReportQuery, filePref
     const annualMonths = useMemo(() => report?.annual_report?.monthly_breakdown ?? [], [report]);
     const annualTotals = useMemo(() => report?.annual_report?.totals ?? {}, [report]);
     const display = report?.display ?? null;
+    const widgets = useMemo(() => report?.widgets ?? [], [report]);
     const reportTitle: string = report?.title ?? title;
     const periodLabel = format(period, 'MMMM yyyy');
 
@@ -345,21 +404,15 @@ export function WeeklyLaborCostReport({ title, apiPath, useReportQuery, filePref
                 </div>
             </div>
 
-            {display && (
-                <div className={cn('grid grid-cols-2 md:grid-cols-3 gap-4', staleClass)}>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] dark:border-border rounded-[12px] bg-white dark:bg-card">
-                        <p className="text-xs text-[#7c8689] dark:text-muted-foreground font-medium uppercase tracking-wider">Total Employees</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d] dark:text-foreground">{display.total_employee ?? '-'}</p>
-                    </Card>
-                    {display.default_overhead_per_week != null && (
-                        <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] dark:border-border rounded-[12px] bg-white dark:bg-card">
-                            <p className="text-xs text-[#7c8689] dark:text-muted-foreground font-medium uppercase tracking-wider">Overhead / Week</p>
-                            <p className="text-2xl font-semibold mt-2 text-[#4b545d] dark:text-foreground">{formatCurrency(display.default_overhead_per_week)}</p>
-                            {display.overhead_source && (
-                                <p className="text-xs text-[#7c8689] dark:text-muted-foreground mt-1">{OVERHEAD_SOURCE_LABELS[display.overhead_source] ?? display.overhead_source}</p>
-                            )}
-                        </Card>
-                    )}
+            {widgets.length > 0 && (
+                <div className={cn('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4', staleClass)}>
+                    {widgets.map((widget) => (
+                        <ReportWidgetCard
+                            key={widget.key}
+                            widget={widget}
+                            note={widget.key === 'overhead_per_week' ? OVERHEAD_SOURCE_LABELS[display?.overhead_source ?? ''] : undefined}
+                        />
+                    ))}
                 </div>
             )}
 

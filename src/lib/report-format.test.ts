@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { deltaToneClass, formatCurrency, formatMetric, formatSignedCurrency } from './report-format';
+import {
+  breakevenDeltaToneClass,
+  deltaToneClass,
+  formatCurrency,
+  formatMetric,
+  formatNumber,
+  formatSignedCurrency,
+  formatSignedPercent,
+} from './report-format';
 
 describe('formatSignedCurrency (Gross Profit Delta)', () => {
   it('uses a minus sign, never accounting brackets', () => {
@@ -59,5 +67,45 @@ describe('formatMetric (matches the backend PDF formatter)', () => {
     [null, 'currency', '-'],
   ])('formats %s as %s', (value, format, expected) => {
     expect(formatMetric(value, format)).toBe(expected);
+  });
+});
+
+describe('formatNumber (square feet and other quantities)', () => {
+  it('rounds floating point noise to 2 decimal places', () => {
+    expect(formatNumber(4.69999999)).toBe('4.70');
+    expect(formatNumber(117.100000000001)).toBe('117.10');
+    expect(formatNumber('1234.5')).toBe('1,234.50');
+  });
+
+  it('shows "-" for blanks', () => {
+    expect(formatNumber(null)).toBe('-');
+    expect(formatNumber('-')).toBe('-');
+  });
+});
+
+describe('breakevenDeltaToneClass (report widgets)', () => {
+  it('revenue deltas: green above breakeven, red below', () => {
+    expect(breakevenDeltaToneClass(50000, 'positive')).toBe('text-success');
+    expect(breakevenDeltaToneClass(-50000, 'positive')).toBe('text-destructive');
+  });
+
+  it('wage deltas: red above breakeven, green below', () => {
+    expect(breakevenDeltaToneClass(20000, 'negative')).toBe('text-destructive');
+    expect(breakevenDeltaToneClass(-20000, 'negative')).toBe('text-success');
+  });
+
+  it('zero, blanks and plain figures use the regular text color', () => {
+    expect(breakevenDeltaToneClass(0, 'positive')).toBe('text-foreground');
+    expect(breakevenDeltaToneClass(null, 'negative')).toBe('text-foreground');
+    expect(breakevenDeltaToneClass(450, null)).toBe('text-foreground');
+  });
+});
+
+describe('formatSignedPercent', () => {
+  it('shows percentage points with a sign', () => {
+    expect(formatSignedPercent(10)).toBe('+10.00%');
+    expect(formatSignedPercent(-2.5)).toBe('-2.50%');
+    expect(formatSignedPercent(0)).toBe('0.00%');
+    expect(formatSignedPercent(null)).toBe('-');
   });
 });

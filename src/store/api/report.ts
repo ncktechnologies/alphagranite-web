@@ -26,6 +26,8 @@ export interface PerformanceStaticData {
     overhead_weekly: number | null;
     breakeven_gross_revenue: number | null;
     breakeven_gross_profit: number | null;
+    /** Mon-Fri days in the year less New Year's Day, Good Friday, Christmas Eve and Christmas Day. */
+    working_days_per_year: number;
     breakeven_avg_revenue_per_day: number | null;
     updated_at: string | null;
     updated_by: number | null;

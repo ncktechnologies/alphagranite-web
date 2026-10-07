@@ -8,12 +8,12 @@ import { LoaderCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Input, InputWrapper } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BackButton } from '@/components/common/BackButton';
 import { useIsSuperAdmin, usePermission } from '@/hooks/use-permission';
 import { useGetPerformanceStaticDataQuery, useUpdatePerformanceStaticDataMutation, PerformanceStaticData } from '@/store/api/report';
-import { formatCurrency } from '@/lib/report-format';
+import { formatCurrency, formatNumber } from '@/lib/report-format';
 import { YearSelect } from './YearSelect';
 
 type EnteredField = 'total_expenses' | 'total_wages' | 'breakeven_gross_revenue';
@@ -21,18 +21,54 @@ type EnteredField = 'total_expenses' | 'total_wages' | 'breakeven_gross_revenue'
 const ENTERED_FIELDS: { key: EnteredField; label: string }[] = [
     { key: 'total_expenses', label: 'Total Expenses' },
     { key: 'total_wages', label: 'Total Wages' },
-    { key: 'breakeven_gross_revenue', label: 'Breakeven Gross Revenue' },
+    { key: 'breakeven_gross_revenue', label: 'Breakeven Gross Revenue (Monthly)' },
 ];
 
-const CALCULATED_FIELDS: { key: keyof PerformanceStaticData; label: string; formula: string }[] = [
-    { key: 'difference_overhead', label: 'Difference is Overhead', formula: 'Total Expenses − Total Wages' },
-    { key: 'overhead_monthly', label: 'Overhead (no wages) Monthly', formula: 'Difference ÷ 12' },
-    { key: 'overhead_weekly', label: 'Overhead (no wages) Weekly', formula: 'Difference ÷ 52 · used as overhead per week in the reports' },
-    { key: 'breakeven_gross_profit', label: 'Breakeven Gross Profit', formula: 'Total Expenses ÷ 12' },
-    { key: 'breakeven_avg_revenue_per_day', label: 'Average Revenue Per Day', formula: 'Breakeven Gross Revenue ÷ 253 × 12' },
+// Working days = Mon-Fri less New Year's Day, Good Friday, Christmas Eve and Christmas Day (counted by the API per year).
+const workingDaysText = (data?: PerformanceStaticData) =>
+    data?.working_days_per_year ? `${data.working_days_per_year} working days in ${data.year}` : 'working days in the year';
+
+const CALCULATED_FIELDS: { key: keyof PerformanceStaticData; label: string; formula: (data?: PerformanceStaticData) => string }[] = [
+    { key: 'difference_overhead', label: 'Difference is Overhead', formula: () => 'Total Expenses − Total Wages' },
+    { key: 'overhead_monthly', label: 'Overhead (no wages) Monthly', formula: () => 'Difference ÷ 12' },
+    { key: 'overhead_weekly', label: 'Overhead (no wages) Weekly', formula: () => 'Difference ÷ 52 · used as overhead per week in the reports' },
+    { key: 'breakeven_gross_profit', label: 'Breakeven Gross Profit', formula: () => 'Total Expenses ÷ 12' },
+    { key: 'breakeven_avg_revenue_per_day', label: 'Average Revenue Per Day', formula: (data) =>
+            `Breakeven Gross Revenue (Monthly) × 12 ÷ ${workingDaysText(data)} (weekdays less New Year's Day, Good Friday, Christmas Eve & Christmas Day)` },
 ];
 
 const toInput = (value: number | null | undefined) => (value === null || value === undefined ? '' : String(value));
+
+/**
+ * Dollar amount field: "$" prefix, shown as 7,800,000.00 like the calculated
+ * values, and as the plain number while it is being edited.
+ */
+function CurrencyInput({ id, value, disabled, onChange }: {
+    id: string;
+    value: string;
+    disabled?: boolean;
+    onChange: (value: string) => void;
+}) {
+    const [isEditing, setIsEditing] = useState(false);
+    const shown = isEditing || value === '' || Number.isNaN(Number(value)) ? value : formatNumber(value);
+    return (
+        <InputWrapper className={disabled ? 'opacity-50 cursor-not-allowed' : undefined}>
+            <span className="text-muted-foreground" aria-hidden="true">$</span>
+            <Input
+                id={id}
+                type="text"
+                inputMode="decimal"
+                placeholder="0.00"
+                value={shown}
+                disabled={disabled}
+                onFocus={() => setIsEditing(true)}
+                onBlur={() => setIsEditing(false)}
+                // Digits and the decimal point only, so pasted "$7,800,000" is read as 7800000.
+                onChange={(event) => onChange(event.target.value.replace(/[^0-9.]/g, ''))}
+            />
+        </InputWrapper>
+    );
+}
 
 export function PerformanceStaticDataPage() {
     const permissions = usePermission('SLA Settings');
@@ -106,16 +142,11 @@ export function PerformanceStaticDataPage() {
                             {ENTERED_FIELDS.map(({ key, label }) => (
                                 <div key={key} className="space-y-1.5">
                                     <Label htmlFor={key}>{label}</Label>
-                                    <Input
+                                    <CurrencyInput
                                         id={key}
-                                        type="number"
-                                        inputMode="decimal"
-                                        min={0}
-                                        step="0.01"
-                                        placeholder="0.00"
                                         value={form[key]}
                                         disabled={!canEdit}
-                                        onChange={(event) => setForm((prev) => ({ ...prev, [key]: event.target.value }))}
+                                        onChange={(value) => setForm((prev) => ({ ...prev, [key]: value }))}
                                     />
                                 </div>
                             ))}
@@ -150,7 +181,7 @@ export function PerformanceStaticDataPage() {
                                 <div key={key} className="flex items-center justify-between gap-4 py-3">
                                     <div className="min-w-0">
                                         <p className="text-sm font-medium text-foreground">{label}</p>
-                                        <p className="text-xs text-muted-foreground">{formula}</p>
+                                        <p className="text-xs text-muted-foreground">{formula(saved)}</p>
                                     </div>
                                     <p className="shrink-0 text-base font-semibold tabular-nums">
                                         {isFetching ? '…' : formatCurrency(saved?.[key] as number | null)}

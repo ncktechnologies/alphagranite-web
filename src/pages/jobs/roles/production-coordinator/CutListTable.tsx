@@ -44,6 +44,23 @@ import { useToggleFabOnHoldMutation, useCreateFabNoteMutation } from '@/store/ap
 import { NotesModal } from '@/components/common/NotesModal';
 import { toast } from 'sonner';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
+import { isSameFabType, useFabTypeNames } from '@/hooks/use-fab-type-names';
+import { type DateFilterOption, orderDateFilterOptions } from '@/lib/date-filter-options';
+
+// Date filter choices; shown with the selected one first, then All Date (orderDateFilterOptions).
+const DATE_FILTER_OPTIONS: DateFilterOption[] = [
+    { value: 'all', label: 'All' },
+    { value: 'today', label: 'Today' },
+    { value: 'this_week', label: 'This Week' },
+    { value: 'last_week', label: 'Last Week' },
+    { value: 'this_month', label: 'This Month' },
+    { value: 'last_month', label: 'Last Month' },
+    { value: 'next_week', label: 'Next Week' },
+    { value: 'next_month', label: 'Next Month' },
+    { value: 'unscheduled', label: 'Unscheduled' },
+    { value: 'scheduled', label: 'Scheduled' },
+    { value: 'custom', label: 'Custom' },
+];
 
 export interface CutList {
     id: number;
@@ -120,11 +137,7 @@ export const CutListTable = ({
     const navigate = useNavigate();
 
     // Unique fab types
-    const fabTypes = useMemo(() => {
-        if (!cutLists || !Array.isArray(cutLists)) return [];
-        const types = Array.from(new Set(cutLists.map(list => list.fab_type).filter(Boolean)));
-        return types.sort();
-    }, [cutLists]);
+    const fabTypes = useFabTypeNames();
 
     // Unique sales persons
     const salesPersons = useMemo(() => {
@@ -185,7 +198,7 @@ export const CutListTable = ({
             });
         }
 
-        if (fabTypeFilter !== 'all') result = result.filter((list) => list.fab_type === fabTypeFilter);
+        if (fabTypeFilter !== 'all') result = result.filter((list) => isSameFabType(list.fab_type, fabTypeFilter));
         if (salesPersonFilter !== 'all') {
             if (salesPersonFilter === 'no_sales_person') result = result.filter((list) => !list.sales_person || list.sales_person === '');
             else result = result.filter((list) => list.sales_person === salesPersonFilter);
@@ -544,17 +557,9 @@ export const CutListTable = ({
                                             <SelectValue placeholder="Install Date" />
                                         </SelectTrigger>
                                         <SelectContent className="w-48">
-                                            <SelectItem value="all">All</SelectItem>
-                                            <SelectItem value="today">Today</SelectItem>
-                                            <SelectItem value="this_week">This Week</SelectItem>
-                                            <SelectItem value="last_week">Last Week</SelectItem>
-                                            <SelectItem value="this_month">This Month</SelectItem>
-                                            <SelectItem value="last_month">Last Month</SelectItem>
-                                            <SelectItem value="next_week">Next Week</SelectItem>
-                                            <SelectItem value="next_month">Next Month</SelectItem>
-                                            <SelectItem value="unscheduled">Unscheduled</SelectItem>
-                                            <SelectItem value="scheduled">Scheduled</SelectItem>
-                                            <SelectItem value="custom">Custom</SelectItem>
+                                            {orderDateFilterOptions(DATE_FILTER_OPTIONS, dateFilter).map((option) => (
+                                                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
 

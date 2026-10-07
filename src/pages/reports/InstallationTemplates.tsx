@@ -30,6 +30,7 @@ import { UpdateInstallationTemplateModal } from './component/InstallationModal';
 import { useSelector } from 'react-redux';
 import { usePermission } from '@/hooks/use-permission';
 import { useGetEmployeeSalesPersonsQuery } from '@/store/api';
+import { useFabTypeNames } from '@/hooks/use-fab-type-names';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface TimerSession {
@@ -202,7 +203,7 @@ export function InstallationTemplateReport() {
     }, [salesPersonsData]);
     const reportData = data?.data as ReportData | undefined;
 
-    const fabTypes = useMemo(() => reportData?.filter_options?.fab_types ?? [], [reportData]);
+    const fabTypes = useFabTypeNames();
     const salesPersonOptions = useMemo(() => reportData?.filter_options?.sales_person_options ?? [], [reportData]);
     const summary = reportData?.summary;
 

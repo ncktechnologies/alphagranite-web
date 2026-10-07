@@ -40,6 +40,22 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DateRange } from 'react-day-picker';
 import { formatForDisplay } from '@/utils/date-utils';
 import { useTableState } from '@/hooks/use-table-state';
+import { formatNumber } from '@/lib/report-format';
+import { isSameFabType, useFabTypeNames } from '@/hooks/use-fab-type-names';
+import { type DateFilterOption, orderDateFilterOptions } from '@/lib/date-filter-options';
+
+// Date filter choices; shown with the selected one first, then All Date (orderDateFilterOptions).
+const DATE_FILTER_OPTIONS: DateFilterOption[] = [
+    { value: 'today', label: 'Today' },
+    { value: 'this_week', label: 'This Week' },
+    { value: 'last_week', label: 'Last Week' },
+    { value: 'this_month', label: 'This Month' },
+    { value: 'last_month', label: 'Last Month' },
+    { value: 'next_week', label: 'Next Week' },
+    { value: 'next_month', label: 'Next Month' },
+    { value: 'all', label: 'All Date' },
+    { value: 'custom', label: 'Custom' },
+];
 
 interface JobTableProps {
     jobs: IJob[];
@@ -237,9 +253,7 @@ export const JobTable = ({
         if (selectedStage) navigate(selectedStage.route);
     };
 
-    const fabTypes = useMemo(() => {
-        return Array.from(new Set(jobs.map(job => job.fab_type).filter(Boolean))).sort();
-    }, [jobs]);
+    const fabTypes = useFabTypeNames();
 
     const uniqueSalesPersons = useMemo(() => {
         if (salesPersons && salesPersons.length > 0) {
@@ -291,7 +305,7 @@ export const JobTable = ({
         }
 
         if (fabTypeFilter !== 'all') {
-            result = result.filter((job) => job.fab_type === fabTypeFilter);
+            result = result.filter((job) => isSameFabType(job.fab_type, fabTypeFilter));
         }
 
         if (scheduleFilter !== 'all') {
@@ -798,7 +812,7 @@ export const JobTable = ({
         id: "total_sq_ft",
         accessorKey: "total_sq_ft",
         header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Total Sq ft" column={column} />,
-        cell: ({ row }) => <span className="text-xs break-words max-w-[100px]">{row.original.total_sq_ft}</span>,
+        cell: ({ row }) => <span className="text-xs break-words max-w-[100px]">{formatNumber(row.original.total_sq_ft)}</span>,
         size: 100,
         enableSorting: true,
         meta: { format: (value: string) => value || '' },
@@ -1762,15 +1776,9 @@ export const JobTable = ({
                                             <SelectValue placeholder="Filter by date" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="today">Today</SelectItem>
-                                            <SelectItem value="this_week">This Week</SelectItem>
-                                            <SelectItem value="last_week">Last Week</SelectItem>
-                                            <SelectItem value="this_month">This Month</SelectItem>
-                                            <SelectItem value="last_month">Last Month</SelectItem>
-                                            <SelectItem value="next_week">Next Week</SelectItem>
-                                            <SelectItem value="next_month">Next Month</SelectItem>
-                                            <SelectItem value="all">All Date</SelectItem>
-                                            <SelectItem value="custom">Custom</SelectItem>
+                                            {orderDateFilterOptions(DATE_FILTER_OPTIONS, dateFilter).map((option) => (
+                                                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
 

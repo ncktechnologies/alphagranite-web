@@ -27,6 +27,22 @@ import { format } from 'date-fns';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useFabTypeNames } from '@/hooks/use-fab-type-names';
+import { type DateFilterOption, orderDateFilterOptions } from '@/lib/date-filter-options';
+
+// Date filter choices; shown with the selected one first, then All Date (orderDateFilterOptions).
+const DATE_FILTER_OPTIONS: DateFilterOption[] = [
+    { value: 'today', label: 'Today' },
+    { value: 'this_week', label: 'This Week' },
+    { value: 'last_week', label: 'Last Week' },
+    { value: 'this_month', label: 'This Month' },
+    { value: 'last_month', label: 'Last Month' },
+    { value: 'next_week', label: 'Next Week' },
+    { value: 'next_month', label: 'Next Month' },
+    { value: 'all', label: 'All' },
+    { value: 'scheduled', label: 'Scheduled' },
+    { value: 'unscheduled', label: 'Unscheduled' },
+];
 
 interface FinalProgrammingTableProps {
     data: Fab[];
@@ -60,11 +76,8 @@ export const FinalProgrammingTable = ({
         setDateRange,
     } = tableState;
 
-    // Get unique fab types for the filter
-    const fabTypes = useMemo(() => {
-        const types = Array.from(new Set(data.map(fab => fab.fab_type).filter(Boolean)));
-        return types.sort();
-    }, [data]);
+    // Fab types for the filter (GET /fab-types)
+    const fabTypes = useFabTypeNames();
 
     // Handle row click
     const handleRowClick = (fab: Fab) => {
@@ -273,16 +286,9 @@ export const FinalProgrammingTable = ({
                                     <SelectValue placeholder="Filter by date" />
                                 </SelectTrigger>
                                 <SelectContent className="w-48">
-                                    <SelectItem value="today">Today</SelectItem>
-                                    <SelectItem value="this_week">This Week</SelectItem>
-                                    <SelectItem value="last_week">Last Week</SelectItem>
-                                    <SelectItem value="this_month">This Month</SelectItem>
-                                    <SelectItem value="last_month">Last Month</SelectItem>
-                                    <SelectItem value="next_week">Next Week</SelectItem>
-                                    <SelectItem value="next_month">Next Month</SelectItem>
-                                    <SelectItem value="all">All</SelectItem>
-                                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                                    <SelectItem value="unscheduled">Unscheduled</SelectItem>
+                                    {orderDateFilterOptions(DATE_FILTER_OPTIONS, dateFilter).map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>

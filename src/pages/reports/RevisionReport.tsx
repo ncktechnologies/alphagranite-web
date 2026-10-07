@@ -20,6 +20,7 @@ import { getFabIdLink, getJobNumberLink, getJobNameLink, renderLink } from '@/li
 import { BackButton } from '@/components/common/BackButton';
 import { FabInfoCell } from '@/components/common/fabInfo';
 import { Input } from '@/components/ui/input';
+import { isSameFabType, useFabTypeNames } from '@/hooks/use-fab-type-names';
 
 // ─── Fab type color mapping ──────────────────────────────────────────────
 const fabTypeColorMap: Record<string, string> = {
@@ -218,11 +219,8 @@ export function RevisionReport() {
     const shopRevisions = useMemo(() => data?.data?.shop_revisions ?? [], [data]);
 
     // ─── Extract filter options ────────────────────────────────────────────
-    const sctFabTypes = useMemo(() => {
-        const types = new Set<string>();
-        salesRevisions.forEach(row => { if (row.fab_type) types.add(row.fab_type); });
-        return Array.from(types).sort();
-    }, [salesRevisions]);
+    const fabTypeNames = useFabTypeNames();
+    const sctFabTypes = fabTypeNames;
 
     const sctRevisionTypes = useMemo(() => {
         const types = new Set<string>();
@@ -235,16 +233,12 @@ export function RevisionReport() {
         return Array.from(types).sort();
     }, [salesRevisions]);
 
-    const shopFabTypes = useMemo(() => {
-        const types = new Set<string>();
-        shopRevisions.forEach(row => { if (row.fab_type) types.add(row.fab_type); });
-        return Array.from(types).sort();
-    }, [shopRevisions]);
+    const shopFabTypes = fabTypeNames;
 
     // ─── Apply filters and search ──────────────────────────────────────────
     const filteredSalesRevisions = useMemo(() => {
         return salesRevisions.filter(row => {
-            const matchFab = sctFabTypeFilter === 'all' || row.fab_type === sctFabTypeFilter;
+            const matchFab = sctFabTypeFilter === 'all' || isSameFabType(row.fab_type, sctFabTypeFilter);
             const matchRevType = sctRevisionTypeFilter === 'all' ||
                 (row.revision_type_label && REVISION_TYPE_MAP[row.revision_type_label] === sctRevisionTypeFilter) ||
                 row.revision_type_label === sctRevisionTypeFilter;
@@ -262,7 +256,7 @@ export function RevisionReport() {
 
     const filteredShopRevisions = useMemo(() => {
         return shopRevisions.filter(row => {
-            const matchFab = shopFabTypeFilter === 'all' || row.fab_type === shopFabTypeFilter;
+            const matchFab = shopFabTypeFilter === 'all' || isSameFabType(row.fab_type, shopFabTypeFilter);
 
             let matchSearch = true;
             if (shopSearchQuery.trim()) {
