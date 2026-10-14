@@ -540,9 +540,13 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
   const [entries, setEntries] = useState<PlanEntry[]>([]);
 
-  const selectedFabId = entries[0]?.fab_id || '';
+  // When the FAB is already known (editing an existing plan or prefilled), fetch just that FAB
+  // instead of the full FAB list, which is only needed to populate the FAB picker.
+  const knownFabId = effectiveEvent?.fab_id != null ? String(effectiveEvent.fab_id) : effectivePrefillFabId;
+  const needsFabList = !knownFabId;
+  const selectedFabId = entries[0]?.fab_id || knownFabId || '';
 
-  const { data: fabData, isLoading: isLoadingFab } = useGetFabByIdQuery(
+  const { data: fabData, isLoading: isLoadingFab, isError: isFabError } = useGetFabByIdQuery(
     selectedFabId ? Number(selectedFabId) : 0,
     { skip: !selectedFabId }
   );
@@ -593,13 +597,16 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const { data: employeesData } = useGetEmployeesQuery();
   const employees: any[] = employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
 
-  const { data: allFabsData, isLoading: isLoadingFabs } = useGetFabsQuery({ limit: 1000 });
+  const { data: allFabsData, isLoading: isLoadingFabList } = useGetFabsQuery({ limit: 1000 }, { skip: !needsFabList });
+  const isLoadingFabs = needsFabList ? isLoadingFabList : isLoadingFab;
   const { data: allWorkstationsData } = useGetWorkstationsQuery();
   const allWorkstations: any[] = allWorkstationsData?.data || (Array.isArray(allWorkstationsData) ? allWorkstationsData : []);
 
   const allFabsList = useMemo(() => {
-    return allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
-  }, [allFabsData]);
+    const list = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
+    if (list.length || !fabDetails?.id) return list;
+    return [fabDetails];
+  }, [allFabsData, fabDetails]);
 
   const fabOptions = useMemo(() => {
     return allFabsList.map((fab: any) => ({
@@ -611,7 +618,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const employeesLoaded = employees.length > 0;
   const workstationsLoaded = allWorkstations.length > 0;
   const sectionsLoaded = planningSections.length > 0;
-  const fabsLoaded = !!allFabsData;
+  const fabsLoaded = needsFabList ? !!allFabsData : (!!fabDetails || isFabError);
   const dataReady = !isLoadingFabs && sectionsLoaded && fabsLoaded;
 
   const isResurfaceFab = useCallback((fab: any) => {

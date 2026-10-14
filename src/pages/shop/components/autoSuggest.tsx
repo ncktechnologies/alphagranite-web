@@ -416,28 +416,36 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   const employees: any[] =
     employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
 
-  const { data: allFabsData, isLoading: isLoadingFabs } =
-    useGetFabsQuery({ limit: 1000 });
-
-  const fabOptions = useMemo(() => {
-    const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
-    return fabs.map((fab: any) => ({
-      value: String(fab.id),
-      label: `Fab ${fab.id} - (${fab.fab_type || 'N/A'})`,
-    }));
-  }, [allFabsData]);
+  // With a prefilled FAB (and not editing) the FAB picker is locked, so fetch just that FAB
+  // instead of the full FAB list.
+  const needsFabList = !effectivePrefillFabId || !!selectedEvent;
+  const { data: allFabsData, isLoading: isLoadingFabList } =
+    useGetFabsQuery({ limit: 1000 }, { skip: !needsFabList });
 
   const selectedFabId = entries[0]?.fab_id;
-  const selectedFab = useMemo(() => {
-    if (!allFabsData || !selectedFabId) return null;
-    const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
-    return fabs.find((fab: any) => String(fab.id) === selectedFabId) || null;
-  }, [allFabsData, selectedFabId]);
-
-  const { data: existingPlansData, isFetching: isCheckingPlans } = useGetFabByIdQuery(
+  const { data: existingPlansData, isLoading: isLoadingFab, isFetching: isCheckingPlans } = useGetFabByIdQuery(
     selectedFabId,
     { skip: !selectedFabId }
   );
+  const isLoadingFabs = needsFabList ? isLoadingFabList : isLoadingFab;
+
+  const allFabsList = useMemo(() => {
+    const list = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
+    if (list.length || !existingPlansData?.id) return list;
+    return [existingPlansData];
+  }, [allFabsData, existingPlansData]);
+
+  const fabOptions = useMemo(() => {
+    return allFabsList.map((fab: any) => ({
+      value: String(fab.id),
+      label: `Fab ${fab.id} - (${fab.fab_type || 'N/A'})`,
+    }));
+  }, [allFabsList]);
+
+  const selectedFab = useMemo(() => {
+    if (!selectedFabId) return null;
+    return allFabsList.find((fab: any) => String(fab.id) === selectedFabId) || null;
+  }, [allFabsList, selectedFabId]);
 
   const hasExistingPlans = useMemo(() => {
     if (!existingPlansData) return false;
