@@ -523,13 +523,7 @@ export function FileGallery({
 
   // Ensure model-viewer script is loaded when needed
   const ensureModelViewerLoaded = () => {
-    if ((window as any).customElements && (window as any).customElements.get('model-viewer')) return;
-    if (document.getElementById('model-viewer-script')) return;
-    const s = document.createElement('script');
-    s.id = 'model-viewer-script';
-    s.src = 'https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js';
-    s.async = true;
-    document.head.appendChild(s);
+    import('@google/model-viewer').catch((e) => console.error('Failed to load <model-viewer>:', e));
   };
 
   const openViewer = (file: UnifiedFile) => {

@@ -104,14 +104,38 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
     setModelError(false);
     container.innerHTML = '';
 
-    // Safety check: script loaded?
-    const ce = (window as any).customElements;
-    if (!ce || !ce.get('model-viewer')) {
-      console.error('[FileViewer] <model-viewer> is not defined. Add the script to index.html.');
+    let cancelled = false;
+    let el: any = null;
+    const onLoad  = () => console.debug('[FileViewer] model loaded');
+    const onError = (e: any) => {
+      console.error('[FileViewer] model failed to load:', e);
       setModelError(true);
-      return;
-    }
+    };
 
+    // Load model-viewer (and three.js) on demand so it stays out of the main bundle
+    import('@google/model-viewer')
+      .then(() => {
+        if (cancelled) return;
+        el = createModelViewer();
+        el.addEventListener('load', onLoad);
+        el.addEventListener('error', onError);
+        container.appendChild(el);
+      })
+      .catch((e) => {
+        console.error('[FileViewer] failed to load <model-viewer>:', e);
+        if (!cancelled) setModelError(true);
+      });
+
+    return () => {
+      cancelled = true;
+      if (!el) return;
+      el.removeEventListener('load', onLoad);
+      el.removeEventListener('error', onError);
+      try { container.removeChild(el); } catch { /* ignore */ }
+    };
+  }, [isModel, file.url, file.name]);
+
+  const createModelViewer = () => {
     const el: any = document.createElement('model-viewer');
     el.src = file.url;
     el.alt = file.name;
@@ -124,23 +148,8 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
     el.setAttribute('crossorigin', 'anonymous');
     el.setAttribute('loading', 'eager');
     el.setAttribute('reveal', 'auto');
-
-    const onLoad  = () => console.debug('[FileViewer] model loaded');
-    const onError = (e: any) => {
-      console.error('[FileViewer] model failed to load:', e);
-      setModelError(true);
-    };
-    el.addEventListener('load', onLoad);
-    el.addEventListener('error', onError);
-
-    container.appendChild(el);
-
-    return () => {
-      el.removeEventListener('load', onLoad);
-      el.removeEventListener('error', onError);
-      try { container.removeChild(el); } catch { /* ignore */ }
-    };
-  }, [isModel, file.url, file.name]);
+    return el;
+  };
 
   // ── Image fit / pan ───────────────────────────────────────────────────────
   const stageRef = useRef<HTMLDivElement | null>(null);
