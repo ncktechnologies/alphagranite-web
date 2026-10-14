@@ -246,6 +246,8 @@ export const shopCutPlanningApi = createApi({
         },
         transformResponse: (response: any) => response.data || response,
         providesTags: ['ShopCutPlan'],
+        // Keep recently viewed calendar ranges so paging back is instant; plan mutations still invalidate.
+        keepUnusedDataFor: 60,
       }),
 
       // Get shop plans by FAB ID
