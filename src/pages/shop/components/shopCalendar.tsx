@@ -1135,7 +1135,7 @@ const ShopCalendarPage: React.FC = () => {
                                             onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
                                             onKeyDown={(e) => e.stopPropagation()}
                                             className={cn(
-                                              'flex h-5 w-full items-center gap-1 truncate rounded-[5px] px-1.5 text-start text-[12px] font-medium transition-[filter] hover:brightness-95',
+                                              'flex h-5 w-full cursor-pointer items-center gap-1 truncate rounded-[5px] px-1.5 text-start text-[12px] font-medium transition-[filter] hover:brightness-95',
                                               ev.has_pending_shop_revision && 'ring-1 ring-destructive',
                                             )}
                                             style={{ backgroundColor: c.bg, color: c.text }}
