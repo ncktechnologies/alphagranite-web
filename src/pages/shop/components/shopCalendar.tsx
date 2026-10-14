@@ -1128,20 +1128,27 @@ const ShopCalendarPage: React.FC = () => {
                                   {evs.slice(0, 3).map((ev) => {
                                     const c = getColorForFab(ev.fab_id, ev.fab_type);
                                     return (
-                                      <button
-                                        key={eventKey(ev)}
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
-                                        className={cn(
-                                          'flex h-5 w-full items-center gap-1 truncate rounded-[5px] px-1.5 text-start text-[12px] font-medium transition-[filter] hover:brightness-95',
-                                          ev.has_pending_shop_revision && 'ring-1 ring-destructive',
-                                        )}
-                                        style={{ backgroundColor: c.bg, color: c.text }}
-                                        title={`FAB #${ev.fab_id} · ${ev.plan_name ?? ''} · ${timeRange(ev)}`}
-                                      >
-                                        <span className="tabular-nums opacity-70">{format(new Date(ev.scheduled_start_date), 'h:mm')}</span>
-                                        <span className="truncate">#{ev.fab_id}{ev.plan_name ? ` · ${ev.plan_name}` : ''}</span>
-                                      </button>
+                                      <Tooltip key={eventKey(ev)} delayDuration={250}>
+                                        <TooltipTrigger asChild>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
+                                            onKeyDown={(e) => e.stopPropagation()}
+                                            className={cn(
+                                              'flex h-5 w-full items-center gap-1 truncate rounded-[5px] px-1.5 text-start text-[12px] font-medium transition-[filter] hover:brightness-95',
+                                              ev.has_pending_shop_revision && 'ring-1 ring-destructive',
+                                            )}
+                                            style={{ backgroundColor: c.bg, color: c.text }}
+                                            aria-label={`FAB ${ev.fab_id}, ${ev.plan_name ?? ''}, ${timeRange(ev)}`}
+                                          >
+                                            <span className="tabular-nums opacity-70">{format(new Date(ev.scheduled_start_date), 'h:mm')}</span>
+                                            <span className="truncate">#{ev.fab_id}{ev.plan_name ? ` · ${ev.plan_name}` : ''}</span>
+                                          </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" variant="light" className="p-3">
+                                          <EventDetails ev={ev} />
+                                        </TooltipContent>
+                                      </Tooltip>
                                     );
                                   })}
                                   {evs.length > 3 && (
