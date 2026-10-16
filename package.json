@@ -97,7 +97,6 @@
     "vitest": "^3.2.7"
   },
   "overrides": {
-  "braces": "^3.0.4",
   "tinypool": "^2.1.2"
 }
 }
