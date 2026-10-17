@@ -622,7 +622,7 @@ function DataGridTable<TData extends object>() {
           return (
             <div key={month} className="space-y-2">
               {/* Month Header with Total */}
-              <div className="bg-white border border-border rounded-lg px-4 py-2">
+              <div className="bg-background border border-border rounded-lg px-4 py-2">
                 <table className="w-full table-fixed">
                   <thead>
                     <tr>
@@ -660,7 +660,7 @@ function DataGridTable<TData extends object>() {
                   return (
                     <div key={dateStr} className="border border-border rounded-lg overflow-hidden">
                       {/* Date Header with Total */}
-                      <div className="bg-[#F6FFE7] border-b border-border">
+                      <div className="bg-[#F6FFE7] dark:bg-primary-soft border-b border-border">
                         <table className="w-full table-fixed">
                           <thead>
                             <tr>
@@ -731,7 +731,7 @@ function DataGridTable<TData extends object>() {
 
         return (
           <div key={date} className="border border-border rounded-lg overflow-hidden">
-            <div className="bg-[#F6FFE7] border-b border-border">
+            <div className="bg-[#F6FFE7] dark:bg-primary-soft border-b border-border">
               <table className="w-full table-fixed">
                 <thead>
                   <tr>

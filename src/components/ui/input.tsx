@@ -6,7 +6,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 const inputVariants = cva(
   `
     flex w-full bg-background border border-input shadow-xs shadow-black/[0.03] transition-[color,box-shadow,border-color] text-foreground placeholder:text-placeholder
-    hover:border-[#CDD2C6] focus-visible:ring-ring/25 focus-visible:border-primary-light focus-visible:outline-none focus-visible:ring-[3px]     
+    hover:border-input-hover focus-visible:ring-ring/25 focus-visible:border-primary-light focus-visible:outline-none focus-visible:ring-[3px]     
     disabled:cursor-not-allowed disabled:opacity-60 
     [&[readonly]]:bg-muted/80 [&[readonly]]:cursor-not-allowed
     file:h-full [&[type=file]]:py-0 file:border-solid file:border-input file:bg-transparent 

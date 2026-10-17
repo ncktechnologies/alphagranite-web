@@ -444,7 +444,7 @@ function ReportRenderer({ useQueryHook, title, groupBy, reportId }: { useQueryHo
                         <CardTable>
                             <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                                 <DataGridTable />
-                                <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400" />
+                                <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                             </ScrollArea>
                         </CardTable>
                         <CardFooter><DataGridPagination /></CardFooter>

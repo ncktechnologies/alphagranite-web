@@ -853,7 +853,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
                                     </table>
                                 )}
                             </div>
-                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
 
                         </ScrollArea>
                     </CardTable>

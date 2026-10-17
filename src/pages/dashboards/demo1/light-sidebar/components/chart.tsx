@@ -2,6 +2,7 @@ import { ApexOptions } from 'apexcharts';
 import ApexChart from 'react-apexcharts';
 import { Card, CardContent, CardDescription, CardHeader, CardHeading, CardTitle } from '@/components/ui/card';
 import { OverallStatistics } from '@/store/api/job';
+import { useChartColors } from '@/hooks/use-chart-colors';
 
 interface IContributionsProps {
   title: string;
@@ -18,6 +19,8 @@ const SERIES = [
 const numberFmt = new Intl.NumberFormat('en-US');
 
 const Contributions = ({ title, overallStats }: IContributionsProps) => {
+  const chartColors = useChartColors();
+
   if (!overallStats) {
     return (
       <Card className="h-full">
@@ -46,7 +49,7 @@ const Contributions = ({ title, overallStats }: IContributionsProps) => {
       fontFamily: 'inherit',
     },
     // 2px surface gap between segments
-    stroke: { show: true, width: 2, colors: ['#ffffff'] },
+    stroke: { show: true, width: 2, colors: [chartColors.surface] },
     dataLabels: { enabled: false },
     legend: { show: false },
     states: {

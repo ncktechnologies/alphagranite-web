@@ -75,7 +75,7 @@ function InstallerCard({ installer, rows, isExpanded, onToggle }: { installer: s
                                         {table.getRowModel().rows.map(row => <tr key={row.id} className="border-b">{row.getVisibleCells().map(cell => <td key={cell.id} className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>)}
                                     </tbody>
                                 </table>
-                                <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                                <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
 
                             </ScrollArea>
                         </div>

@@ -410,7 +410,7 @@ export function ServiceLevelReport() {
                                 </tbody>
                             </table>
                         </div>
-                        <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                        <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                     </ScrollArea>
                 </CardTable>
                 <CardFooter className="bg-white border-t px-4 py-2">
@@ -620,7 +620,7 @@ export function ServiceLevelReport() {
                                         </tbody>
                                     </table>
                                 </div>
-                                <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                                <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                             </ScrollArea>
                         </CardTable>
                         <CardFooter className="bg-white border-t px-4 py-2">

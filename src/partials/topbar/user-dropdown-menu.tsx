@@ -252,20 +252,25 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
         </DropdownMenuSub>
 
         {/* Footer */}
-        {/* <DropdownMenuItem
+        <DropdownMenuItem
           className="flex items-center gap-2"
-          onSelect={(event) => event.preventDefault()}
+          onSelect={(event) => {
+            // Keep the menu open and let a click anywhere on the row flip the theme
+            event.preventDefault();
+            handleThemeToggle(theme !== 'dark');
+          }}
         >
           <Moon />
           <div className="flex items-center gap-2 justify-between grow">
-            Dark Mode
+            Dark mode
             <Switch
               size="sm"
               checked={theme === 'dark'}
+              onClick={(event) => event.stopPropagation()}
               onCheckedChange={handleThemeToggle}
             />
           </div>
-        </DropdownMenuItem> */}
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="flex items-center gap-2 text-destructive focus:text-destructive focus:bg-destructive/5"
