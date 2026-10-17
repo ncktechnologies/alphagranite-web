@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -22,6 +22,7 @@ import {
   format,
   addDays,
   addHours,
+  addMinutes,
   startOfWeek,
   endOfWeek,
   isSameDay,
@@ -60,6 +61,8 @@ import {
   SHOP_BREAK_START_HOUR,
   SHOP_BREAK_END_HOUR,
 } from '@/lib/shop-time';
+import { type ShopCalendarPlan, dragBlockReason, splitPlanIntoParts } from '@/lib/shop-schedule';
+import { type DragPreview, useShopCalendarDrag } from './shop-calendar-dnd';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const DAY_START_HOUR = SHOP_DAY_START_HOUR;
@@ -177,6 +180,11 @@ function EventDetails({ ev }: { ev: any }) {
         </div>
       </div>
       {ev.notes && <p className="border-t border-border pt-2 text-xs text-text">{ev.notes}</p>}
+      {dragBlockReason(ev) && (
+        <p className="flex items-center gap-1.5 border-t border-border pt-2 text-[12px] text-muted-foreground">
+          <Lock className="size-3" /> {dragBlockReason(ev)}
+        </p>
+      )}
     </div>
   );
 }
@@ -186,6 +194,38 @@ function ProgressBar({ value, color }: { value: number; color: string }) {
   return (
     <div className="h-1 w-full overflow-hidden rounded-full bg-black/10">
       <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+    </div>
+  );
+}
+
+/** Dashed outline showing where a dragged / resized plan segment will land. */
+function DragGhost({
+  part,
+  plan,
+  preview,
+  style,
+}: {
+  part: { start: Date; hours: number; first: boolean };
+  plan: ShopCalendarPlan | null;
+  preview: DragPreview;
+  style: React.CSSProperties;
+}) {
+  const { bg, border, text } = getColorForFab(plan?.fab_id ?? 0, plan?.fab_type ?? '');
+  const end = addMinutes(part.start, Math.round(part.hours * 60));
+  return (
+    <div
+      className="pointer-events-none absolute z-[5] flex flex-col justify-center gap-0.5 overflow-hidden rounded-lg border-2 border-dashed px-2 py-1 shadow-popover"
+      style={{ ...style, backgroundColor: `color-mix(in oklab, ${bg} 80%, transparent)`, borderColor: border, color: text }}
+      aria-hidden
+    >
+      <span className="truncate text-[12px] font-semibold tabular-nums">
+        {format(part.start, 'h:mm')} – {format(end, 'h:mm a')}
+      </span>
+      {part.first && (
+        <span className="truncate text-[11px] font-medium tabular-nums opacity-80">
+          {Math.round(preview.hours * 100) / 100} h{preview.kind === 'resize' ? ' total' : ''}
+        </span>
+      )}
     </div>
   );
 }
@@ -478,6 +518,37 @@ const ShopCalendarPage: React.FC = () => {
 
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
 
+  // ─── Drag to reschedule / resize ──────────────────────────────────────
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const {
+    preview: dragPreview,
+    activePlanId: draggingPlanId,
+    startMove: startDragMove,
+    startResize: startDragResize,
+    consumeClick: consumeDragClick,
+    dialog: rescheduleDialog,
+  } = useShopCalendarDrag({
+    layout: viewMode === 'month' ? 'month' : isAxisSwapped ? 'timeline' : 'columns',
+    lockDay: viewMode === 'day',
+    hourHeight: HOUR_HEIGHT,
+    hourWidth: HOUR_WIDTH,
+    scrollRef,
+    plans: flatPlans,
+    planMap,
+  });
+
+  // Where the dragged plan would land, split per day like the real events
+  const previewByDay = useMemo(() => {
+    const byDay: Record<string, { start: Date; hours: number; first: boolean }[]> = {};
+    if (!dragPreview) return byDay;
+    splitPlanIntoParts(dragPreview.start, dragPreview.hours).forEach((part, i) => {
+      const key = format(part.start, 'yyyy-MM-dd');
+      (byDay[key] ??= []).push({ start: part.start, hours: part.hours, first: i === 0 });
+    });
+    return byDay;
+  }, [dragPreview]);
+  const previewPlan = dragPreview ? planMap[Number(dragPreview.planId)] : null;
+
   const displayDays = useMemo(() => {
     if (viewMode === 'day') return [currentDate];
     if (viewMode === 'week') {
@@ -506,57 +577,20 @@ const ShopCalendarPage: React.FC = () => {
     const plans = Array.isArray(flatPlans) ? flatPlans : [];
 
     plans.forEach((event: any) => {
-      const startDate = new Date(event.scheduled_start_date);
-      let remainingHours = Number(event.estimated_hours) || 0;
-      let currentDate = startDate;
-      let currentHour = startDate.getHours() + startDate.getMinutes() / 60;
-
-      // If start time falls inside break, move to end of break
-      if (currentHour >= BREAK_START_HOUR && currentHour < BREAK_END_HOUR) {
-        currentHour = BREAK_END_HOUR;
-        currentDate.setHours(BREAK_END_HOUR, 0, 0, 0);
-      }
-
-      while (remainingHours > 0) {
-        let hoursToday = 0;
-        if (currentHour < BREAK_START_HOUR) {
-          hoursToday = Math.min(remainingHours, BREAK_START_HOUR - currentHour);
-        } else if (currentHour >= BREAK_END_HOUR) {
-          hoursToday = Math.min(remainingHours, DAY_END_HOUR - currentHour);
-        } else {
-          // Should not happen – skip to break end
-          currentHour = BREAK_END_HOUR;
-          continue;
-        }
-
-        if (hoursToday > 0) {
-          const partStart = new Date(currentDate);
-          partStart.setHours(currentHour, 0, 0, 0);
-          const key = format(currentDate, 'yyyy-MM-dd');
-          if (!grouped[key]) grouped[key] = [];
-          grouped[key].push({
-            ...event,
-            _isSplitPart: true,
-            _originalHours: event.estimated_hours,
-            estimated_hours: hoursToday,
-            scheduled_start_date: partStart.toISOString(),
-            _planId: event.id,
-          });
-          remainingHours -= hoursToday;
-          currentHour += hoursToday;
-        }
-
-        // If we've reached the break, skip over it
-        if (currentHour >= BREAK_START_HOUR && currentHour < BREAK_END_HOUR) {
-          currentHour = BREAK_END_HOUR;
-        }
-
-        // If we've reached end of day or no time left, move to next day
-        if (currentHour >= DAY_END_HOUR || remainingHours <= 0) {
-          currentDate = addDays(currentDate, 1);
-          currentHour = DAY_START_HOUR;
-        }
-      }
+      splitPlanIntoParts(new Date(event.scheduled_start_date), Number(event.estimated_hours) || 0).forEach((part) => {
+        const key = format(part.start, 'yyyy-MM-dd');
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push({
+          ...event,
+          _isSplitPart: true,
+          _originalHours: event.estimated_hours,
+          _hoursBefore: part.hoursBefore,
+          _isLastPart: part.isLast,
+          estimated_hours: part.hours,
+          scheduled_start_date: part.start.toISOString(),
+          _planId: event.id,
+        });
+      });
     });
 
     return grouped;
@@ -715,6 +749,8 @@ const ShopCalendarPage: React.FC = () => {
     const colLeft = `calc(${(event._col / col) * 100}% + ${PAD}px)`;
     const h = event._height - PAD * 2;
     const pendingRevision = !!event?.has_pending_shop_revision;
+    const dayKey = format(new Date(event.scheduled_start_date), 'yyyy-MM-dd');
+    const draggable = !dragBlockReason(event);
 
     return (
       <Tooltip key={eventKey(event)} delayDuration={250}>
@@ -722,8 +758,10 @@ const ShopCalendarPage: React.FC = () => {
           <button
             type="button"
             className={cn(
-              'group absolute z-[2] cursor-pointer overflow-hidden rounded-lg border text-start shadow-[0_1px_2px_rgb(0_0_0/0.06)] transition-[box-shadow,transform] hover:z-[3] hover:-translate-y-px hover:shadow-card-hover focus-visible:z-[3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              'group absolute z-[2] cursor-pointer overflow-hidden rounded-lg border text-start shadow-[0_1px_2px_rgb(0_0_0/0.06)] transition-[box-shadow,transform,opacity] hover:z-[3] hover:-translate-y-px hover:shadow-card-hover focus-visible:z-[3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              draggable && 'cursor-grab',
               pendingRevision && 'ring-2 ring-destructive ring-offset-1',
+              draggingPlanId === (event._planId ?? event.id) && 'opacity-40',
             )}
             style={{
               top: event._top + PAD,
@@ -733,9 +771,19 @@ const ShopCalendarPage: React.FC = () => {
               backgroundColor: bg,
               borderColor: border,
             }}
-            onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(event); }}
+            onPointerDown={(e) => startDragMove(e, event, dayKey)}
+            onClick={(e) => { e.stopPropagation(); if (!consumeDragClick()) handleOpenEditPlan(event); }}
             aria-label={`FAB ${event.fab_id}, ${event.plan_name ?? ''}, ${timeRange(event)}`}
           >
+            {draggable && (
+              <span
+                aria-hidden
+                onPointerDown={(e) => startDragResize(e, event, dayKey)}
+                className="absolute inset-x-0 bottom-0 z-[1] flex h-2.5 cursor-ns-resize items-end justify-center opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                <span className="mb-0.5 h-1 w-7 rounded-full bg-black/30" />
+              </span>
+            )}
             <div className="@container flex h-full flex-col gap-0.5 px-2 py-1.5" style={{ color: text }}>
               <div className="flex items-center gap-1 min-w-0">
                 {pendingRevision && <AlertTriangle className="size-3 shrink-0 text-destructive" />}
@@ -773,7 +821,7 @@ const ShopCalendarPage: React.FC = () => {
         </TooltipContent>
       </Tooltip>
     );
-  }, [handleOpenEditPlan]);
+  }, [handleOpenEditPlan, draggingPlanId, startDragMove, startDragResize, consumeDragClick]);
 
   if (activePage === 'create-plan') {
     return (
@@ -1071,7 +1119,7 @@ const ShopCalendarPage: React.FC = () => {
                   </div>
                 )}
 
-                <div className="overflow-auto" style={{ maxHeight: 'max(440px, calc(100vh - 330px))' }}>
+                <div ref={scrollRef} className="overflow-auto" style={{ maxHeight: 'max(440px, calc(100vh - 330px))' }}>
                   {/* ─── Month view ─── */}
                   {viewMode === 'month' && (
                     <div className="min-w-[760px]">
@@ -1102,17 +1150,21 @@ const ShopCalendarPage: React.FC = () => {
                                 .sort((a, b) => new Date(a.scheduled_start_date).getTime() - new Date(b.scheduled_start_date).getTime());
                               const inMonth = getMonth(day) === getMonth(currentDate);
                               const today = isSameDay(day, new Date());
+                              const isDropTarget = dragPreview?.dayKey === dk;
                               return (
                                 <div
                                   key={dk}
                                   role="button"
                                   tabIndex={0}
-                                  onClick={() => openDay(day)}
+                                  data-dnd-day={dk}
+                                  data-dnd-axis="none"
+                                  onClick={() => { if (!consumeDragClick()) openDay(day); }}
                                   onKeyDown={(e) => { if (e.key === 'Enter') openDay(day); }}
                                   className={cn(
                                     'group/cell flex min-h-[112px] cursor-pointer flex-col gap-1 border-b border-s border-border/70 p-1.5 text-start transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
                                     !inMonth && 'bg-muted/60',
                                     inMonth && isWeekend(day) && 'bg-muted/30',
+                                    isDropTarget && 'bg-primary-soft/70 ring-2 ring-inset ring-primary-light hover:bg-primary-soft/70',
                                   )}
                                 >
                                   <div className="flex items-center justify-between px-0.5">
@@ -1125,6 +1177,23 @@ const ShopCalendarPage: React.FC = () => {
                                       {format(day, 'd')}
                                     </span>
                                   </div>
+                                  {isDropTarget && dragPreview && (
+                                    <div
+                                      className="flex h-5 w-full items-center gap-1 truncate rounded-[5px] border border-dashed px-1.5 text-[12px] font-semibold"
+                                      style={{
+                                        backgroundColor: getColorForFab(previewPlan?.fab_id, previewPlan?.fab_type).bg,
+                                        borderColor: getColorForFab(previewPlan?.fab_id, previewPlan?.fab_type).border,
+                                        color: getColorForFab(previewPlan?.fab_id, previewPlan?.fab_type).text,
+                                      }}
+                                      aria-hidden
+                                    >
+                                      <span className="tabular-nums">{format(dragPreview.start, 'h:mm a')}</span>
+                                      <span className="truncate">
+                                        #{previewPlan?.fab_id}
+                                        {dragPreview.adjusted ? ' · time adjusted' : ''}
+                                      </span>
+                                    </div>
+                                  )}
                                   {evs.slice(0, 3).map((ev) => {
                                     const c = getColorForFab(ev.fab_id, ev.fab_type);
                                     return (
@@ -1132,11 +1201,14 @@ const ShopCalendarPage: React.FC = () => {
                                         <TooltipTrigger asChild>
                                           <button
                                             type="button"
-                                            onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
+                                            onPointerDown={(e) => startDragMove(e, ev, dk)}
+                                            onClick={(e) => { e.stopPropagation(); if (!consumeDragClick()) handleOpenEditPlan(ev); }}
                                             onKeyDown={(e) => e.stopPropagation()}
                                             className={cn(
-                                              'flex h-5 w-full cursor-pointer items-center gap-1 truncate rounded-[5px] px-1.5 text-start text-[12px] font-medium transition-[filter] hover:brightness-95',
+                                              'flex h-5 w-full cursor-pointer items-center gap-1 truncate rounded-[5px] px-1.5 text-start text-[12px] font-medium transition-[filter,opacity] hover:brightness-95',
+                                              !dragBlockReason(ev) && 'cursor-grab',
                                               ev.has_pending_shop_revision && 'ring-1 ring-destructive',
+                                              draggingPlanId === (ev._planId ?? ev.id) && 'opacity-40',
                                             )}
                                             style={{ backgroundColor: c.bg, color: c.text }}
                                             aria-label={`FAB ${ev.fab_id}, ${ev.plan_name ?? ''}, ${timeRange(ev)}`}
@@ -1239,7 +1311,12 @@ const ShopCalendarPage: React.FC = () => {
                                 style={{ top: 8 + getTimePosition(DAY_END_HOUR) }}
                                 aria-hidden
                               />
-                              <div className="absolute inset-x-0" style={{ top: 8, height: DISPLAY_HOURS * HOUR_HEIGHT }}>
+                              <div
+                                className="absolute inset-x-0"
+                                style={{ top: 8, height: DISPLAY_HOURS * HOUR_HEIGHT }}
+                                data-dnd-day={key}
+                                data-dnd-axis="y"
+                              >
                                 {hourMarks.map((hour) => (
                                   <div
                                     key={hour}
@@ -1264,6 +1341,20 @@ const ShopCalendarPage: React.FC = () => {
                                 </div>
 
                                 {positioned.map((ev) => renderEventCard(ev))}
+
+                                {dragPreview && previewByDay[key]?.map((part) => {
+                                  const startH = part.start.getHours() + part.start.getMinutes() / 60;
+                                  const top = getTimePosition(startH);
+                                  return (
+                                    <DragGhost
+                                      key={part.start.toISOString()}
+                                      part={part}
+                                      plan={previewPlan}
+                                      preview={dragPreview}
+                                      style={{ top, height: getVisualEndPosition(startH, part.hours, HOUR_HEIGHT) - top, left: 3, right: 3 }}
+                                    />
+                                  );
+                                })}
 
                                 {today && showTimeIndicator && (
                                   <div className="pointer-events-none absolute inset-x-0 z-[4]" style={{ top: getTimePosition(nowHour) }}>
@@ -1375,6 +1466,8 @@ const ShopCalendarPage: React.FC = () => {
                             <div
                               className="relative"
                               style={{ height: rowHeight, minWidth: DISPLAY_HOURS * HOUR_WIDTH + END_GUTTER_X }}
+                              data-dnd-day={dk}
+                              data-dnd-axis="x"
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(false); } : undefined}
                             >
                               {hourMarks.map((hour) => (
@@ -1411,6 +1504,7 @@ const ShopCalendarPage: React.FC = () => {
                                   const width = Math.max(HOUR_WIDTH * 0.5, right - left) - LANE_GAP;
                                   const { bg, border, text } = getColorForFab(ev.fab_id, ev.fab_type);
                                   const pendingRevision = !!ev?.has_pending_shop_revision;
+                                  const draggable = !dragBlockReason(ev);
 
                                   return (
                                     <Tooltip key={eventKey(ev)} delayDuration={250}>
@@ -1418,8 +1512,10 @@ const ShopCalendarPage: React.FC = () => {
                                         <button
                                           type="button"
                                           className={cn(
-                                            'absolute z-[2] cursor-pointer overflow-hidden rounded-lg border text-start shadow-[0_1px_2px_rgb(0_0_0/0.06)] transition-[box-shadow,transform] hover:z-[3] hover:-translate-y-px hover:shadow-card-hover focus-visible:z-[3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                            'group absolute z-[2] cursor-pointer overflow-hidden rounded-lg border text-start shadow-[0_1px_2px_rgb(0_0_0/0.06)] transition-[box-shadow,transform,opacity] hover:z-[3] hover:-translate-y-px hover:shadow-card-hover focus-visible:z-[3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                            draggable && 'cursor-grab',
                                             pendingRevision && 'ring-2 ring-destructive ring-offset-1',
+                                            draggingPlanId === (ev._planId ?? ev.id) && 'opacity-40',
                                           )}
                                           style={{
                                             left: Math.max(0, left) + LANE_GAP / 2,
@@ -1429,9 +1525,19 @@ const ShopCalendarPage: React.FC = () => {
                                             backgroundColor: bg,
                                             borderColor: border,
                                           }}
-                                          onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
+                                          onPointerDown={(e) => startDragMove(e, ev, dk)}
+                                          onClick={(e) => { e.stopPropagation(); if (!consumeDragClick()) handleOpenEditPlan(ev); }}
                                           aria-label={`FAB ${ev.fab_id}, ${ev.plan_name ?? ''}, ${timeRange(ev)}`}
                                         >
+                                          {draggable && (
+                                            <span
+                                              aria-hidden
+                                              onPointerDown={(e) => startDragResize(e, ev, dk)}
+                                              className="absolute inset-y-0 end-0 z-[1] flex w-2.5 cursor-ew-resize items-center justify-end opacity-0 transition-opacity group-hover:opacity-100"
+                                            >
+                                              <span className="me-0.5 h-7 w-1 rounded-full bg-black/30" />
+                                            </span>
+                                          )}
                                           <div className="flex h-full flex-col justify-center gap-0.5 px-2.5 py-1.5" style={{ color: text }}>
                                             <div className="flex items-center gap-1.5 min-w-0">
                                               {pendingRevision && <AlertTriangle className="size-3 shrink-0 text-destructive" />}
@@ -1461,6 +1567,20 @@ const ShopCalendarPage: React.FC = () => {
                                 })
                               )}
 
+                              {dragPreview && previewByDay[dk]?.map((part) => {
+                                const startH = part.start.getHours() + part.start.getMinutes() / 60;
+                                const left = getHorizontalPosition(startH);
+                                return (
+                                  <DragGhost
+                                    key={part.start.toISOString()}
+                                    part={part}
+                                    plan={previewPlan}
+                                    preview={dragPreview}
+                                    style={{ left: left + LANE_GAP / 2, width: getVisualEndPosition(startH, part.hours, HOUR_WIDTH) - left - LANE_GAP, top: LANE_GAP, bottom: LANE_GAP }}
+                                  />
+                                );
+                              })}
+
                               {today && showTimeIndicator && (
                                 <div className="pointer-events-none absolute inset-y-0 z-[4]" style={{ left: getHorizontalPosition(nowHour) }}>
                                   <div className="relative h-full w-0.5 bg-destructive">
@@ -1480,10 +1600,12 @@ const ShopCalendarPage: React.FC = () => {
           )}
         </Card>
 
+        {rescheduleDialog}
+
         <p className="mt-3 hidden text-xs text-muted-foreground lg:block">
           Tip: <Kbd size="xs" className="bg-background font-sans">←</Kbd> <Kbd size="xs" className="bg-background font-sans">→</Kbd> move between periods,{' '}
           <Kbd size="xs" className="bg-background font-sans">T</Kbd> jumps to today,{' '}
-          <Kbd size="xs" className="bg-background font-sans">D</Kbd> <Kbd size="xs" className="bg-background font-sans">W</Kbd> <Kbd size="xs" className="bg-background font-sans">M</Kbd> switch views. Click a day heading to open it.
+          <Kbd size="xs" className="bg-background font-sans">D</Kbd> <Kbd size="xs" className="bg-background font-sans">W</Kbd> <Kbd size="xs" className="bg-background font-sans">M</Kbd> switch views. Click a day heading to open it. Drag a plan to reschedule it, or drag its edge to change the duration.
         </p>
       </Container>
     </>

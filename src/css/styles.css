@@ -92,3 +92,21 @@ html:not([data-density='compact']) [data-slot='data-grid-table']:not([data-dense
 html[data-density='compact'] [data-slot='data-grid-table'] > thead > tr > th {
   height: 2.25rem;
 }
+
+/* Shop calendar drag: no hover tooltips, text selection or grab cursor flicker mid-drag */
+body[data-calendar-dragging] {
+  user-select: none;
+  cursor: grabbing;
+}
+body[data-calendar-dragging='resize-x'] {
+  cursor: ew-resize;
+}
+body[data-calendar-dragging='resize-y'] {
+  cursor: ns-resize;
+}
+body[data-calendar-dragging] * {
+  cursor: inherit !important;
+}
+body[data-calendar-dragging] [data-radix-popper-content-wrapper]:has([data-slot='tooltip-content']) {
+  display: none;
+}
