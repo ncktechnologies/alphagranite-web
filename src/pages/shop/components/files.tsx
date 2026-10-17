@@ -368,13 +368,13 @@ export function Documents({
             <div
               key={file.id}
               className={cn(
-                'relative rounded-lg border p-4 transition-colors border-muted-foreground/25 hover:border-muted-foreground/50 bg-white'
+                'relative rounded-lg border p-4 transition-colors border-muted-foreground/25 hover:border-muted-foreground/50 bg-background'
               )}
             >
               {/* Delete button - absolutely positioned top-right */}
               {showDeleteButton && (
                 <button
-                  className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-md hover:bg-gray-100"
+                  className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-md hover:bg-accent"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDeleteClick(file.id, file.name);
@@ -391,7 +391,7 @@ export function Documents({
                   {getFileIcon(file)}
                 </div>
                 <div className="flex-1 min-w-0 w-full text-left">
-                  <p className="text-[15px] text-black font-bold truncate" title={file.name}>
+                  <p className="text-[15px] text-foreground font-bold truncate" title={file.name}>
                     {file.name}
                   </p>
                   <div className="flex flex-wrap justify-start items-center gap-2 mt-1">
@@ -400,7 +400,7 @@ export function Documents({
                     </span>
                     <span className={cn('w-fit', stageCls)}>{stageLabel}</span>
                     {file.file_design && (
-                      <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-0.5 rounded">
+                      <span className="text-xs text-muted-foreground bg-accent px-2 py-0.5 rounded">
                         {getFileDesignLabel(file.file_design)}
                       </span>
                     )}
@@ -459,7 +459,7 @@ export function Documents({
         </div>
       </Popup>
       {activeFile && (
-        <div className="fixed inset-0 z-50 bg-white overflow-auto">
+        <div className="fixed inset-0 z-50 bg-background overflow-auto">
           <FileViewer file={activeFile} onClose={handleCloseViewer} />
         </div>
       )}

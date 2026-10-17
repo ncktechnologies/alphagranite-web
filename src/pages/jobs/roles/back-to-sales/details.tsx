@@ -35,7 +35,7 @@ const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
 const getFabStatusInfo = (statusId: number | undefined) => {
     if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
     if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
-    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
+    return { className: 'bg-accent text-foreground', text: 'LOADING' };
 };
 
 export const DraftReviewDetailsPage = () => {
@@ -139,7 +139,7 @@ export const DraftReviewDetailsPage = () => {
     if (isFabLoading) {
         return (
             <div className="flex flex-col min-h-screen">
-                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+                <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
                     <Skeleton className="h-8 w-72 mb-1" />
                     <Skeleton className="h-4 w-48" />
                 </div>
@@ -252,9 +252,9 @@ export const DraftReviewDetailsPage = () => {
     ];
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
+        <div className="flex flex-col min-h-screen bg-muted">
             {/* Sticky toolbar */}
-            <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+            <div className="sticky top-0 z-10 bg-background border-b shadow-sm">
                 <div className="px-3 sm:px-4 lg:px-6">
                     <Toolbar className="py-2 sm:py-3">
                         <div className="flex items-center justify-between w-full gap-2 flex-wrap">
@@ -267,10 +267,10 @@ export const DraftReviewDetailsPage = () => {
                                         >
                                             {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
                                         </a>
-                                        <span className="mx-1 text-gray-400">·</span>
+                                        <span className="mx-1 text-placeholder">·</span>
                                         <a
                                             href={jobNumberLink}
-                                            className="hover:underline text-gray-600"
+                                            className="hover:underline text-secondary-foreground"
                                             target="_blank"
                                             rel="noreferrer"
                                         >
@@ -296,7 +296,7 @@ export const DraftReviewDetailsPage = () => {
                 {/* Sticky sidebar */}
                 <aside
                     className={[
-                        'w-full bg-white border-b',
+                        'w-full bg-background border-b',
                         'lg:w-[220px] xl:w-[260px] lg:shrink-0',
                         'lg:sticky lg:top-[50px]',
                         'lg:self-start',
@@ -312,11 +312,11 @@ export const DraftReviewDetailsPage = () => {
                 <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
                     {viewMode === 'file' && activeFile ? (
                         // File viewer
-                        <div className="bg-white rounded-xl border overflow-hidden">
-                            <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
+                        <div className="bg-background rounded-xl border overflow-hidden">
+                            <div className="flex justify-between items-center p-4 bg-muted border-b">
                                 <div>
                                     <h3 className="font-semibold text-sm">{activeFile.name}</h3>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-muted-foreground">
                                         {activeFile.size ? `${Math.round(activeFile.size / 1024)} KB` : 'Unknown size'} · {activeFile.stage_name}
                                     </p>
                                 </div>
@@ -345,7 +345,7 @@ export const DraftReviewDetailsPage = () => {
                             <Card>
                                 <CardHeader className="py-3 px-4 sm:px-5">
                                     <CardTitle className="text-sm sm:text-base">SCT activity
-                                        <p className="text-xs text-gray-500 mt-0.5">
+                                        <p className="text-xs text-muted-foreground mt-0.5">
                                             Review drafting work and mark as complete or create revision
                                         </p>
                                     </CardTitle>

@@ -386,7 +386,7 @@ export function DailyInstallCompletionReport() {
         meta: {
             getRowAttributes: (row) => {
                 if (row.original._isTotalRow) {
-                    return { className: 'bg-[#f0f7e0] font-semibold [&>td]:border-0' };
+                    return { className: 'bg-primary-soft font-semibold [&>td]:border-0' };
                 }
                 const fabType = row.original.fab_type?.toLowerCase();
                 const bgColor = getFabColor(fabType);
@@ -408,7 +408,7 @@ export function DailyInstallCompletionReport() {
         columnResizeMode: 'onEnd',
     });
 
-    if (isLoading) return <div className="p-5 text-[#7c8689]">Loading daily install completion report...</div>;
+    if (isLoading) return <div className="p-5 text-text-foreground">Loading daily install completion report...</div>;
 
     const getTitle = () => {
         if (dateRange?.from) {
@@ -423,7 +423,7 @@ export function DailyInstallCompletionReport() {
         <div className="flex flex-col gap-5 p-5">
             {/* ─── Top Bar: Title + Date Picker ──────────────────────────── */}
             <div className="flex items-center justify-between flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Install Completion</h1>
+                <h1 className="text-2xl font-semibold text-secondary-foreground">Install Completion</h1>
                 <div className="flex items-center gap-2">
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
@@ -449,26 +449,26 @@ export function DailyInstallCompletionReport() {
             {/* ─── Summary Widgets (grandTotals) ──────────────────────────── */}
             {grandTotals && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total SQ FT</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{grandTotals.total_sqft.toFixed(2)}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Total SQ FT</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{grandTotals.total_sqft.toFixed(2)}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total Revenue</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${grandTotals.total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Total Revenue</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">${grandTotals.total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                     </Card>
                     
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total Cost of Stone</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${grandTotals.total_cost_of_stone?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0.00'}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Total Cost of Stone</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">${grandTotals.total_cost_of_stone?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0.00'}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total GP</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${grandTotals.total_gp?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Total GP</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">${grandTotals.total_gp?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">FABS</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{grandTotals.entry_count}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">FABS</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{grandTotals.entry_count}</p>
                     </Card>
 
                 </div>
@@ -477,22 +477,22 @@ export function DailyInstallCompletionReport() {
             {/* ─── Daily Totals Table ───────────────────────────────────────── */}
             {dailyTotals.length > 0 && (
                 <DataGrid table={dailyTotalTable} recordCount={dailyTotals.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
-                    <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
-                        <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
-                            <p className="text-base font-semibold text-[#4b545d]">Daily Totals</p>
+                    <Card className="border border-border rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                        <CardHeader className="py-3 px-5 border-b border-border flex flex-row items-center justify-between bg-background">
+                            <p className="text-base font-semibold text-secondary-foreground">Daily Totals</p>
                             <CardToolbar />
                         </CardHeader>
                         <CardTable>
                             <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[300px] [&>[data-radix-scroll-area-viewport]]:pb-4">
                                 <div className="relative">
                                     <table className="w-full border-collapse table-fixed">
-                                        <thead className="sticky top-0 z-10 bg-white">
+                                        <thead className="sticky top-0 z-10 bg-background">
                                             {dailyTotalTable.getHeaderGroups().map(headerGroup => (
                                                 <tr key={headerGroup.id}>
                                                     {headerGroup.headers.map(header => (
                                                         <th
                                                             key={header.id}
-                                                            className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50"
+                                                            className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted"
                                                             style={{ width: header.getSize() }}
                                                         >
                                                             {flexRender(header.column.columnDef.header, header.getContext())}
@@ -501,7 +501,7 @@ export function DailyInstallCompletionReport() {
                                                                     onDoubleClick={() => header.column.resetSize()}
                                                                     onMouseDown={header.getResizeHandler()}
                                                                     onTouchStart={header.getResizeHandler()}
-                                                                    className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                                    className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                                 />
                                                             )}
                                                         </th>
@@ -511,9 +511,9 @@ export function DailyInstallCompletionReport() {
                                         </thead>
                                         <tbody>
                                             {dailyTotalTable.getRowModel().rows.map(row => (
-                                                <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50">
+                                                <tr key={row.id} className="border-b border-border hover:bg-muted/50">
                                                     {row.getVisibleCells().map(cell => (
-                                                        <td key={cell.id} className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0" style={{ width: cell.column.getSize() }}>
+                                                        <td key={cell.id} className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0" style={{ width: cell.column.getSize() }}>
                                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                         </td>
                                                     ))}
@@ -521,7 +521,7 @@ export function DailyInstallCompletionReport() {
                                             ))}
                                             {dailyTotals.length === 0 && (
                                                 <tr>
-                                                    <td colSpan={dailyTotalColumns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                                                    <td colSpan={dailyTotalColumns.length} className="px-4 py-8 text-center text-sm text-text-foreground">
                                                         No daily totals available.
                                                     </td>
                                                 </tr>
@@ -532,8 +532,8 @@ export function DailyInstallCompletionReport() {
                                 <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                             </ScrollArea>
                         </CardTable>
-                        <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
-                            <div className="text-sm text-[#7c8689]">Showing {dailyTotals.length} day(s)</div>
+                        <CardFooter className="bg-background border-t border-border px-4 py-2">
+                            <div className="text-sm text-text-foreground">Showing {dailyTotals.length} day(s)</div>
                         </CardFooter>
                     </Card>
                 </DataGrid>
@@ -541,13 +541,13 @@ export function DailyInstallCompletionReport() {
 
             {/* ─── Detail Entries Table with filters inside CardToolbar ────── */}
             <DataGrid table={detailTable} recordCount={filteredEntries.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
-                <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
-                    <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
-                        <p className="text-base font-semibold text-[#4b545d]">{getTitle()} – Fab Details</p>
+                <Card className="border border-border rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                    <CardHeader className="py-3 px-5 border-b border-border flex flex-row items-center justify-between bg-background">
+                        <p className="text-base font-semibold text-secondary-foreground">{getTitle()} – Fab Details</p>
                         <CardToolbar className="flex items-center gap-2 flex-wrap">
                             {/* Fab Type Filter */}
                             <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
-                                <SelectTrigger className="w-[150px] h-[34px] border-[#e2e4ed]">
+                                <SelectTrigger className="w-[150px] h-[34px] border-border">
                                     <SelectValue placeholder="Fab Type" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -559,7 +559,7 @@ export function DailyInstallCompletionReport() {
                             {/* Installer Filter */}
                             {installers.length > 0 && (
                                 <Select value={installerFilter} onValueChange={setInstallerFilter}>
-                                    <SelectTrigger className="w-[180px] h-[34px] border-[#e2e4ed]">
+                                    <SelectTrigger className="w-[180px] h-[34px] border-border">
                                         <SelectValue placeholder="Installer" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -613,13 +613,13 @@ export function DailyInstallCompletionReport() {
                         <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
-                                    <thead className="sticky top-0 z-10 bg-white">
+                                    <thead className="sticky top-0 z-10 bg-background">
                                         {detailTable.getHeaderGroups().map(headerGroup => (
                                             <tr key={headerGroup.id}>
                                                 {headerGroup.headers.map(header => (
                                                     <th
                                                         key={header.id}
-                                                        className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50"
+                                                        className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted"
                                                         style={{ width: header.getSize() }}
                                                     >
                                                         {flexRender(header.column.columnDef.header, header.getContext())}
@@ -628,7 +628,7 @@ export function DailyInstallCompletionReport() {
                                                                 onDoubleClick={() => header.column.resetSize()}
                                                                 onMouseDown={header.getResizeHandler()}
                                                                 onTouchStart={header.getResizeHandler()}
-                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                             />
                                                         )}
                                                     </th>
@@ -642,13 +642,13 @@ export function DailyInstallCompletionReport() {
                                             return (
                                                 <tr
                                                     key={row.id}
-                                                    className={`border-b border-[#e2e4ed] hover:bg-gray-50/50 ${rowAttrs.className || ''}`}
+                                                    className={`border-b border-border hover:bg-muted/50 ${rowAttrs.className || ''}`}
                                                     {...rowAttrs}
                                                 >
                                                     {row.getVisibleCells().map(cell => (
                                                         <td
                                                             key={cell.id}
-                                                            className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                            className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0"
                                                             style={{ width: cell.column.getSize() }}
                                                         >
                                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -659,7 +659,7 @@ export function DailyInstallCompletionReport() {
                                         })}
                                         {filteredEntries.length === 0 && (
                                             <tr>
-                                                <td colSpan={detailColumns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                                                <td colSpan={detailColumns.length} className="px-4 py-8 text-center text-sm text-text-foreground">
                                                     No data available.
                                                 </td>
                                             </tr>
@@ -670,7 +670,7 @@ export function DailyInstallCompletionReport() {
                             <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                         </ScrollArea>
                     </CardTable>
-                    <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
+                    <CardFooter className="bg-background border-t border-border px-4 py-2">
                         <DataGridPagination />
                     </CardFooter>
                 </Card>

@@ -133,7 +133,7 @@ export function StoreDashboardPage() {
             <span className="text-[15px] leading-[14px] font-semibold text-text-foreground">
               {widget.title}
             </span>
-            <span className="text-[33px] leading-[32px] pt-3 font-semibold text-black">
+            <span className="text-[33px] leading-[32px] pt-3 font-semibold text-foreground">
               {isStagesLoading ? '...' : fabCount}
             </span>
           </div>

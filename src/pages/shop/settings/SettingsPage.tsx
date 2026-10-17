@@ -363,7 +363,7 @@ function SettingsPage() {
     const renderRightContent = () => {
         if (isLoading) {
             return (
-                <div className="flex items-center justify-center h-64 text-gray-500">
+                <div className="flex items-center justify-center h-64 text-muted-foreground">
                     Loading workstations...
                 </div>
             );
@@ -393,7 +393,7 @@ function SettingsPage() {
 
         // List view - no selection
         return (
-            <div className="flex items-center justify-center h-64 text-gray-500">
+            <div className="flex items-center justify-center h-64 text-muted-foreground">
                 Select a workstation from the list to view details
             </div>
         );
@@ -529,7 +529,7 @@ function SettingsPage() {
                                         />
                                     )
                                 ) : (
-                                    <div className="flex items-center justify-center h-64 text-gray-500">
+                                    <div className="flex items-center justify-center h-64 text-muted-foreground">
                                         Select an activity from the list to view details
                                     </div>
                                 )}
@@ -609,14 +609,14 @@ function SettingsPage() {
                                         {stoneTypes.map((stoneType: any) => (
                                             <Card
                                                 key={stoneType.id}
-                                                className={`cursor-pointer hover:bg-gray-50 ${selectedStoneTypeId === stoneType.id ? 'border-blue-500 bg-blue-50' : ''}`}
+                                                className={`cursor-pointer hover:bg-muted ${selectedStoneTypeId === stoneType.id ? 'border-blue-500 bg-blue-50' : ''}`}
                                                 onClick={() => setSelectedStoneTypeId(stoneType.id)}
                                             >
                                                 <CardContent className="p-3 flex items-center justify-between">
                                                     <div className="flex-1">
                                                         <p className="font-medium">{stoneType.name}</p>
                                                         {stoneType.description && (
-                                                            <p className="text-xs text-gray-500 truncate">{stoneType.description}</p>
+                                                            <p className="text-xs text-muted-foreground truncate">{stoneType.description}</p>
                                                         )}
                                                     </div>
                                                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
@@ -653,7 +653,7 @@ function SettingsPage() {
                                                 <h3 className="text-lg font-semibold">
                                                     {stoneTypes.find((st: any) => st.id === selectedStoneTypeId)?.name} - Colors
                                                 </h3>
-                                                <p className="text-sm text-gray-500">
+                                                <p className="text-sm text-muted-foreground">
                                                     {stoneColors.length} color(s) available
                                                 </p>
                                             </div>
@@ -763,13 +763,13 @@ function SettingsPage() {
                                         </div>
 
                                         {stoneColors.length === 0 && (
-                                            <div className="flex items-center justify-center h-40 text-gray-500">
+                                            <div className="flex items-center justify-center h-40 text-muted-foreground">
                                                 No colors added yet. Click "Add Color" to get started.
                                             </div>
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="flex items-center justify-center h-64 text-gray-500">
+                                    <div className="flex items-center justify-center h-64 text-muted-foreground">
                                         Select a stone type from the list to manage its colors
                                     </div>
                                 )}

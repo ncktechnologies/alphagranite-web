@@ -267,8 +267,8 @@ export const RevisionModal = ({
         </DialogHeader>
 
         <div className="space-y-2 pt-5 pb-6 ">
-          <p className="font-semibold text-black leading-4">Fab id {fabId}</p>
-          {/* <p className="text-sm text-black">Conference Table – Quartz</p> */}
+          <p className="font-semibold text-foreground leading-4">Fab id {fabId}</p>
+          {/* <p className="text-sm text-foreground">Conference Table – Quartz</p> */}
         </div>
 
         <div className="grid grid-cols-2 gap-2 text-sm pb-5 border-b space-y-3">

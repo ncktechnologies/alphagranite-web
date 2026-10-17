@@ -24,8 +24,8 @@ export function ActivityDetailsView({ activity, onEdit, onDelete, onToggleStatus
           {/* Header with actions */}
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900">{activity.plan_name}</h2>
-              <p className="text-sm text-gray-500 mt-1">Shop Activity Details</p>
+              <h2 className="text-2xl font-semibold text-foreground">{activity.plan_name}</h2>
+              <p className="text-sm text-muted-foreground mt-1">Shop Activity Details</p>
             </div>
             <div className="flex flex-col items-end gap-2">
               <div className="flex items-center gap-2">
@@ -64,8 +64,8 @@ export function ActivityDetailsView({ activity, onEdit, onDelete, onToggleStatus
 
           {/* Description */}
           <div className="space-y-2">
-            <h3 className="text-sm font-medium text-gray-700">Description</h3>
-            <p className="text-base text-gray-900 bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-sm font-medium text-secondary-foreground">Description</h3>
+            <p className="text-base text-foreground bg-muted p-4 rounded-lg">
               {activity.plan_description || ''}
             </p>
           </div>

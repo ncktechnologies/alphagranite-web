@@ -139,8 +139,8 @@ export function FileViewer({ file, onClose }: FileViewerProps) {
                     className="max-w-full max-h-full object-contain"
                   />
                 ) : file.type === 'application/pdf' ? (
-                  <div className="bg-white p-8 rounded-lg shadow-lg">
-                    <div className="text-center text-gray-500">
+                  <div className="bg-background p-8 rounded-lg shadow-lg">
+                    <div className="text-center text-muted-foreground">
                       <p className="text-lg font-medium">PDF Preview</p>
                       <p className="text-sm">{file.name}</p>
                       <p className="text-xs mt-2">{formatFileSize(file.size)}</p>
@@ -148,9 +148,9 @@ export function FileViewer({ file, onClose }: FileViewerProps) {
                   </div>
                 ) : file.type?.includes('dwg') || file.type?.includes('cad') ? (
                   // Mock DWG/CAD file display
-                  <div className="bg-white p-8 rounded-lg shadow-lg border">
+                  <div className="bg-background p-8 rounded-lg shadow-lg border">
                     <div className="w-full h-full min-h-[400px] relative">
-                      <div className="text-center text-gray-500">
+                      <div className="text-center text-muted-foreground">
                         <p className="text-lg font-medium">CAD/DWG File</p>
                         <p className="text-sm">{file.name}</p>
                         <p className="text-xs mt-2">{formatFileSize(file.size)}</p>
@@ -158,8 +158,8 @@ export function FileViewer({ file, onClose }: FileViewerProps) {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white p-8 rounded-lg shadow-lg">
-                    <div className="text-center text-gray-500">
+                  <div className="bg-background p-8 rounded-lg shadow-lg">
+                    <div className="text-center text-muted-foreground">
                       <p className="text-lg font-medium">File Preview</p>
                       <p className="text-sm">{file.name}</p>
                       <p className="text-xs mt-2">{formatFileSize(file.size)}</p>
@@ -170,7 +170,7 @@ export function FileViewer({ file, onClose }: FileViewerProps) {
             </Card>
             <p className="text-sm text-center mt-2 font-medium text-text-foreground">{file.name}</p>
             {(file.stage_name || file.file_design || file.uploaded_by_name) && (
-              <div className="text-xs text-gray-500 text-center mt-1 space-x-3">
+              <div className="text-xs text-muted-foreground text-center mt-1 space-x-3">
                 {file.stage_name && <span>Stage: {file.stage_name}</span>}
                 {file.file_design && <span>Design: {getFileDesignLabel(file.file_design)}</span>}
                 {file.uploaded_by_name && <span>By: {file.uploaded_by_name}</span>}
@@ -185,7 +185,7 @@ export function FileViewer({ file, onClose }: FileViewerProps) {
                   onClick={handleDownload}
                   variant="outline"
                   size="sm"
-                  className='text-[#7A9705] font-semibold'
+                  className='text-primary font-semibold'
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Download

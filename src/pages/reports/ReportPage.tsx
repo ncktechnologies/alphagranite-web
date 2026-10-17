@@ -118,12 +118,12 @@ function InstallerCard({ installer, rows, columns, isExpanded, onToggle }: {
     const totalIncomplete = useMemo(() => rows.reduce((s, r) => s + (r.sq_ft_incomplete || 0), 0), [rows]);
 
     return (
-        <Card className="overflow-hidden border border-[#e2e4ed] rounded-[12px]">
-            <div className="px-4 py-3 bg-gray-50 cursor-pointer hover:bg-gray-100 flex justify-between items-center" onClick={onToggle}>
+        <Card className="overflow-hidden border border-border rounded-[12px]">
+            <div className="px-4 py-3 bg-muted cursor-pointer hover:bg-accent flex justify-between items-center" onClick={onToggle}>
                 <div className="flex items-center gap-4">
-                    {isExpanded ? <ChevronDown className="h-4 w-4 text-gray-500" /> : <ChevronRight className="h-4 w-4 text-gray-500" />}
+                    {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                     <span className="font-semibold text-lg">{installer}</span>
-                    <div className="flex gap-4 text-sm text-gray-500">
+                    <div className="flex gap-4 text-sm text-muted-foreground">
                         <span>{rows.length} activities</span>
                         <span>Hours: {totalHours.toFixed(2)}</span>
                         <span>Installed: {totalInstalled.toFixed(0)} sqft</span>
@@ -258,7 +258,7 @@ function ReportRenderer({ useQueryHook, title, groupBy, reportId }: { useQueryHo
                 id: key,
                 accessorKey: key,
                 size: key === 'fab_info' ? 450 : 180,
-                header: ({ column }) => <DataGridColumnHeader title={formatLabel(key).toUpperCase()} column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+                header: ({ column }) => <DataGridColumnHeader title={formatLabel(key).toUpperCase()} column={column} className="text-text-foreground text-[16px] font-normal" />,
                 cell: ({ row, getValue }) => {
                     let val = getValue();
                     const isTotalRow = row.original?._isTotalRow;
@@ -268,18 +268,18 @@ function ReportRenderer({ useQueryHook, title, groupBy, reportId }: { useQueryHo
                         return (
                             <div className="flex gap-4 text-xs max-w-[500px]">
                                 <div className="flex-1 min-w-0">
-                                    {leftLine1.length > 0 && <div className="truncate text-gray-600" title={leftLine1.join(' - ')}>{leftLine1.join(' - ')}</div>}
-                                    {leftLine2.length > 0 && <div className="truncate text-gray-600" title={leftLine2.join(' - ')}>{leftLine2.join(' - ')}</div>}
-                                    {!leftLine1.length && !leftLine2.length && <div className="truncate text-gray-400 italic">No details</div>}
+                                    {leftLine1.length > 0 && <div className="truncate text-secondary-foreground" title={leftLine1.join(' - ')}>{leftLine1.join(' - ')}</div>}
+                                    {leftLine2.length > 0 && <div className="truncate text-secondary-foreground" title={leftLine2.join(' - ')}>{leftLine2.join(' - ')}</div>}
+                                    {!leftLine1.length && !leftLine2.length && <div className="truncate text-placeholder italic">No details</div>}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    {right.length ? <div className="truncate text-gray-600" title={right.join(' - ')}>{right.join(' - ')}</div> : <div className="truncate text-gray-400 italic">—</div>}
+                                    {right.length ? <div className="truncate text-secondary-foreground" title={right.join(' - ')}>{right.join(' - ')}</div> : <div className="truncate text-placeholder italic">—</div>}
                                 </div>
                             </div>
                         );
                     }
                     const formattedValue = isDateField ? formatDateValue(val, key) : val;
-                    return <span className={cn('text-sm text-[#4b545d] truncate max-w-[200px] block', isTotalRow && 'font-semibold')}>{String(formattedValue)}</span>;
+                    return <span className={cn('text-sm text-secondary-foreground truncate max-w-[200px] block', isTotalRow && 'font-semibold')}>{String(formattedValue)}</span>;
                 },
                 // ─── meta.format for CSV export ──────────────────────────────────
                 meta: {
@@ -295,7 +295,7 @@ function ReportRenderer({ useQueryHook, title, groupBy, reportId }: { useQueryHo
         });
     }, [listData]);
 
-    if (isLoading && !isFetching && listData.length === 0) return <div className="p-4 flex items-center text-[#7c8689]"><div className="animate-spin mr-2 border-2 border-primary border-t-transparent rounded-full h-4 w-4"></div> Loading report...</div>;
+    if (isLoading && !isFetching && listData.length === 0) return <div className="p-4 flex items-center text-text-foreground"><div className="animate-spin mr-2 border-2 border-primary border-t-transparent rounded-full h-4 w-4"></div> Loading report...</div>;
     if (isError) return <div className="p-4 text-red-500">Error loading report</div>;
 
     // ----- Installation Template (widgets + collapsible cards) -----
@@ -311,7 +311,7 @@ function ReportRenderer({ useQueryHook, title, groupBy, reportId }: { useQueryHo
         return (
             <div className="flex flex-col gap-5 p-5">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                    <h1 className="text-2xl font-semibold text-[#4b545d]">{title}</h1>
+                    <h1 className="text-2xl font-semibold text-secondary-foreground">{title}</h1>
                     <div className="flex items-center gap-2">
                         <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                             <PopoverTrigger asChild>
@@ -337,16 +337,16 @@ function ReportRenderer({ useQueryHook, title, groupBy, reportId }: { useQueryHo
                 {installerWidgets && Object.keys(installerWidgets).length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-2">
                         {Object.entries(installerWidgets).map(([key, value]) => (
-                            <Card key={key} className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                                <h3 className="text-sm text-[#7c8689] font-medium uppercase tracking-wider">{formatLabel(key)}</h3>
-                                <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{typeof value === 'number' ? value.toLocaleString() : value}</p>
+                            <Card key={key} className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                                <h3 className="text-sm text-text-foreground font-medium uppercase tracking-wider">{formatLabel(key)}</h3>
+                                <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{typeof value === 'number' ? value.toLocaleString() : value}</p>
                             </Card>
                         ))}
                     </div>
                 )}
 
                 {listData.length > 0 ? <InstallerCards data={listData} columns={columns} /> : (
-                    <Card className="p-12 text-center border-dashed border-[#e2e4ed] bg-gray-50 rounded-[12px]"><p className="text-[#7c8689] text-lg">No data available.</p></Card>
+                    <Card className="p-12 text-center border-dashed border-border bg-muted rounded-[12px]"><p className="text-text-foreground text-lg">No data available.</p></Card>
                 )}
             </div>
         );
@@ -381,7 +381,7 @@ function ReportRenderer({ useQueryHook, title, groupBy, reportId }: { useQueryHo
         meta: {
             getRowAttributes: (row: any) => {
                 const fabType = row.original?.fab_type;
-                if (row.original?._isTotalRow) return { className: 'bg-[#f0f7e0] [&>td]:border-0' };
+                if (row.original?._isTotalRow) return { className: 'bg-primary-soft [&>td]:border-0' };
                 if (fabType) return { style: { backgroundColor: getFabColor(fabType) } };
                 return {};
             },
@@ -391,7 +391,7 @@ function ReportRenderer({ useQueryHook, title, groupBy, reportId }: { useQueryHo
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex items-center justify-between flex-wrap gap-2">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">{title}</h1>
+                <h1 className="text-2xl font-semibold text-secondary-foreground">{title}</h1>
                 <div className="flex items-center gap-2">
                     {isWeeklyReport ? (
                         <div className="flex items-center gap-2">
@@ -429,9 +429,9 @@ function ReportRenderer({ useQueryHook, title, groupBy, reportId }: { useQueryHo
             {widgetData && Object.keys(widgetData).length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {Object.entries(widgetData).map(([k, v]) => typeof v !== 'object' && (
-                        <Card key={k} className="p-4 shadow-sm border border-[#e2e4ed] rounded-[12px] bg-white">
-                            <h3 className="text-sm text-[#7c8689] font-medium uppercase">{formatLabel(k)}</h3>
-                            <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{String(v)}</p>
+                        <Card key={k} className="p-4 shadow-sm border border-border rounded-[12px] bg-background">
+                            <h3 className="text-sm text-text-foreground font-medium uppercase">{formatLabel(k)}</h3>
+                            <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{String(v)}</p>
                         </Card>
                     ))}
                 </div>
@@ -439,8 +439,8 @@ function ReportRenderer({ useQueryHook, title, groupBy, reportId }: { useQueryHo
 
             {listData.length > 0 ? (
                 <DataGrid table={table} recordCount={dataWithTotal.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, cellBorder: true, columnsResizable: true, width: 'fixed' }}>
-                    <Card className="border border-[#e2e4ed] rounded-[12px] shadow-sm overflow-hidden">
-                        <CardHeader className="py-3 px-5 border-b bg-white" />
+                    <Card className="border border-border rounded-[12px] shadow-sm overflow-hidden">
+                        <CardHeader className="py-3 px-5 border-b bg-background" />
                         <CardTable>
                             <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                                 <DataGridTable />
@@ -451,8 +451,8 @@ function ReportRenderer({ useQueryHook, title, groupBy, reportId }: { useQueryHo
                     </Card>
                 </DataGrid>
             ) : (
-                <Card className="p-12 text-center border-dashed border-[#e2e4ed] bg-gray-50 rounded-[12px]">
-                    <p className="text-[#7c8689] text-lg">No data available for this report.</p>
+                <Card className="p-12 text-center border-dashed border-border bg-muted rounded-[12px]">
+                    <p className="text-text-foreground text-lg">No data available for this report.</p>
                 </Card>
             )}
         </div>

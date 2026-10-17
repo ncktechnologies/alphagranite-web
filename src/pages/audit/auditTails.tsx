@@ -171,7 +171,7 @@ export function AuditTrails() {
         accessorKey: 'operation',
         header: ({ column }) => <DataGridColumnHeader title="OPERATION" column={column} />,
         cell: ({ row }) => (
-          <span className="uppercase px-2 py-0.5 rounded bg-gray-100 text-xs font-medium">
+          <span className="uppercase px-2 py-0.5 rounded bg-accent text-xs font-medium">
             {row.original.operation || '—'}
           </span>
         ),
@@ -309,7 +309,7 @@ const renderSummary = () => {
           return (
             <div key={label} className="flex items-center gap-2 text-sm">
               <span className="w-20 truncate font-medium">{label}</span>
-              <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div className="flex-1 h-2 bg-accent rounded-full overflow-hidden">
                 <div
                   className="h-full bg-primary rounded-full transition-all"
                   style={{ width: `${Math.max(width, 2)}%` }}
@@ -393,7 +393,7 @@ const renderSummary = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold text-[#4b545d]">Audit Trails</h1>
+          <h1 className="text-2xl font-semibold text-secondary-foreground">Audit Trails</h1>
           <Button
             variant="ghost"
             size="sm"
@@ -587,13 +587,13 @@ const renderSummary = () => {
           <CardTable>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
-                <thead className="bg-gray-50 border-b border-[#e2e4ed]">
+                <thead className="bg-muted border-b border-border">
                   {table.getHeaderGroups().map((headerGroup) => (
                     <tr key={headerGroup.id}>
                       {headerGroup.headers.map((header) => (
                         <th
                           key={header.id}
-                          className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689]"
+                          className="px-3 py-2 text-left text-xs font-semibold text-text-foreground"
                           style={{ width: header.getSize() }}
                         >
                           {flexRender(header.column.columnDef.header, header.getContext())}
@@ -602,7 +602,7 @@ const renderSummary = () => {
                               onDoubleClick={() => header.column.resetSize()}
                               onMouseDown={header.getResizeHandler()}
                               onTouchStart={header.getResizeHandler()}
-                              className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                              className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                             />
                           )}
                         </th>
@@ -612,11 +612,11 @@ const renderSummary = () => {
                 </thead>
                 <tbody>
                   {table.getRowModel().rows.map((row) => (
-                    <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50">
+                    <tr key={row.id} className="border-b border-border hover:bg-muted/50">
                       {row.getVisibleCells().map((cell) => (
                         <td
                           key={cell.id}
-                          className="px-3 py-2 text-sm text-[#4b545d]"
+                          className="px-3 py-2 text-sm text-secondary-foreground"
                           style={{ width: cell.column.getSize() }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -626,7 +626,7 @@ const renderSummary = () => {
                   ))}
                   {(!trailsData?.records || trailsData.records.length === 0) && (
                     <tr>
-                      <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                      <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-text-foreground">
                         No audit trails found.
                       </td>
                     </tr>
@@ -717,7 +717,7 @@ const renderSummary = () => {
                   {detailData.request?.path && (
                     <div>
                       <div className="text-xs text-muted-foreground font-medium">Path</div>
-                      <code className="text-xs bg-gray-100 p-1 rounded block break-all">
+                      <code className="text-xs bg-accent p-1 rounded block break-all">
                         {detailData.request.path}
                       </code>
                     </div>
@@ -726,7 +726,7 @@ const renderSummary = () => {
                   {detailData.manipulated_data?.old_values && (
                     <div>
                       <div className="text-xs text-muted-foreground font-medium">Old Data</div>
-                      <pre className="mt-1 p-2 bg-gray-100 rounded text-xs overflow-auto max-h-40">
+                      <pre className="mt-1 p-2 bg-accent rounded text-xs overflow-auto max-h-40">
                         {JSON.stringify(detailData.manipulated_data.old_values, null, 2)}
                       </pre>
                     </div>
@@ -734,7 +734,7 @@ const renderSummary = () => {
                   {detailData.manipulated_data?.new_values && (
                     <div>
                       <div className="text-xs text-muted-foreground font-medium">New Data</div>
-                      <pre className="mt-1 p-2 bg-gray-100 rounded text-xs overflow-auto max-h-40">
+                      <pre className="mt-1 p-2 bg-accent rounded text-xs overflow-auto max-h-40">
                         {JSON.stringify(detailData.manipulated_data.new_values, null, 2)}
                       </pre>
                     </div>

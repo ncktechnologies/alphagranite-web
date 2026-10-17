@@ -24,7 +24,7 @@ const getAllFabNotes = (fabNotes: any[]) => {
 const getFabStatusInfo = (statusId: number | undefined) => {
     if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
     if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
-    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
+    return { className: 'bg-accent text-foreground', text: 'LOADING' };
 };
 
 export function InstallSchedulingDetailsPage() {
@@ -132,7 +132,7 @@ export function InstallSchedulingDetailsPage() {
     if (isLoading) {
         return (
             <div className="flex flex-col min-h-screen">
-                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+                <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
                     <Skeleton className="h-8 w-72 mb-1" />
                     <Skeleton className="h-4 w-48" />
                 </div>
@@ -154,7 +154,7 @@ export function InstallSchedulingDetailsPage() {
     if (isError || !fab) {
         return (
             <div className="flex flex-col min-h-screen">
-                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+                <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
                     <ToolbarHeading title="Error loading FAB" description="Could not load install scheduling details" />
                 </div>
                 <div className="p-6">
@@ -173,9 +173,9 @@ export function InstallSchedulingDetailsPage() {
     const statusInfo = getFabStatusInfo(fab.status_id);
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
+        <div className="flex flex-col min-h-screen bg-muted">
             {/* Sticky toolbar */}
-            <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+            <div className="sticky top-0 z-10 bg-background border-b shadow-sm">
                 <div className="px-3 sm:px-4 lg:px-6">
                     <Toolbar className="py-2 sm:py-3">
                         <div className="flex items-center justify-between w-full gap-2 flex-wrap">
@@ -188,10 +188,10 @@ export function InstallSchedulingDetailsPage() {
                                         >
                                             {fab?.job_details?.name || `Job ${fab?.job_id}`}
                                         </a>
-                                        <span className="mx-1 text-gray-400">·</span>
+                                        <span className="mx-1 text-placeholder">·</span>
                                         <a
                                             href={jobNumberLink}
-                                            className="hover:underline text-gray-600"
+                                            className="hover:underline text-secondary-foreground"
                                             target="_blank"
                                             rel="noreferrer"
                                         >
@@ -217,7 +217,7 @@ export function InstallSchedulingDetailsPage() {
                 {/* Left column – sticky sidebar with Job Details and FAB Notes */}
                 <aside
                     className={[
-                        'w-full bg-white border-b',
+                        'w-full bg-background border-b',
                         'lg:w-[220px] xl:w-[260px] lg:shrink-0',
                         'lg:sticky lg:top-[50px]',
                         'lg:self-start',
@@ -234,7 +234,7 @@ export function InstallSchedulingDetailsPage() {
                     {/* Job Information Card */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-[#111827] text-xl font-bold">Job Information</CardTitle>
+                            <CardTitle className="text-foreground text-xl font-bold">Job Information</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

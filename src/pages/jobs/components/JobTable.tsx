@@ -352,12 +352,12 @@ export const JobTable = ({
                 : [];
         const stages = Array.isArray(stage) ? stage : [stage];
         const notes = fabNotes.filter((note: any) => stages.includes(note.stage));
-        if (notes.length === 0) return <span className="text-xs text-gray-500 italic">No notes</span>;
+        if (notes.length === 0) return <span className="text-xs text-muted-foreground italic">No notes</span>;
         const latest = notes[0];
         return (
             <div className="text-xs max-w-xs" title={latest.note}>
                 <div className="font-medium truncate">{latest.note}</div>
-                <div className="text-gray-500 text-xs">by {latest.created_by_name || 'Unknown'}</div>
+                <div className="text-muted-foreground text-xs">by {latest.created_by_name || 'Unknown'}</div>
             </div>
         );
     };
@@ -535,11 +535,11 @@ export const JobTable = ({
                 <div className="flex gap-4 text-xs max-w-[400px]">
                     {jobInfo.length > 0 && (
                         <div className="flex-1 min-w-0">
-                            <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
+                            <div className="truncate text-secondary-foreground" title={jobInfo.join(' - ')}>
                                 {jobInfo.join(' - ')}
                             </div>
                             {stoneInfo.length > 0 && (
-                                <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
+                                <div className="truncate text-secondary-foreground" title={stoneInfo.join(' - ')}>
                                     {stoneInfo.join(' - ')}
                                 </div>
                             )}
@@ -548,7 +548,7 @@ export const JobTable = ({
                     {materialInfo.length > 0 && (
                         <div className="shrink-0 max-w-[45%] text-right">
                             {materialInfo.map((info, idx) => (
-                                <div key={idx} className="truncate text-gray-600">{info}</div>
+                                <div key={idx} className="truncate text-secondary-foreground">{info}</div>
                             ))}
                         </div>
                     )}
@@ -587,7 +587,7 @@ export const JobTable = ({
         cell: ({ row }) => {
             const consumed = row.original.consumed;
             return (
-                <span className={`text-xs font-medium ${consumed ? 'text-green-600' : 'text-gray-500'}`}>
+                <span className={`text-xs font-medium ${consumed ? 'text-green-600' : 'text-muted-foreground'}`}>
                     {consumed ? 'Yes' : 'No'}
                 </span>
             );
@@ -928,7 +928,7 @@ export const JobTable = ({
             const agNeeded = (row.original as any).slab_smith_ag_needed ?? (row.original as any)._rawFabData?.slab_smith_ag_needed;
             const completed = (row.original as any).slabsmith_completed_date ?? (row.original as any)._rawFabData?.slabsmith_completed_date;
             if (custNeeded === false && agNeeded === false) {
-                return <span className="text-sm text-gray-500">Not Needed</span>;
+                return <span className="text-sm text-muted-foreground">Not Needed</span>;
             }
             const types = [];
             if (custNeeded === true) types.push('Cust');
@@ -939,7 +939,7 @@ export const JobTable = ({
                     ? <span className="text-sm text-green-600 font-medium">Completed ({neededType})</span>
                     : <span className="text-sm text-orange-600 font-medium">{neededType} - Not Completed</span>;
             }
-            return <span className="text-sm text-gray-500">Unknown</span>;
+            return <span className="text-sm text-muted-foreground">Unknown</span>;
         },
         size: 180,
         enableSorting: true,
@@ -967,7 +967,7 @@ export const JobTable = ({
             const status = row.original.draft_completed;
             if (status === 'drafting') return <span className="text-sm text-green-600 font-medium">Drafting</span>;
             if (status === 'paused') return <span className="text-sm text-red-600 font-medium">Paused</span>;
-            return <span className="text-sm text-gray-500">Not Started</span>;
+            return <span className="text-sm text-muted-foreground">Not Started</span>;
         },
         size: 130,
         enableSorting: true,
@@ -1451,7 +1451,7 @@ export const JobTable = ({
             const confirmed = (row.original as any).install_confirmed;
             if (confirmed === true || confirmed === 'Yes') return <span className="text-xs font-medium text-green-600">Yes</span>;
             if (confirmed === false || confirmed === 'No') return <span className="text-xs font-medium text-red-500">No</span>;
-            return <span className="text-xs text-gray-400">-</span>;
+            return <span className="text-xs text-placeholder">-</span>;
         },
         size: 140,
         enableSorting: true,
@@ -1471,7 +1471,7 @@ export const JobTable = ({
             const confirmed = (row.original as any).install_completed;
             if (confirmed === true || confirmed === 'Yes') return <span className="text-xs font-medium text-green-600">Yes</span>;
             if (confirmed === false || confirmed === 'No') return <span className="text-xs font-medium text-red-500">No</span>;
-            return <span className="text-xs text-gray-400">-</span>;
+            return <span className="text-xs text-placeholder">-</span>;
         },
         size: 140,
         enableSorting: true,
@@ -1547,7 +1547,7 @@ export const JobTable = ({
                     />
                     {isLoading && (
                         <div className="ml-2">
-                            <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                            <div className="h-4 w-4 border-2 border-input border-t-gray-600 rounded-full animate-spin" />
                         </div>
                     )}
                 </div>

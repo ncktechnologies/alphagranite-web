@@ -216,7 +216,7 @@ function FileIcon({ mimeType, className }: { mimeType: string; className?: strin
   if (cat === 'sheet')   return <FileSpreadsheetIcon className={cn('text-green-600',  cls)} />;
   if (cat === 'archive') return <FileArchiveIcon     className={cn('text-amber-500',  cls)} />;
   if (cat === 'model')   return <LayoutGrid className={cn('text-indigo-600', cls)} />;
-  return <FileTextIcon className={cn('text-gray-500', cls)} />;
+  return <FileTextIcon className={cn('text-muted-foreground', cls)} />;
 }
 
 // ─── Card view ────────────────────────────────────────────────────────────────
@@ -249,7 +249,7 @@ function FileCard({
     : null;
 
   return (
-    <div className="relative rounded-lg border border-[#e2e4ed] p-4 transition-colors hover:border-gray-400 bg-white">
+    <div className="relative rounded-lg border border-border p-4 transition-colors hover:border-input-hover bg-background">
       {/* Top row: icon centred + delete top-right */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex flex-col items-center gap-3 w-full">
@@ -261,7 +261,7 @@ function FileCard({
           {/* Name + meta */}
           <div className="flex-1 min-w-0 w-full">
             <p
-              className="text-[15px] text-black font-bold truncate cursor-pointer hover:text-primary"
+              className="text-[15px] text-foreground font-bold truncate cursor-pointer hover:text-primary"
               title={file.name}
               onClick={() => onView?.(file)}
             >
@@ -359,24 +359,24 @@ function FileRow({
 
   return (
     <tr
-      className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+      className="border-b border-border hover:bg-muted transition-colors cursor-pointer"
       onClick={() => onView?.(file)}
     >
       {/* Icon + name + size */}
       <td className="py-3 px-4">
         <div className="flex items-center gap-3">
-          <div className="size-8 flex items-center justify-center rounded-lg bg-gray-100 shrink-0">
+          <div className="size-8 flex items-center justify-center rounded-lg bg-accent shrink-0">
             <FileIcon mimeType={file.type ?? ''} className="size-4" />
           </div>
           <div className="min-w-0">
             <p
-              className="text-sm font-semibold text-gray-800 truncate max-w-[220px]"
+              className="text-sm font-semibold text-foreground truncate max-w-[220px]"
               title={file.name}
             >
               {file.name}
             </p>
             {file.size ? (
-              <p className="text-xs text-gray-400 mt-0.5">{formatBytes(file.size)}</p>
+              <p className="text-xs text-placeholder mt-0.5">{formatBytes(file.size)}</p>
             ) : null}
           </div>
         </div>
@@ -391,22 +391,22 @@ function FileRow({
       <td className="py-3 px-4">
         <div className="flex flex-col gap-1">
           {fileType && (
-            <span className="text-[12px] font-medium text-gray-700 bg-gray-100 px-2 py-0.5 rounded w-fit uppercase">
+            <span className="text-[12px] font-medium text-secondary-foreground bg-accent px-2 py-0.5 rounded w-fit uppercase">
               {fileType}
             </span>
           )}
           {fileDesign && (
-            <span className="text-[12px] text-gray-500 bg-blue-50 px-2 py-0.5 rounded w-fit">
+            <span className="text-[12px] text-blue-700 bg-blue-50 dark:bg-blue-500/15 dark:text-blue-300 px-2 py-0.5 rounded w-fit">
               {fileDesign.replace(/_/g, ' ')}
             </span>
           )}
-          {!fileType && !fileDesign && <span className="text-xs text-gray-400">—</span>}
+          {!fileType && !fileDesign && <span className="text-xs text-placeholder">—</span>}
         </div>
       </td>
 
       {/* Uploaded by */}
       <td className="py-3 px-4">
-        <span className="text-xs text-gray-700 font-medium">
+        <span className="text-xs text-secondary-foreground font-medium">
           {file.uploaded_by_name ?? file.uploadedBy ?? '—'}
         </span>
       </td>
@@ -415,10 +415,10 @@ function FileRow({
       <td className="py-3 px-4 whitespace-nowrap">
         {file.uploadedAt ? (
           <div className="flex flex-col gap-0.5">
-            <span className="text-xs text-gray-700">
+            <span className="text-xs text-secondary-foreground">
               {new Date(file.uploadedAt).toLocaleDateString()}
             </span>
-            <span className="text-[12px] text-gray-400">
+            <span className="text-[12px] text-placeholder">
               {new Date(file.uploadedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
@@ -552,15 +552,15 @@ export function FileGallery({
       {/* Model viewer modal */}
       {viewerOpen && viewerFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="relative w-full max-w-4xl h-[80vh] bg-white rounded-md shadow-lg overflow-hidden">
+          <div className="relative w-full max-w-4xl h-[80vh] bg-background rounded-md shadow-lg overflow-hidden">
             <button
               onClick={closeViewer}
-              className="absolute top-3 end-3 z-50 bg-white rounded-full p-2 shadow"
+              className="absolute top-3 end-3 z-50 bg-background rounded-full p-2 shadow"
               aria-label="Close viewer"
             >
               <X />
             </button>
-            <div className="w-full h-full flex items-center justify-center bg-gray-50">
+            <div className="w-full h-full flex items-center justify-center bg-muted">
               {
                 // Render model-viewer dynamically to avoid TS JSX typing issues
               }
@@ -588,7 +588,7 @@ export function FileGallery({
         <div className="flex items-center gap-3 flex-wrap">
           {/* Search */}
           <div className="relative flex-1 min-w-[200px] max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-placeholder" />
             <Input
               placeholder="Search files…"
               value={search}
@@ -600,7 +600,7 @@ export function FileGallery({
                 onClick={() => setSearch('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2"
               >
-                <X className="size-3.5 text-gray-400 hover:text-gray-600" />
+                <X className="size-3.5 text-placeholder hover:text-secondary-foreground" />
               </button>
             )}
           </div>
@@ -608,7 +608,7 @@ export function FileGallery({
           {/* Type filter */}
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="h-8 w-[150px] text-sm">
-              <Filter className="size-3.5 mr-1.5 text-gray-400" />
+              <Filter className="size-3.5 mr-1.5 text-placeholder" />
               <SelectValue placeholder="All types" />
             </SelectTrigger>
             <SelectContent>
@@ -628,7 +628,7 @@ export function FileGallery({
                   <SelectItem key={value} value={value}>
                     {label}
                     {categoryCounts[value] != null && (
-                      <span className="ml-1.5 text-xs text-gray-400">({categoryCounts[value]})</span>
+                      <span className="ml-1.5 text-xs text-placeholder">({categoryCounts[value]})</span>
                     )}
                   </SelectItem>
                 ))}
@@ -636,19 +636,19 @@ export function FileGallery({
           </Select>
 
           {/* Count */}
-          <span className="text-xs text-gray-400 ml-auto">
+          <span className="text-xs text-placeholder ml-auto">
             {filtered.length} of {allFiles.length} file{allFiles.length !== 1 ? 's' : ''}
           </span>
 
           {/* Layout toggle */}
           {!lockLayout && (
-            <div className="flex items-center rounded-md border border-gray-200 overflow-hidden">
+            <div className="flex items-center rounded-md border border-border overflow-hidden">
               <button
                 className={cn(
                   'p-1.5 transition-colors',
                   layout === 'card'
-                    ? 'bg-gray-100 text-gray-800'
-                    : 'text-gray-400 hover:bg-gray-50'
+                    ? 'bg-accent text-foreground'
+                    : 'text-placeholder hover:bg-muted'
                 )}
                 onClick={() => setLayout('card')}
                 title="Card view"
@@ -659,8 +659,8 @@ export function FileGallery({
                 className={cn(
                   'p-1.5 transition-colors',
                   layout === 'table'
-                    ? 'bg-gray-100 text-gray-800'
-                    : 'text-gray-400 hover:bg-gray-50'
+                    ? 'bg-accent text-foreground'
+                    : 'text-placeholder hover:bg-muted'
                 )}
                 onClick={() => setLayout('table')}
                 title="Table view"
@@ -674,9 +674,9 @@ export function FileGallery({
 
       {/* Empty state */}
       {filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-gray-200 bg-gray-50">
-          <File className="size-10 text-gray-300 mb-3" />
-          <p className="text-sm text-gray-500">
+        <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-border bg-muted">
+          <File className="size-10 text-placeholder mb-3" />
+          <p className="text-sm text-muted-foreground">
             {search || typeFilter !== 'all' ? 'No files match your filter.' : emptyMessage}
           </p>
           {(search || typeFilter !== 'all') && (
@@ -709,14 +709,14 @@ export function FileGallery({
 
       {/* ── Table ──────────────────────────────────────────────────────────── */}
       {filtered.length > 0 && layout === 'table' && (
-        <div className="rounded-xl border border-gray-200 overflow-hidden">
+        <div className="rounded-xl border border-border overflow-hidden">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
+              <tr className="bg-muted border-b border-border">
                 {['Name', 'Stage', 'Type ', 'Uploaded by', 'Date', ''].map((h) => (
                   <th
                     key={h}
-                    className="py-2.5 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap"
+                    className="py-2.5 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap"
                   >
                     {h}
                   </th>

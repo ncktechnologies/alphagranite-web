@@ -428,7 +428,7 @@ export const CutListTable = ({
                             />
                             {isLoading && (
                                 <div className="ml-2">
-                                    <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                                    <div className="h-4 w-4 border-2 border-input border-t-gray-600 rounded-full animate-spin" />
                                 </div>
                             )}
                         </div>

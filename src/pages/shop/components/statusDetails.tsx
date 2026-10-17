@@ -83,7 +83,7 @@ const noteStageConfig: Record<string, { label: string; color: string }> = {
     install_scheduling: { label: 'Install Scheduling', color: 'text-teal-700' },
     install_completion: { label: 'Install Completion', color: 'text-cyan-700' },
     shop: { label: 'Shop', color: 'text-indigo-700' },
-    general: { label: 'General', color: 'text-gray-700' },
+    general: { label: 'General', color: 'text-secondary-foreground' },
 };
 
 const parseDateString = (s: string | undefined): Date | undefined => {
@@ -148,7 +148,7 @@ const parseTimeFromISO = (isoStr: string | undefined): string => {
 const getFabStatusInfo = (statusId: number | undefined) => {
     if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
     if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
-    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
+    return { className: 'bg-accent text-foreground', text: 'LOADING' };
 };
 
 // ─── Subcomponents ──────────────────────────────────────────────────────────
@@ -162,7 +162,7 @@ const MiniProgress: React.FC<{ percent: number }> = ({ percent }) => {
                     p >= 25 ? '#f44336' : '#9e9e9e';
     return (
         <div className="flex items-center gap-2 w-full">
-            <div className="flex-1 bg-[#e2e4ed] rounded-full h-[6px] overflow-hidden">
+            <div className="flex-1 bg-border rounded-full h-[6px] overflow-hidden">
                 <div className="h-full rounded-full transition-all" style={{ width: `${p}%`, backgroundColor: color }} />
             </div>
             <span className="text-xs text-muted-foreground w-10 text-right shrink-0">{p.toFixed(2)}%</span>
@@ -453,8 +453,8 @@ export const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations
 
     return (
         <>
-            <Card className="border border-[#e2e4ed] shadow-sm">
-                <CardHeader className="py-3 px-4 border-b border-[#e2e4ed] flex flex-row items-center justify-between">
+            <Card className="border border-border shadow-sm">
+                <CardHeader className="py-3 px-4 border-b border-border flex flex-row items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Badge
                             className="text-xs font-semibold px-2 py-0.5"
@@ -472,7 +472,7 @@ export const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations
                     <div className="flex items-center gap-2">
                         {isEditing ? (
                             <Select value={String(draft.sequence)} onValueChange={v => patch({ sequence: v })}>
-                                <SelectTrigger className="h-7 w-auto text-xs border-[#e2e4ed]">
+                                <SelectTrigger className="h-7 w-auto text-xs border-border">
                                     <SelectValue placeholder="Seq" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[200px] overflow-y-auto">
@@ -489,7 +489,7 @@ export const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations
                                 {!effectiveDisabled && (
                                     <Button
                                         variant="ghost" size="icon"
-                                        className="h-7 w-7 text-[#7c8689] hover:text-[#4b545d]"
+                                        className="h-7 w-7 text-text-foreground hover:text-secondary-foreground"
                                         onClick={() => setIsEditing(true)}
                                     >
                                         <Pencil className="h-3.5 w-3.5" />
@@ -522,7 +522,7 @@ export const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations
                                     onValueChange={v => patch({ workstation_id: v, operator_id: '' })}
                                     disabled={isLoadingWorkstations || effectiveDisabled}
                                 >
-                                    <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
+                                    <SelectTrigger className="h-[38px] border-border text-sm">
                                         <SelectValue
                                             placeholder={
                                                 isLoadingWorkstations
@@ -557,7 +557,7 @@ export const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations
                                     onValueChange={v => patch({ operator_id: v })}
                                     disabled={!draft.workstation_id || effectiveDisabled}
                                 >
-                                    <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
+                                    <SelectTrigger className="h-[38px] border-border text-sm">
                                         <SelectValue
                                             placeholder={
                                                 !draft.workstation_id
@@ -594,7 +594,7 @@ export const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations
                                     value={draft.estimated_hours ?? ''}
                                     onChange={e => handleEstimatedHoursChange(e.target.value)}
                                     placeholder="e.g. 2.5"
-                                    className="h-[38px] border-[#e2e4ed] text-sm"
+                                    className="h-[38px] border-border text-sm"
                                     disabled={effectiveDisabled}
                                 />
                             </div>
@@ -614,7 +614,7 @@ export const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations
                             <div className="flex flex-col gap-1.5">
                                 <Label className="text-xs text-muted-foreground uppercase tracking-wide">Start Time</Label>
                                 <Select value={draft.start_time} onValueChange={handleStartTimeChange} disabled={effectiveDisabled}>
-                                    <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
+                                    <SelectTrigger className="h-[38px] border-border text-sm">
                                         <SelectValue placeholder="Select start" />
                                     </SelectTrigger>
                                     <SelectContent className="max-h-[200px] overflow-y-auto">
@@ -640,7 +640,7 @@ export const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations
                             <div className="flex flex-col gap-1.5">
                                 <Label className="text-xs text-muted-foreground uppercase tracking-wide">End Time (auto)</Label>
                                 <Select value={draft.end_time} onValueChange={() => { }} disabled>
-                                    <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm bg-gray-50 cursor-not-allowed">
+                                    <SelectTrigger className="h-[38px] border-border text-sm bg-muted cursor-not-allowed">
                                         <SelectValue placeholder="Auto‑calculated" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -658,7 +658,7 @@ export const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations
                                     value={draft.notes}
                                     onChange={e => patch({ notes: e.target.value })}
                                     placeholder="Add notes..."
-                                    className="min-h-[72px] resize-none text-sm border-[#e2e4ed]"
+                                    className="min-h-[72px] resize-none text-sm border-border"
                                     disabled={effectiveDisabled}
                                 />
                             </div>
@@ -694,7 +694,7 @@ export const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations
                                 />
                             </div>
                             {plan.notes && (
-                                <p className="text-xs text-muted-foreground bg-[#f9f9f9] border border-[#e2e4ed] rounded px-2.5 py-1.5 mt-0.5">
+                                <p className="text-xs text-muted-foreground bg-muted border border-border rounded px-2.5 py-1.5 mt-0.5">
                                     {plan.notes}
                                 </p>
                             )}
@@ -728,7 +728,7 @@ export const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations
 
 const LoadingSkeleton = () => (
     <div className="flex flex-col min-h-screen">
-        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+        <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
             <Skeleton className="h-8 w-72 mb-1" />
             <Skeleton className="h-4 w-48" />
         </div>
@@ -744,7 +744,7 @@ const LoadingSkeleton = () => (
 
 const ErrorAlert = ({ error }: { error: any }) => (
     <div className="flex flex-col min-h-screen">
-        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+        <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
             <ToolbarHeading title="Error loading FAB" description="Could not load Fab details" />
         </div>
         <div className="p-6">
@@ -759,7 +759,7 @@ const ErrorAlert = ({ error }: { error: any }) => (
 
 const NotFoundAlert = () => (
     <div className="flex flex-col min-h-screen">
-        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+        <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
             <ToolbarHeading title="Not Found" description="FAB record not found" />
         </div>
         <div className="p-6">
@@ -1039,9 +1039,9 @@ const FabDetailsPage = () => {
     ];
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
+        <div className="flex flex-col min-h-screen bg-muted">
             {/* Sticky toolbar */}
-            <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+            <div className="sticky top-0 z-10 bg-background border-b shadow-sm">
                 <div className="px-3 sm:px-4 lg:px-6">
                     <Toolbar className="py-2 sm:py-3">
                         <div className="flex items-center justify-between w-full gap-2 flex-wrap">
@@ -1051,8 +1051,8 @@ const FabDetailsPage = () => {
                                         <a href={jobNameLink} className="hover:underline" target="_blank" rel="noreferrer">
                                             {fab?.job_details?.name || `Job ${fab?.job_id}`}
                                         </a>
-                                        <span className="mx-1 text-gray-400">·</span>
-                                        <a href={jobNumberLink} className="hover:underline text-gray-600" target="_blank" rel="noreferrer">
+                                        <span className="mx-1 text-placeholder">·</span>
+                                        <a href={jobNumberLink} className="hover:underline text-secondary-foreground" target="_blank" rel="noreferrer">
                                             {fab?.job_details?.job_number || fab?.job_id}
                                         </a>
                                     </div>
@@ -1114,11 +1114,11 @@ const FabDetailsPage = () => {
                     {/* FAB Files Card */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-[#111827] leading-[32px] text-2xl font-bold">
+                            <CardTitle className="text-foreground leading-[32px] text-2xl font-bold">
                                 FAB Files
-                                {totalFileCount > 0 && <span className="ml-2 text-base font-normal text-gray-400">({totalFileCount})</span>}
+                                {totalFileCount > 0 && <span className="ml-2 text-base font-normal text-placeholder">({totalFileCount})</span>}
                             </CardTitle>
-                            <p className="text-sm text-[#4B5563]">
+                            <p className="text-sm text-secondary-foreground">
                                 Drafting, SlabSmith, CNC, Sales CT, Operator, and Shop Revision files
                             </p>
                         </CardHeader>
@@ -1236,16 +1236,16 @@ const FabDetailsPage = () => {
                                                 const timestamp = note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date';
                                                 return (
                                                     <div key={note.id || i} className="flex gap-3">
-                                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
+                                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent flex items-center justify-center text-xs font-medium text-secondary-foreground">
                                                             {avatar}
                                                         </div>
                                                         <div className="flex-1 space-y-1">
                                                             <div className="flex items-center gap-2 flex-wrap">
-                                                                <span className="text-sm font-medium text-gray-900">{author}</span>
-                                                                <span className="text-xs text-gray-500">{timestamp}</span>
+                                                                <span className="text-sm font-medium text-foreground">{author}</span>
+                                                                <span className="text-xs text-muted-foreground">{timestamp}</span>
                                                             </div>
-                                                            <div className="text-sm text-gray-700">
-                                                                <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${cfg.color} bg-gray-100 mr-2`}>
+                                                            <div className="text-sm text-secondary-foreground">
+                                                                <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${cfg.color} bg-accent mr-2`}>
                                                                     {cfg.label}
                                                                 </span>
                                                                 <span className="text-muted-foreground">{note.note || '—'}</span>
@@ -1264,10 +1264,10 @@ const FabDetailsPage = () => {
 
                 {/* RIGHT SIDEBAR */}
                 <div className="border-l space-y-6">
-                    <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
-                        <CardHeader className="pb-3 border-b border-[#e2e4ed]">
-                            <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
-                                <CalendarDays className="h-4 w-4 text-[#7c8689]" />
+                    <Card className="border border-border shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
+                        <CardHeader className="pb-3 border-b border-border">
+                            <CardTitle className="text-sm font-semibold text-secondary-foreground flex items-center gap-2">
+                                <CalendarDays className="h-4 w-4 text-text-foreground" />
                                 Estimated Completion Date
                             </CardTitle>
                         </CardHeader>
@@ -1276,10 +1276,10 @@ const FabDetailsPage = () => {
                         </CardContent>
                     </Card>
 
-                    <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
-                        <CardHeader className="pb-3 border-b border-[#e2e4ed]">
-                            <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
-                                <CalendarDays className="h-4 w-4 text-[#7c8689]" />
+                    <Card className="border border-border shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
+                        <CardHeader className="pb-3 border-b border-border">
+                            <CardTitle className="text-sm font-semibold text-secondary-foreground flex items-center gap-2">
+                                <CalendarDays className="h-4 w-4 text-text-foreground" />
                                 Shop Suggested Date
                             </CardTitle>
                         </CardHeader>
@@ -1288,10 +1288,10 @@ const FabDetailsPage = () => {
                         </CardContent>
                     </Card>
 
-                    <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
-                        <CardHeader className="pb-3 border-b border-[#e2e4ed]">
-                            <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-[#7c8689]" />
+                    <Card className="border border-border shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
+                        <CardHeader className="pb-3 border-b border-border">
+                            <CardTitle className="text-sm font-semibold text-secondary-foreground flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-text-foreground" />
                                 Schedule Dates
                             </CardTitle>
                         </CardHeader>
@@ -1306,10 +1306,10 @@ const FabDetailsPage = () => {
                         </CardContent>
                     </Card>
 
-                    <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
-                        <CardHeader className="pb-3 border-b border-[#e2e4ed]">
-                            <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
-                                <CalendarDays className="h-4 w-4 text-[#7c8689]" />
+                    <Card className="border border-border shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
+                        <CardHeader className="pb-3 border-b border-border">
+                            <CardTitle className="text-sm font-semibold text-secondary-foreground flex items-center gap-2">
+                                <CalendarDays className="h-4 w-4 text-text-foreground" />
                                 Shop Revisions
                             </CardTitle>
                         </CardHeader>
@@ -1343,7 +1343,7 @@ const FabDetailsPage = () => {
                                                 </span>
                                             </div>
                                             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{revision.revision_note || 'No note provided.'}</p>
-                                            <p className="text-xs text-gray-400 mt-1">Requested by: {revision.requested_by_name || revision.requested_by || 'Unknown'}</p>
+                                            <p className="text-xs text-placeholder mt-1">Requested by: {revision.requested_by_name || revision.requested_by || 'Unknown'}</p>
                                         </button>
                                     ))}
                                 </div>
@@ -1351,10 +1351,10 @@ const FabDetailsPage = () => {
                         </CardContent>
                     </Card>
 
-                    <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
-                        <CardHeader className="pb-3 border-b border-[#e2e4ed]">
-                            <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-[#7c8689]" />
+                    <Card className="border border-border shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
+                        <CardHeader className="pb-3 border-b border-border">
+                            <CardTitle className="text-sm font-semibold text-secondary-foreground flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-text-foreground" />
                                 Revision Details
                             </CardTitle>
                         </CardHeader>
@@ -1407,7 +1407,7 @@ const FabDetailsPage = () => {
             {/* ─── Modals ────────────────────────────────────────────────────── */}
 
             {activeFile && (
-                <div className="fixed inset-0 z-50 bg-white overflow-auto">
+                <div className="fixed inset-0 z-50 bg-background overflow-auto">
                     <FileViewer file={activeFile} onClose={() => setActiveFile(null)} />
                 </div>
             )}

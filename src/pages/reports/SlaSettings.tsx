@@ -116,7 +116,7 @@ export function SlaSettings() {
   return (
     <div className="p-5 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-[#4b545d]">SLA Settings</h1>
+        <h1 className="text-2xl font-semibold text-secondary-foreground">SLA Settings</h1>
         <div className="flex gap-2">
           {canEdit && (
             <Button
@@ -143,13 +143,13 @@ export function SlaSettings() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-gray-50 border-b">
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-[#7c8689]">Fab Type</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-[#7c8689]">Stage</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-[#7c8689]">Target Days</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-[#7c8689]">At‑Risk Days</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-[#7c8689]">Applicable</th>
-                  {canEdit && <th className="px-4 py-2 text-left text-xs font-semibold text-[#7c8689]">Actions</th>}
+                <tr className="bg-muted border-b">
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-text-foreground">Fab Type</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-text-foreground">Stage</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-text-foreground">Target Days</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-text-foreground">At‑Risk Days</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-text-foreground">Applicable</th>
+                  {canEdit && <th className="px-4 py-2 text-left text-xs font-semibold text-text-foreground">Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -157,7 +157,7 @@ export function SlaSettings() {
                   const isModified = modifiedIds.has(rule.id);
                   const isSaving = savingId === rule.id;
                   return (
-                    <tr key={rule.id} className={`border-b hover:bg-gray-50/50 ${isModified ? 'bg-yellow-50' : ''}`}>
+                    <tr key={rule.id} className={`border-b hover:bg-muted/50 ${isModified ? 'bg-yellow-50' : ''}`}>
                       <td className="px-4 py-2 text-sm uppercase">{rule.fab_type}</td>
                       <td className="px-4 py-2 text-sm">{rule.stage_name}</td>
                       <td className="px-4 py-2">

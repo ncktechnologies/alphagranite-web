@@ -13,5 +13,5 @@ export const stageConfig: Record<string, { label: string; color: string }> = {
     install_completion: { label: 'Install Completion', color: 'text-cyan-700' },
     shop_status: { label: 'Shop Status', color: 'text-blue-700' },
     shop: { label: 'Shop', color: 'text-indigo-700' },
-    general: { label: 'General', color: 'text-gray-700' },
+    general: { label: 'General', color: 'text-secondary-foreground' },
 };

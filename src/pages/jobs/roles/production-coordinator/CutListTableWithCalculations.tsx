@@ -393,15 +393,15 @@ export const CutListTableWithCalculations = ({
                         <div className="flex gap-4 text-xs max-w-[400px]">
                             {jobInfo.length > 0 && (
                                 <div className="flex-1 min-w-0">
-                                    <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>{jobInfo.join(' - ')}</div>
+                                    <div className="truncate text-secondary-foreground" title={jobInfo.join(' - ')}>{jobInfo.join(' - ')}</div>
                                     {stoneInfo.length > 0 && (
-                                        <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>{stoneInfo.join(' - ')}</div>
+                                        <div className="truncate text-secondary-foreground" title={stoneInfo.join(' - ')}>{stoneInfo.join(' - ')}</div>
                                     )}
                                 </div>
                             )}
                             {materialInfo.length > 0 && (
                                 <div className="shrink-0 max-w-[45%] text-right">
-                                    <div className="truncate text-gray-600" title={materialInfo.join(' - ')}>{materialInfo.join(' - ')}</div>
+                                    <div className="truncate text-secondary-foreground" title={materialInfo.join(' - ')}>{materialInfo.join(' - ')}</div>
                                 </div>
                             )}
                         </div>
@@ -537,13 +537,13 @@ export const CutListTableWithCalculations = ({
                         ? row.original.fab_notes
                         : Array.isArray(row.original.notes) ? row.original.notes : [];
                     const cuttingNotes = fabNotes.filter(n => n.stage === 'cut_list');
-                    if (cuttingNotes.length === 0) return <span className="text-xs text-gray-500 italic">No notes</span>;
+                    if (cuttingNotes.length === 0) return <span className="text-xs text-muted-foreground italic">No notes</span>;
                     const latest = cuttingNotes[0];
                     return (
                         <div className="text-xs max-w-xs" title={latest.note}>
                             <div className="font-medium text-orange-700 truncate">C:</div>
                             <div className="truncate">{latest.note}</div>
-                            <div className="text-gray-500 text-xs">by {latest.created_by_name || 'Unknown'}</div>
+                            <div className="text-muted-foreground text-xs">by {latest.created_by_name || 'Unknown'}</div>
                         </div>
                     );
                 },
@@ -607,7 +607,7 @@ export const CutListTableWithCalculations = ({
                         />
                         {isLoadingRow && (
                             <div className="ml-2">
-                                <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                                <div className="h-4 w-4 border-2 border-input border-t-gray-600 rounded-full animate-spin" />
                             </div>
                         )}
                     </div>

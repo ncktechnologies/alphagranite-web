@@ -39,7 +39,7 @@ const getActionIcon = (action: string) => {
         case 'on_hold':
             return <Square className="w-4 h-4 text-orange-600" />;
         default:
-            return <Clock className="w-4 h-4 text-gray-600" />;
+            return <Clock className="w-4 h-4 text-secondary-foreground" />;
     }
 };
 
@@ -52,7 +52,7 @@ const getActionBadge = (action: string) => {
         on_hold: { className: 'bg-orange-100 text-orange-800', label: 'On Hold' },
     };
 
-    const badge = badges[action] || { className: 'bg-gray-100 text-gray-800', label: action };
+    const badge = badges[action] || { className: 'bg-accent text-foreground', label: action };
 
     return (
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.className}`}>
@@ -91,7 +91,7 @@ export const SessionHistory = ({ fabId }: SessionHistoryProps) => {
     if (isLoading) {
         return (
             <Card className="mt-4">
-                <CardContent className="p-8 text-center text-gray-500">
+                <CardContent className="p-8 text-center text-muted-foreground">
                     Loading session history...
                 </CardContent>
             </Card>
@@ -138,7 +138,7 @@ export const SessionHistory = ({ fabId }: SessionHistoryProps) => {
                     {allHistory.map((item, index) => (
                         <div
                             key={`${item.timestamp}-${index}`}
-                            className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                            className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted transition-colors"
                         >
                             {/* Icon */}
                             <div className="flex-shrink-0 mt-1">{getActionIcon(item.action)}</div>
@@ -147,19 +147,19 @@ export const SessionHistory = ({ fabId }: SessionHistoryProps) => {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                     {getActionBadge(item.action)}
-                                    <span className="text-sm text-gray-500">{formatTimestamp(item.timestamp)}</span>
+                                    <span className="text-sm text-muted-foreground">{formatTimestamp(item.timestamp)}</span>
                                 </div>
 
                                 {/* Session Details */}
                                 <div className="flex flex-wrap gap-4 mt-2 text-sm">
                                     {item.sqft_drafted && (
-                                        <div className="text-gray-600">
+                                        <div className="text-secondary-foreground">
                                             <span className="font-medium">Sq Ft:</span> {item.sqft_drafted}
                                         </div>
                                     )}
 
                                     {item.work_percentage_done !== null && item.work_percentage_done !== undefined && (
-                                        <div className="text-gray-600">
+                                        <div className="text-secondary-foreground">
                                             <span className="font-medium">Progress:</span> {item.work_percentage_done}%
                                         </div>
                                     )}
@@ -167,7 +167,7 @@ export const SessionHistory = ({ fabId }: SessionHistoryProps) => {
 
                                 {/* Note */}
                                 {item.note && (
-                                    <div className="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-700 italic">
+                                    <div className="mt-2 p-2 bg-muted rounded text-sm text-secondary-foreground italic">
                                         "{item.note}"
                                     </div>
                                 )}

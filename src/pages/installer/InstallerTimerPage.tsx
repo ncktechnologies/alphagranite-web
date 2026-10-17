@@ -155,10 +155,10 @@ export function InstallerTimerPage() {
 
     if (shouldSkip) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-muted flex items-center justify-center">
                 <div className="text-center">
                     <h2 className="text-lg font-semibold text-red-600">{t('INSTALLER.TIMER.MISSING_INFO_TITLE')}</h2>
-                    <p className="text-gray-600">{t('INSTALLER.TIMER.MISSING_INFO_DESCRIPTION')}</p>
+                    <p className="text-secondary-foreground">{t('INSTALLER.TIMER.MISSING_INFO_DESCRIPTION')}</p>
                     <Button onClick={() => navigate(-1)} className="mt-4">{t('COMMON.BACK')}</Button>
                 </div>
             </div>
@@ -167,15 +167,15 @@ export function InstallerTimerPage() {
 
     if (activeFile) {
         return (
-            <div className="fixed inset-0 z-50 bg-white overflow-auto">
+            <div className="fixed inset-0 z-50 bg-background overflow-auto">
                 <FileViewer file={activeFile} onClose={() => setActiveFile(null)} />
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
-            <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+        <div className="flex flex-col min-h-screen bg-muted">
+            <div className="sticky top-0 z-10 bg-background border-b shadow-sm">
                 <div className="px-3 sm:px-4 lg:px-6">
                     <Toolbar className="py-2 sm:py-3">
                         <div className="flex items-center justify-between w-full gap-2 flex-wrap">
@@ -185,10 +185,10 @@ export function InstallerTimerPage() {
                                         <a href={jobNameLink} className="hover:underline" target="_blank" rel="noreferrer">
                                             {jobData?.name || `Job ${job_id}`}
                                         </a>
-                                        <span className="mx-1 text-gray-400">·</span>
+                                        <span className="mx-1 text-placeholder">·</span>
                                         <a
                                             href={jobNumberLink}
-                                            className="hover:underline text-gray-600"
+                                            className="hover:underline text-secondary-foreground"
                                             target="_blank"
                                             rel="noreferrer"
                                         >
@@ -210,7 +210,7 @@ export function InstallerTimerPage() {
                 <div className="max-w-5xl mx-auto">
                     {isTimerLoading ? (
                         <div className="space-y-6">
-                            <div className="bg-white rounded-lg border shadow-sm p-8 space-y-4">
+                            <div className="bg-background rounded-lg border shadow-sm p-8 space-y-4">
                                 <div className="flex justify-center">
                                     <Skeleton className="h-32 w-48 rounded-full" />
                                 </div>
@@ -247,7 +247,7 @@ export function InstallerTimerPage() {
                         <CardHeader>
                             <CardHeading className="flex flex-col items-start py-4">
                                 <CardTitle>{t('JOB.MEDIA_TITLE')}</CardTitle>
-                                <p className="text-sm text-[#4B5563]">{t('JOB.MEDIA_DESCRIPTION')}</p>
+                                <p className="text-sm text-secondary-foreground">{t('JOB.MEDIA_DESCRIPTION')}</p>
                             </CardHeading>
                             <CardToolbar>
                                 <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>

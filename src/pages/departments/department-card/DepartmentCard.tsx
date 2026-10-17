@@ -77,7 +77,7 @@ const DepartmentCard = () => {
                             <div className="space-y-2">
                                 <img
                                     src={toAbsoluteUrl('/images/icons/department.svg')}
-                                    className="bg-[#E6E9E7] rounded-full p-2 size-[36px] mb-3"
+                                    className="bg-accent rounded-full p-2 size-[36px] mb-3"
                                     alt="department"
                                 />
                                 <div className="flex flex-col">

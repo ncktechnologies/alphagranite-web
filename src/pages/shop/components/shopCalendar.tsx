@@ -225,7 +225,7 @@ function MultiSelectFilter({
         <button
           type="button"
           className={cn(
-            'flex h-9 min-w-[140px] max-w-[200px] items-center justify-between gap-2 rounded-lg border bg-background px-3 text-sm shadow-xs shadow-black/[0.03] transition-colors hover:border-[#CDD2C6] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/25',
+            'flex h-9 min-w-[140px] max-w-[200px] items-center justify-between gap-2 rounded-lg border bg-background px-3 text-sm shadow-xs shadow-black/[0.03] transition-colors hover:border-input-hover focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/25',
             selected.length ? 'border-primary-light/70 bg-primary-soft/60 text-primary-accent font-medium' : 'border-input text-text',
           )}
         >
@@ -252,7 +252,7 @@ function MultiSelectFilter({
                       >
                         <div
                           className={cn(
-                            'flex size-4 items-center justify-center rounded-[4px] border border-[#CDD2C6]',
+                            'flex size-4 items-center justify-center rounded-[4px] border border-input-hover',
                             isSelected ? 'border-primary bg-primary text-primary-foreground' : '[&_svg]:invisible',
                           )}
                         >
@@ -824,7 +824,7 @@ const ShopCalendarPage: React.FC = () => {
                     Today
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Jump to today <Kbd size="xs" className="ms-1 bg-white/15 border-white/20 text-white font-sans">T</Kbd></TooltipContent>
+                <TooltipContent>Jump to today <Kbd size="xs" className="ms-1 bg-background/15 border-white/20 text-white font-sans">T</Kbd></TooltipContent>
               </Tooltip>
               <div className="flex items-center">
                 <Tooltip>
@@ -833,7 +833,7 @@ const ShopCalendarPage: React.FC = () => {
                       <ChevronLeft className="size-[18px]!" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Previous {viewMode} <Kbd size="xs" className="ms-1 bg-white/15 border-white/20 text-white font-sans">←</Kbd></TooltipContent>
+                  <TooltipContent>Previous {viewMode} <Kbd size="xs" className="ms-1 bg-background/15 border-white/20 text-white font-sans">←</Kbd></TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -841,7 +841,7 @@ const ShopCalendarPage: React.FC = () => {
                       <ChevronRight className="size-[18px]!" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Next {viewMode} <Kbd size="xs" className="ms-1 bg-white/15 border-white/20 text-white font-sans">→</Kbd></TooltipContent>
+                  <TooltipContent>Next {viewMode} <Kbd size="xs" className="ms-1 bg-background/15 border-white/20 text-white font-sans">→</Kbd></TooltipContent>
                 </Tooltip>
               </div>
               <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
@@ -921,7 +921,7 @@ const ShopCalendarPage: React.FC = () => {
                       placeholder={`Search ${searchType === 'fab_id' ? 'FAB ID' : 'job number'}…`}
                       value={searchFabId}
                       onChange={(e) => setSearchFabId(e.target.value)}
-                      className="h-9 w-[200px] rounded-lg rounded-s-none border border-input bg-background ps-9 pe-8 text-sm text-foreground shadow-xs shadow-black/[0.03] outline-none transition-[border-color,box-shadow] placeholder:text-placeholder hover:border-[#CDD2C6] focus-visible:border-primary-light focus-visible:ring-[3px] focus-visible:ring-ring/25"
+                      className="h-9 w-[200px] rounded-lg rounded-s-none border border-input bg-background ps-9 pe-8 text-sm text-foreground shadow-xs shadow-black/[0.03] outline-none transition-[border-color,box-shadow] placeholder:text-placeholder hover:border-input-hover focus-visible:border-primary-light focus-visible:ring-[3px] focus-visible:ring-ring/25"
                     />
                     {searchFabId && (
                       <button

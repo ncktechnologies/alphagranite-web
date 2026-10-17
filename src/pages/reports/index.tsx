@@ -51,13 +51,13 @@ export function ReportsPage() {
     if (visibleReports.length === 0) {
         return (
             <div className="">
-                <div className="border-b border-[#e5e7eb] pb-[32px]">
-                    <h1 className="font-proxima font-semibold text-[29px] leading-[32px] text-black px-[32px]">
+                <div className="border-b border-border pb-[32px]">
+                    <h1 className="font-proxima font-semibold text-[29px] leading-[32px] text-foreground px-[32px]">
                         Reports
                     </h1>
                 </div>
                 <div className="flex items-center justify-center h-64">
-                    <p className="text-gray-500 text-lg">You do not have access to any reports.</p>
+                    <p className="text-muted-foreground text-lg">You do not have access to any reports.</p>
                 </div>
             </div>
         );
@@ -72,8 +72,8 @@ export function ReportsPage() {
 
     return (
         <div className="">
-            <div className="border-b border-[#e5e7eb] pb-[32px]">
-                <h1 className="font-proxima font-semibold text-[29px] leading-[32px] text-black px-[32px]">
+            <div className="border-b border-border pb-[32px]">
+                <h1 className="font-proxima font-semibold text-[29px] leading-[32px] text-foreground px-[32px]">
                     Reports
                 </h1>
             </div>
@@ -84,10 +84,10 @@ export function ReportsPage() {
                             <button
                                 key={report.title}
                                 onClick={() => report.path && navigate(report.path)}
-                                className="bg-white w-full rounded-[8px] border border-[#e5e7eb] flex items-center px-[25px] py-[17px] text-left hover:bg-[#f9fafb] transition-colors cursor-pointer disabled:cursor-default"
+                                className="bg-background w-full rounded-[8px] border border-border flex items-center px-[25px] py-[17px] text-left hover:bg-muted transition-colors cursor-pointer disabled:cursor-default"
                                 disabled={!report.path}
                             >
-                                <span className="flex-1 font-['Proxima_Nova',sans-serif] font-semibold text-[17px] text-black leading-[24px]">
+                                <span className="flex-1 font-['Proxima_Nova',sans-serif] font-semibold text-[17px] text-foreground leading-[24px]">
                                     {report.title}
                                 </span>
                                 <ChevronRight />

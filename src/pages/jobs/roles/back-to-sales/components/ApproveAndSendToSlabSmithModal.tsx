@@ -107,8 +107,8 @@ export const ApproveAndSendToSlabSmithModal = ({
         </DialogHeader>
 
         <div className="space-y-2 pt-5 pb-6">
-          <p className="font-semibold text-black leading-4">{fabId}</p>
-          <p className="text-sm text-black">Approve FAB and send to Slab Smith processing</p>
+          <p className="font-semibold text-foreground leading-4">{fabId}</p>
+          <p className="text-sm text-foreground">Approve FAB and send to Slab Smith processing</p>
         </div>
 
         <Form {...form}>
@@ -145,7 +145,7 @@ export const ApproveAndSendToSlabSmithModal = ({
                       type="checkbox"
                       checked={field.value}
                       onChange={field.onChange}
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="h-4 w-4 text-blue-600 border-input rounded focus:ring-blue-500"
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">

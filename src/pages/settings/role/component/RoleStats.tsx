@@ -59,8 +59,8 @@ export const RoleStats = ({ role }: RoleStatsProps) => {
             )}
           </div>
           <div>
-            <p className="font-normal text-base text-black">{stat.value}</p>
-            <p className="text-xs text-gray-500 pt-2">{stat.label}</p>
+            <p className="font-normal text-base text-foreground">{stat.value}</p>
+            <p className="text-xs text-muted-foreground pt-2">{stat.label}</p>
           </div>
         </div>
       ))}

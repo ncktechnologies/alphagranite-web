@@ -181,7 +181,7 @@ function HoverBackground({ className, objectCount = 12, children, colors = {}, .
           {Array.from({ length: 20 }).map((_, i) => (
             <motion.div
               key={`particle-${i}`}
-              className="absolute w-1 h-1 bg-white/60 rounded-full"
+              className="absolute w-1 h-1 bg-background/60 rounded-full"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,

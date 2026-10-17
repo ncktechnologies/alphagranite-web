@@ -47,7 +47,7 @@ const StatusBadge = ({ status }: { status?: string | number }) => {
         '0': 'bg-pink-100 text-pink-700',
     };
 
-    const colorClass = colors[s] ?? 'bg-gray-100 text-gray-600';
+    const colorClass = colors[s] ?? 'bg-accent text-secondary-foreground';
 
     return (
         <span
@@ -100,7 +100,7 @@ const DepartmentTable = ({ employees }: employeeProps) => {
                                 {row.original.profile_image_id && (
                                     <AvatarImage src={row.original.profile_image_id} alt={fullName} />
                                 )}
-                                <AvatarFallback className="bg-gray-200 text-gray-600">
+                                <AvatarFallback className="bg-border text-secondary-foreground">
                                     {initials}
                                 </AvatarFallback>
                             </Avatar>

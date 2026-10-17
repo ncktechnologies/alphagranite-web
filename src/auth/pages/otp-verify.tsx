@@ -107,7 +107,7 @@ export function OtpVerifyPage() {
         <div className="w-full flex flex-col items-center justify-center">
             <FormHeader title="Verification Code" caption={`Enter the code sent to ${username} to verify password reset`} />
             {/* Form content goes here */}
-            <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-[#DFDFDF]">
+            <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-input">
                 <CardContent className="px-6 py-12">
                     <h4 className="text-secondary text-[17px] pb-3">Verification code</h4>
                     <div className="flex justify-center gap-2">

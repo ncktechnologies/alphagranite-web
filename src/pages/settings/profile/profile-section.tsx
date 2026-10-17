@@ -79,7 +79,7 @@ const ProfileSection = () => {
             <Navbar>
               <NavbarActions>
                 <div className="flex items-center justify-between w-full">
-                  <h1 className="text-black font-semibold text-lg">Personal Information</h1>
+                  <h1 className="text-foreground font-semibold text-lg">Personal Information</h1>
                   {isSuperAdmin && (
                     <>
                       {viewMode === 'details' ? (
@@ -115,19 +115,19 @@ const ProfileSection = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm pt-4 text-text">
               <div className="flex flex-col space-y-1">
-                <span className="text-xs uppercase text-[#9094A4]">Email address</span>
+                <span className="text-xs uppercase text-muted-foreground">Email address</span>
                 <div className="font-semibold">{profile?.email || 'Not provided'}</div>
               </div>
               <div className="flex flex-col space-y-1">
-                <span className="text-xs uppercase text-[#9094A4]">Phone number</span>
+                <span className="text-xs uppercase text-muted-foreground">Phone number</span>
                 <div className="font-semibold">{profile?.phone || 'Not provided'}</div>
               </div>
               <div className="flex flex-col space-y-1">
-                <span className="text-xs uppercase text-[#9094A4]">Department</span>
+                <span className="text-xs uppercase text-muted-foreground">Department</span>
                 <div className="font-semibold">{profile?.department_name}</div>
               </div>
               {/* <div className="flex flex-col space-y-1">
-                <span className="text-xs uppercase text-[#9094A4]">Gender</span>
+                <span className="text-xs uppercase text-muted-foreground">Gender</span>
                 <div className="font-semibold capitalize">{profile?.gender || 'Not provided'}</div>
               </div> */}
             </div>

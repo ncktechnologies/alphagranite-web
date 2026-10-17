@@ -758,8 +758,8 @@ const EditFabIdForm = () => {
                 </div>
                 <div className="max-w-4xl mx-auto">
                     <Card className="animate-pulse">
-                        <CardHeader><div className="h-8 bg-gray-200 rounded w-1/3"></div></CardHeader>
-                        <CardContent><div className="space-y-4"><div className="h-4 bg-gray-200 rounded w-1/4"></div><div className="h-10 bg-gray-200 rounded"></div></div></CardContent>
+                        <CardHeader><div className="h-8 bg-border rounded w-1/3"></div></CardHeader>
+                        <CardContent><div className="space-y-4"><div className="h-4 bg-border rounded w-1/4"></div><div className="h-10 bg-border rounded"></div></div></CardContent>
                     </Card>
                 </div>
             </Container>
@@ -794,12 +794,12 @@ const EditFabIdForm = () => {
                         <CardHeader className='flex flex-col justify-start items-start'>
                             <div className="flex  items-center gap-4 ">
 
-                                <CardTitle className='text-2xl font-bold text-[#111827]'>Edit FAB ID</CardTitle>
+                                <CardTitle className='text-2xl font-bold text-foreground'>Edit FAB ID</CardTitle>
                                 <CardToolbar>
                                     {existingFab?.id && (
-                                        <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 ">
-                                            <span className="text-[14px] text-[#4a4d59]">FAB ID</span>
-                                            <span className="text-[21px] text-[#7a9705] font-semibold">#{existingFab.id}</span>
+                                        <div className="flex items-center gap-2 bg-primary-soft border border-[#9cc15e] rounded-[8px] px-4 ">
+                                            <span className="text-[14px] text-secondary-foreground">FAB ID</span>
+                                            <span className="text-[21px] text-primary font-semibold">#{existingFab.id}</span>
                                         </div>
                                     )}
                                 </CardToolbar>
@@ -807,7 +807,7 @@ const EditFabIdForm = () => {
 
                             </div>
 
-                            <CardDescription className='text-sm text-[#4B5563]'>Edit the Standard Fabrication Form with project specifications.</CardDescription>
+                            <CardDescription className='text-sm text-secondary-foreground'>Edit the Standard Fabrication Form with project specifications.</CardDescription>
                         </CardHeader>
 
                     </Card>
@@ -816,7 +816,7 @@ const EditFabIdForm = () => {
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle className='text-[#111827] flex items-center gap-2 font-semibold'>
+                                        <CardTitle className='text-foreground flex items-center gap-2 font-semibold'>
                                             <RiInformationFill className='text-primary' />
                                             Fab Information
                                         </CardTitle>
@@ -860,11 +860,11 @@ const EditFabIdForm = () => {
                                                                     </div>
                                                                     <div className="space-y-1 max-h-48 overflow-y-auto">
                                                                         {filteredFabTypes.map((type: string) => (
-                                                                            <div key={type} className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm uppercase" onClick={() => { field.onChange(type); setFabTypeSearch(''); setFabTypePopoverOpen(false); }}>
+                                                                            <div key={type} className="px-3 py-2 hover:bg-accent cursor-pointer rounded text-sm uppercase" onClick={() => { field.onChange(type); setFabTypeSearch(''); setFabTypePopoverOpen(false); }}>
                                                                                 {type}
                                                                             </div>
                                                                         ))}
-                                                                        {filteredFabTypes.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">No FAB types found</div>}
+                                                                        {filteredFabTypes.length === 0 && <div className="px-3 py-2 text-sm text-muted-foreground text-center">No FAB types found</div>}
                                                                     </div>
                                                                 </div>
                                                             </PopoverContent>
@@ -912,9 +912,9 @@ const EditFabIdForm = () => {
                                                                     <div className="relative mb-2"><Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" /><Input placeholder="Search account" className="pl-8" value={accountSearch} onChange={(e) => setAccountSearch(e.target.value)} /></div>
                                                                     <div className="space-y-1 max-h-48 overflow-y-auto">
                                                                         {filteredAccounts.map((account: string) => (
-                                                                            <div key={account} className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm" onClick={() => { field.onChange(account); setAccountSearch(''); setAccountPopoverOpen(false); }}>{account}</div>
+                                                                            <div key={account} className="px-3 py-2 hover:bg-accent cursor-pointer rounded text-sm" onClick={() => { field.onChange(account); setAccountSearch(''); setAccountPopoverOpen(false); }}>{account}</div>
                                                                         ))}
-                                                                        {filteredAccounts.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">No accounts found</div>}
+                                                                        {filteredAccounts.length === 0 && <div className="px-3 py-2 text-sm text-muted-foreground text-center">No accounts found</div>}
                                                                     </div>
                                                                 </div>
                                                             </PopoverContent>
@@ -934,7 +934,7 @@ const EditFabIdForm = () => {
                                                             <FormControl><SelectTrigger><SelectValue placeholder={isEffectiveJobsLoading ? 'Loading...' : 'Select job name'} /></SelectTrigger></FormControl>
                                                             <SelectContent className="max-h-[200px] overflow-y-auto">
                                                                 {jobNames.map((jobName: string) => <SelectItem key={jobName} value={jobName}>{jobName}</SelectItem>)}
-                                                                {jobNames.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">{selectedAccountId ? 'No jobs found for this account' : 'No jobs found'}</div>}
+                                                                {jobNames.length === 0 && <div className="px-3 py-2 text-sm text-muted-foreground text-center">{selectedAccountId ? 'No jobs found for this account' : 'No jobs found'}</div>}
                                                             </SelectContent>
                                                         </Select>
                                                         <FormMessage />
@@ -952,7 +952,7 @@ const EditFabIdForm = () => {
                                                             <FormControl><SelectTrigger><SelectValue placeholder={isEffectiveJobsLoading ? 'Loading...' : 'Select job number'} /></SelectTrigger></FormControl>
                                                             <SelectContent className="max-h-[200px] overflow-y-auto">
                                                                 {jobNumbers.map((jobNumber: string) => <SelectItem key={jobNumber} value={jobNumber}>{jobNumber}</SelectItem>)}
-                                                                {jobNumbers.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">{selectedAccountId ? 'No jobs found for this account' : 'No jobs found'}</div>}
+                                                                {jobNumbers.length === 0 && <div className="px-3 py-2 text-sm text-muted-foreground text-center">{selectedAccountId ? 'No jobs found for this account' : 'No jobs found'}</div>}
                                                             </SelectContent>
                                                         </Select>
                                                         <FormMessage />
@@ -1032,10 +1032,10 @@ const EditFabIdForm = () => {
                                                                     <div className="relative mb-2"><Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" /><Input placeholder="Search stone color" className="pl-8" value={stoneColorSearch} onChange={(e) => setStoneColorSearch(e.target.value)} /></div>
                                                                     <div className="space-y-1 max-h-48 overflow-y-auto">
                                                                         {stoneColors.filter((color: string) => color.toLowerCase().includes(stoneColorSearch.toLowerCase())).map((color: string) => (
-                                                                            <div key={color} className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm" onClick={() => { field.onChange(color); setStoneColorSearch(''); setStoneColorPopoverOpen(false); }}>{color}</div>
+                                                                            <div key={color} className="px-3 py-2 hover:bg-accent cursor-pointer rounded text-sm" onClick={() => { field.onChange(color); setStoneColorSearch(''); setStoneColorPopoverOpen(false); }}>{color}</div>
                                                                         ))}
                                                                         {stoneColors.filter((color: string) => color.toLowerCase().includes(stoneColorSearch.toLowerCase())).length === 0 && (
-                                                                            <div className="px-3 py-2 text-sm text-gray-500 text-center">{isEffectiveStoneColorsLoading ? 'Loading stone colors...' : 'No stone colors found'}</div>
+                                                                            <div className="px-3 py-2 text-sm text-muted-foreground text-center">{isEffectiveStoneColorsLoading ? 'Loading stone colors...' : 'No stone colors found'}</div>
                                                                         )}
                                                                     </div>
                                                                 </div>
@@ -1065,7 +1065,7 @@ const EditFabIdForm = () => {
                                                                 <div className="p-2">
                                                                     <div className="flex items-center justify-between mb-2"><span className="text-sm font-medium">Thickness</span><Popover open={showAddThickness} onOpenChange={setShowAddThickness}><PopoverTrigger asChild><Button variant="ghost" size="sm" className="h-7 px-2"><Plus className="w-3 h-3 mr-1" />Add</Button></PopoverTrigger><PopoverContent className="w-80" align="end"><div className="space-y-3"><div><Label htmlFor="newThickness">Thickness (cm)</Label><Input id="newThickness" placeholder="Enter thickness (cm)" value={newThickness} onChange={(e) => setNewThickness(e.target.value)} /></div><div className="flex justify-end gap-2"><Button variant="outline" size="sm" onClick={() => setShowAddThickness(false)}>Cancel</Button><Button size="sm" onClick={handleAddThickness}>Add</Button></div></div></PopoverContent></Popover></div>
                                                                     <div className="relative mb-2"><Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" /><Input placeholder="Search thickness" className="pl-8" value={thicknessSearch} onChange={(e) => setThicknessSearch(e.target.value)} /></div>
-                                                                    <div className="space-y-1 max-h-48 overflow-y-auto">{filteredThicknessOptions.map((thickness: string) => (<div key={thickness} className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm" onClick={() => { field.onChange(thickness); setThicknessSearch(''); setThicknessPopoverOpen(false); }}>{thickness}</div>))}{filteredThicknessOptions.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">No thickness options found</div>}</div>
+                                                                    <div className="space-y-1 max-h-48 overflow-y-auto">{filteredThicknessOptions.map((thickness: string) => (<div key={thickness} className="px-3 py-2 hover:bg-accent cursor-pointer rounded text-sm" onClick={() => { field.onChange(thickness); setThicknessSearch(''); setThicknessPopoverOpen(false); }}>{thickness}</div>))}{filteredThicknessOptions.length === 0 && <div className="px-3 py-2 text-sm text-muted-foreground text-center">No thickness options found</div>}</div>
                                                                 </div>
                                                             </PopoverContent>
                                                         </Popover>
@@ -1093,7 +1093,7 @@ const EditFabIdForm = () => {
                                                                 <div className="p-2">
                                                                     <div className="flex items-center justify-between mb-2"><span className="text-sm font-medium">Edges</span><Popover open={showAddEdge} onOpenChange={setShowAddEdge}><PopoverTrigger asChild><Button variant="ghost" size="sm" className="h-7 px-2"><Plus className="w-3 h-3 mr-1" />Add</Button></PopoverTrigger><PopoverContent className="w-80" align="end"><div className="space-y-3"><div><Label htmlFor="newEdge">Edge Name</Label><Input id="newEdge" placeholder="Enter edge name" value={newEdge} onChange={(e) => setNewEdge(e.target.value)} /></div><div className="flex justify-end gap-2"><Button variant="outline" size="sm" onClick={() => setShowAddEdge(false)}>Cancel</Button><Button size="sm" onClick={handleAddEdge}>Add</Button></div></div></PopoverContent></Popover></div>
                                                                     <div className="relative mb-2"><Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" /><Input placeholder="Search edge" className="pl-8" value={edgeSearch} onChange={(e) => setEdgeSearch(e.target.value)} /></div>
-                                                                    <div className="space-y-1 max-h-48 overflow-y-auto">{filteredEdgeOptions.map((edge: string) => (<div key={edge} className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm" onClick={() => { field.onChange(edge); setEdgeSearch(''); setEdgePopoverOpen(false); }}>{edge}</div>))}{filteredEdgeOptions.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">No edge options found</div>}</div>
+                                                                    <div className="space-y-1 max-h-48 overflow-y-auto">{filteredEdgeOptions.map((edge: string) => (<div key={edge} className="px-3 py-2 hover:bg-accent cursor-pointer rounded text-sm" onClick={() => { field.onChange(edge); setEdgeSearch(''); setEdgePopoverOpen(false); }}>{edge}</div>))}{filteredEdgeOptions.length === 0 && <div className="px-3 py-2 text-sm text-muted-foreground text-center">No edge options found</div>}</div>
                                                                 </div>
                                                             </PopoverContent>
                                                         </Popover>
@@ -1118,7 +1118,7 @@ const EditFabIdForm = () => {
                                                             <FormControl><SelectTrigger><SelectValue placeholder={isLoadingSalesPersons ? 'Loading sales persons...' : 'Select salesperson'} /></SelectTrigger></FormControl>
                                                             <SelectContent className="max-h-[200px] overflow-y-auto">
                                                                 {salesPersons.map((person: any) => <SelectItem key={person.id} value={person.name}>{person.name}</SelectItem>)}
-                                                                {salesPersons.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">No sales persons found</div>}
+                                                                {salesPersons.length === 0 && <div className="px-3 py-2 text-sm text-muted-foreground text-center">No sales persons found</div>}
                                                             </SelectContent>
                                                         </Select>
                                                         <FormMessage />

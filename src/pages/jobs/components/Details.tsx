@@ -25,7 +25,7 @@ export const JobDetailsView = ({ job, onEdit }: JobDetailsViewProps) => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{job.name}</h1>
-          <p className="text-gray-500">Job Number: {job.job_number}</p>
+          <p className="text-muted-foreground">Job Number: {job.job_number}</p>
         </div>
         <Can action="create" on="jobs">
           <Button variant="outline" size="sm" onClick={() => onEdit(job)}>
@@ -42,12 +42,12 @@ export const JobDetailsView = ({ job, onEdit }: JobDetailsViewProps) => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-500">Project Value</label>
+              <label className="text-sm font-medium text-muted-foreground">Project Value</label>
               <p>{job.project_value ? `$${job.project_value}` : 'Not set'}</p>
             </div>
             {job.account_id && (
               <div>
-                <label className="text-sm font-medium text-gray-500">Account</label>
+                <label className="text-sm font-medium text-muted-foreground">Account</label>
                 {isAccountLoading ? (
                   <p>Loading...</p>
                 ) : account ? (

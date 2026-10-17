@@ -38,7 +38,7 @@ export function BrandedLayout() {
               className="h-[40px] w-auto"
               alt="Alpha Granite"
             />
-            <div className="h-px w-full bg-white/20" />
+            <div className="h-px w-full bg-background/20" />
             <div className="space-y-3 text-sm">
               <p className="font-semibold text-white">Need help?</p>
               <a

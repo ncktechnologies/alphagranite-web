@@ -82,21 +82,21 @@ export interface JobStatusRow {
 const StageCell: React.FC<{ needed: boolean; date: string | null | undefined }> = ({ needed, date }) => {
     if (!needed) {
         return (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-400 whitespace-nowrap">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-accent text-placeholder whitespace-nowrap">
                 Not Needed
             </span>
         );
     }
     if (date) {
-        return <span className="text-sm text-[#4b545d] whitespace-nowrap">{format(new Date(date), 'MM/dd/yyyy')}</span>;
+        return <span className="text-sm text-secondary-foreground whitespace-nowrap">{format(new Date(date), 'MM/dd/yyyy')}</span>;
     }
-    return <span className="text-sm text-[#b0b7bc]">—</span>;
+    return <span className="text-sm text-placeholder">—</span>;
 };
 
 const YesNoBadge: React.FC<{ value: boolean }> = ({ value }) => (
     <span className={cn(
         'inline-flex items-center px-2 py-0.5 rounded text-[12px] font-semibold',
-        value ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
+        value ? 'bg-green-100 text-green-700' : 'bg-accent text-placeholder'
     )}>
         {value ? 'Yes' : 'No'}
     </span>
@@ -254,7 +254,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
                 return (
                     <div className="flex flex-col gap-0.5 text-xs max-w-[280px]">
                         {line1 && <span className="truncate font-medium" title={line1}>{line1}</span>}
-                        {line2 && <span className="truncate text-gray-500" title={line2}>{line2}</span>}
+                        {line2 && <span className="truncate text-muted-foreground" title={line2}>{line2}</span>}
                     </div>
                 );
             },

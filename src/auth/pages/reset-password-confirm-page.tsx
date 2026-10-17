@@ -118,7 +118,7 @@ export function ResetPasswordConfirmPage() {
         title="Reset Your Password" 
         caption='Enter your new password to complete the reset process'
       />
-      <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-[#DFDFDF]">
+      <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-input">
         <CardContent className="px-6 py-12">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

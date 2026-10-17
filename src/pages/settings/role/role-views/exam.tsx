@@ -94,10 +94,10 @@ const RolesSection = () => {
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               Role deleted successfully
             </h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-secondary-foreground">
               The role '{selectedRole?.name}' has been deleted successfully.
             </p>
           </div>
@@ -115,8 +115,8 @@ const RolesSection = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900">{roles[0].name}</h3>
-                    <p className="text-xs text-gray-600">{roles[0].description}</p>
+                    <h3 className="text-sm font-semibold text-foreground">{roles[0].name}</h3>
+                    <p className="text-xs text-secondary-foreground">{roles[0].description}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => handleEditRole(roles[0])}>Edit</Button>
@@ -127,25 +127,25 @@ const RolesSection = () => {
             </Card>
 
             {/* Stats row */}
-            <Card className="bg-gray-50">
+            <Card className="bg-muted">
               <CardContent className="p-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="text-gray-600 text-sm">📅</span>
+                    <div className="w-8 h-8 bg-border rounded-full flex items-center justify-center">
+                      <span className="text-secondary-foreground text-sm">📅</span>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Date created</p>
-                      <p className="font-semibold text-gray-900">Mar 14, 2025</p>
+                      <p className="text-sm text-secondary-foreground">Date created</p>
+                      <p className="font-semibold text-foreground">Mar 14, 2025</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="text-gray-600 text-sm">👥</span>
+                    <div className="w-8 h-8 bg-border rounded-full flex items-center justify-center">
+                      <span className="text-secondary-foreground text-sm">👥</span>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Total No. of staff</p>
-                      <p className="font-semibold text-gray-900">121</p>
+                      <p className="text-sm text-secondary-foreground">Total No. of staff</p>
+                      <p className="font-semibold text-foreground">121</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -153,8 +153,8 @@ const RolesSection = () => {
                       <span className="text-green-600 text-sm">✓</span>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Active staff</p>
-                      <p className="font-semibold text-gray-900">95</p>
+                      <p className="text-sm text-secondary-foreground">Active staff</p>
+                      <p className="font-semibold text-foreground">95</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -162,8 +162,8 @@ const RolesSection = () => {
                       <span className="text-orange-600 text-sm">⏳</span>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Pending staff</p>
-                      <p className="font-semibold text-gray-900">21</p>
+                      <p className="text-sm text-secondary-foreground">Pending staff</p>
+                      <p className="font-semibold text-foreground">21</p>
                     </div>
                   </div>
                 </div>
@@ -183,8 +183,8 @@ const RolesSection = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-900">{selectedRole?.name}</h3>
-                  <p className="text-xs text-gray-600">{selectedRole?.description}</p>
+                  <h3 className="text-sm font-semibold text-foreground">{selectedRole?.name}</h3>
+                  <p className="text-xs text-secondary-foreground">{selectedRole?.description}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => handleEditRole(selectedRole!)}>Edit</Button>
@@ -195,25 +195,25 @@ const RolesSection = () => {
           </Card>
 
           {/* Stats row */}
-          <Card className="bg-gray-50">
+          <Card className="bg-muted">
             <CardContent className="p-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                    <span className="text-gray-600 text-sm">📅</span>
+                  <div className="w-8 h-8 bg-border rounded-full flex items-center justify-center">
+                    <span className="text-secondary-foreground text-sm">📅</span>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Date created</p>
-                    <p className="font-semibold text-gray-900">Mar 14, 2025</p>
+                    <p className="text-sm text-secondary-foreground">Date created</p>
+                    <p className="font-semibold text-foreground">Mar 14, 2025</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                    <span className="text-gray-600 text-sm">👥</span>
+                  <div className="w-8 h-8 bg-border rounded-full flex items-center justify-center">
+                    <span className="text-secondary-foreground text-sm">👥</span>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Total No. of staff</p>
-                    <p className="font-semibold text-gray-900">121</p>
+                    <p className="text-sm text-secondary-foreground">Total No. of staff</p>
+                    <p className="font-semibold text-foreground">121</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -221,8 +221,8 @@ const RolesSection = () => {
                     <span className="text-green-600 text-sm">✓</span>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Active staff</p>
-                    <p className="font-semibold text-gray-900">95</p>
+                    <p className="text-sm text-secondary-foreground">Active staff</p>
+                    <p className="font-semibold text-foreground">95</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -230,8 +230,8 @@ const RolesSection = () => {
                     <span className="text-orange-600 text-sm">⏳</span>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Pending staff</p>
-                    <p className="font-semibold text-gray-900">21</p>
+                    <p className="text-sm text-secondary-foreground">Pending staff</p>
+                    <p className="font-semibold text-foreground">21</p>
                   </div>
                 </div>
               </div>
@@ -249,7 +249,7 @@ const RolesSection = () => {
     }
 
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         No roles available. Create a new role to get started.
       </div>
     );
@@ -263,7 +263,7 @@ const RolesSection = () => {
           {/* Left Sidebar - Roles List */}
           <div className="w-80 space-y-4 pr-6 border-r">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Roles</h2>
+              <h2 className="text-xl font-semibold text-foreground">Roles</h2>
               <Button onClick={handleNewRole} className="bg-green-600 hover:bg-green-700">
                 + New role
               </Button>
@@ -281,23 +281,23 @@ const RolesSection = () => {
                   <CardContent className="p-4">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-gray-900">{role.name}</h3>
+                        <h3 className="font-semibold text-foreground">{role.name}</h3>
                         <Badge 
                           variant={role.status === 'Active' ? 'default' : 'secondary'}
-                          className={role.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}
+                          className={role.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-accent text-secondary-foreground'}
                         >
                           {role.status}
                         </Badge>
                       </div>
                       
-                      <p className="text-sm text-gray-600">{role.description}</p>
+                      <p className="text-sm text-secondary-foreground">{role.description}</p>
                       
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">MEMBERS ({role.members}) +2</span>
+                        <span className="text-sm text-secondary-foreground">MEMBERS ({role.members}) +2</span>
                         <div className="flex -space-x-2">
                           {role.avatars?.map((avatar, index) => (
-                            <Avatar key={index} className="w-6 h-6 border-2 border-white">
-                              <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
+                            <Avatar key={index} className="w-6 h-6 border-2 border-background">
+                              <AvatarFallback className="text-xs bg-border text-secondary-foreground">
                                 {avatar}
                               </AvatarFallback>
                             </Avatar>
@@ -364,7 +364,7 @@ const RoleFormView = ({ mode, role, onBack }: { mode: 'new' | 'edit', role: Role
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="text-xl font-semibold text-foreground">
           {mode === 'new' ? 'New Role:' : `Edit Role: ${role?.name}`}
         </h2>
         <Button variant="ghost" size="sm" onClick={onBack}>
@@ -409,7 +409,7 @@ const RoleFormView = ({ mode, role, onBack }: { mode: 'new' | 'edit', role: Role
 
           {/* Assign Users */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-gray-900">Assign Users</h3>
+            <h3 className="font-semibold text-foreground">Assign Users</h3>
             <div className="space-y-2">
               <Input placeholder="Search users..." />
               <div className="space-y-2">
@@ -422,7 +422,7 @@ const RoleFormView = ({ mode, role, onBack }: { mode: 'new' | 'edit', role: Role
                     />
                     <Label htmlFor={user.id} className="flex items-center space-x-2">
                       <Avatar className="w-6 h-6">
-                        <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
+                        <AvatarFallback className="text-xs bg-border text-secondary-foreground">
                           {user.initials}
                         </AvatarFallback>
                       </Avatar>
@@ -437,22 +437,22 @@ const RoleFormView = ({ mode, role, onBack }: { mode: 'new' | 'edit', role: Role
 
         {/* Right Column - Permissions */}
         <div className="space-y-4">
-          <h3 className="font-semibold text-gray-900">Permissions</h3>
+          <h3 className="font-semibold text-foreground">Permissions</h3>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2 font-medium text-gray-700">Module</th>
-                  <th className="text-center py-2 font-medium text-gray-700">Create</th>
-                  <th className="text-center py-2 font-medium text-gray-700">Read</th>
-                  <th className="text-center py-2 font-medium text-gray-700">Update</th>
-                  <th className="text-center py-2 font-medium text-gray-700">Delete</th>
+                  <th className="text-left py-2 font-medium text-secondary-foreground">Module</th>
+                  <th className="text-center py-2 font-medium text-secondary-foreground">Create</th>
+                  <th className="text-center py-2 font-medium text-secondary-foreground">Read</th>
+                  <th className="text-center py-2 font-medium text-secondary-foreground">Update</th>
+                  <th className="text-center py-2 font-medium text-secondary-foreground">Delete</th>
                 </tr>
               </thead>
               <tbody>
                 {modules.map((module) => (
                   <tr key={module.key} className="border-b">
-                    <td className="py-2 font-medium text-gray-900">{module.label}</td>
+                    <td className="py-2 font-medium text-foreground">{module.label}</td>
                     <td className="py-2 text-center">
                       <Checkbox
                         checked={permissions[module.key as keyof typeof permissions].create}

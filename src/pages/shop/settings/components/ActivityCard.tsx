@@ -23,14 +23,14 @@ export const ActivityCard = ({
   return (
     <Card 
       className={`cursor-pointer transition-all hover:shadow-md ${
-        isSelected ? 'border border-[#8BAD2B] bg-[#F0FDF4]' : ''
+        isSelected ? 'border border-[#8BAD2B] bg-primary-soft' : ''
       }`}
       onClick={() => onClick(id)}
     >
       <CardContent className="p-4">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className={`${isSelected ? 'text-lg font-normal' : 'font-bold text-[17px]'} text-black`}>
+            <h3 className={`${isSelected ? 'text-lg font-normal' : 'font-bold text-[17px]'} text-foreground`}>
               {plan_name}
             </h3>
             <Badge 

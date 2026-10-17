@@ -125,7 +125,7 @@ const getStatusIcon = (status: WorkflowStage['status']) => {
     case 'pending':
       return <AlertCircle className="h-4 w-4 text-yellow-500" />;
     case 'not-started':
-      return <div className="h-4 w-4 rounded-full border border-gray-300" />;
+      return <div className="h-4 w-4 rounded-full border border-input" />;
     default:
       return null;
   }

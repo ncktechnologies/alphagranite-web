@@ -11,7 +11,7 @@ export const EmptyState = ({ onNewRole }: EmptyStateProps) => {
         <img src="/images/app/employee-security.svg" alt="" />
       </div>
       
-      <h3 className="text-lg font-bold text-black mb-2">
+      <h3 className="text-lg font-bold text-foreground mb-2">
         You haven't created any role yet
       </h3>
       

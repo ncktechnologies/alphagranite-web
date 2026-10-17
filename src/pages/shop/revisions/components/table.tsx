@@ -38,12 +38,12 @@ const FabInfo: React.FC<FabInfoProps> = ({ fab }) => {
       {(jobInfo.length > 0 || stoneInfo.length > 0) && (
         <div className="flex-1 min-w-0">
           {jobInfo.length > 0 && (
-            <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
+            <div className="truncate text-secondary-foreground" title={jobInfo.join(' - ')}>
               {jobInfo.join(' - ')}
             </div>
           )}
           {stoneInfo.length > 0 && (
-            <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
+            <div className="truncate text-secondary-foreground" title={stoneInfo.join(' - ')}>
               {stoneInfo.join(' - ')}
             </div>
           )}
@@ -52,7 +52,7 @@ const FabInfo: React.FC<FabInfoProps> = ({ fab }) => {
       {materialInfo.length > 0 && (
         <div className="shrink-0 max-w-[45%] text-right">
           {materialInfo.map((info, idx) => (
-            <div key={idx} className="truncate text-gray-600">
+            <div key={idx} className="truncate text-secondary-foreground">
               {info}
             </div>
           ))}
@@ -223,7 +223,7 @@ export const ShopRevisionTable = ({ canViewDetails = false, canExport = false }:
               value={searchType}
               onValueChange={(value: 'fab_id' | 'job_number' | 'job_name' | 'account_name') => setSearchType(value)}
             >
-              <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed] focus-visible:ring-0">
+              <SelectTrigger className="w-[140px] h-[34px] border-border focus-visible:ring-0">
                 <SelectValue placeholder="Search by" />
               </SelectTrigger>
               <SelectContent>
@@ -235,12 +235,12 @@ export const ShopRevisionTable = ({ canViewDetails = false, canExport = false }:
             </Select>
 
             <div className="relative">
-              <Search className="size-4 text-[#7c8689] absolute start-3 top-1/2 -translate-y-1/2" />
+              <Search className="size-4 text-text-foreground absolute start-3 top-1/2 -translate-y-1/2" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={`Search by ${searchType.replace('_', ' ')}`}
-                className="ps-9 w-[280px] h-[34px] border-[#e2e4ed] focus-visible:ring-0"
+                className="ps-9 w-[280px] h-[34px] border-border focus-visible:ring-0"
                 disabled={isLoading}
               />
               {searchQuery && (
@@ -266,13 +266,13 @@ export const ShopRevisionTable = ({ canViewDetails = false, canExport = false }:
         <CardTable>
           <ScrollArea className="max-h-[calc(100vh-280px)]">
             <table className="w-full border-collapse table-fixed">
-              <thead className="sticky top-0 z-10 bg-white">
+              <thead className="sticky top-0 z-10 bg-background">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
                       <th
                         key={header.id}
-                        className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-gray-200 bg-gray-50"
+                        className="px-4 py-2 text-left text-xs font-semibold text-secondary-foreground border-b border-border bg-muted"
                         style={{ width: header.getSize() }}
                       >
                         {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}

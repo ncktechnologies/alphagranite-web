@@ -50,7 +50,7 @@ export const FileList: React.FC<FileListProps> = ({
     if (type?.startsWith('image/')) {
       return <ImageIcon className="w-5 h-5 text-blue-500" />;
     }
-    return <File className="w-5 h-5 text-gray-500" />;
+    return <File className="w-5 h-5 text-muted-foreground" />;
   };
 
   const handleView = (file: UploadedFileMeta) => {
@@ -109,7 +109,7 @@ export const FileList: React.FC<FileListProps> = ({
 
   return (
     <div className={cn('space-y-2', className)}>
-      <h4 className="text-sm font-semibold text-gray-700">
+      <h4 className="text-sm font-semibold text-secondary-foreground">
         Uploaded Files ({files.length})
       </h4>
       <div className="space-y-1 max-h-60 overflow-y-auto">
@@ -117,19 +117,19 @@ export const FileList: React.FC<FileListProps> = ({
           <div
             key={file.id}
             className={cn(
-              'flex items-center justify-between bg-gray-50 p-2 rounded-md border',
+              'flex items-center justify-between bg-muted p-2 rounded-md border',
               deletingIds.has(file.id) && 'opacity-50'
             )}
           >
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="flex items-center justify-center w-8 h-8 bg-white rounded border">
+              <div className="flex items-center justify-center w-8 h-8 bg-background rounded border">
                 {getFileIcon(file.type)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {file.name}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   {formatFileSize(file.size)}
                   {file.uploaded_by_name && (
                     <span className="ml-2">• by {file.uploaded_by_name}</span>

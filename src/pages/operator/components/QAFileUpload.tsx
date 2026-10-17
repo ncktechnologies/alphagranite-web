@@ -46,7 +46,7 @@ export function OperatorQAUpload({
     const getFileIcon = (type: string) => {
         if (type.startsWith('image/')) return <Image className="w-5 h-5 text-blue-500" />;
         if (type.startsWith('video/')) return <Camera className="w-5 h-5 text-red-500" />;
-        return <FileText className="w-5 h-5 text-gray-500" />;
+        return <FileText className="w-5 h-5 text-muted-foreground" />;
     };
 
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -218,7 +218,7 @@ export function OperatorQAUpload({
                             
                             <div className="space-y-2 max-h-48 overflow-y-auto">
                                 {selectedFiles.map((file, index) => (
-                                    <div key={index} className="flex items-center gap-3 p-2 border rounded bg-gray-50">
+                                    <div key={index} className="flex items-center gap-3 p-2 border rounded bg-muted">
                                         {getFileIcon(file.type)}
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium truncate">{file.name}</p>
@@ -260,7 +260,7 @@ export function OperatorQAUpload({
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {uploadedFiles.map((file) => (
-                                <div key={file.id} className="border rounded-lg p-4 flex items-start gap-3 bg-gray-50">
+                                <div key={file.id} className="border rounded-lg p-4 flex items-start gap-3 bg-muted">
                                     {getFileIcon(file.type)}
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium truncate">{file.name}</p>

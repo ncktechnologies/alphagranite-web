@@ -156,8 +156,8 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
         )}
 
         {/* Profile Image Upload */}
-        <div className="space-y-4 bg-[#F8F9FC] h-[220px] text-center p-[24px] rounded-[12px]">
-          <FormLabel className="text-center text-[#2E3A59] pb-2">Upload Image</FormLabel>
+        <div className="space-y-4 bg-muted h-[220px] text-center p-[24px] rounded-[12px]">
+          <FormLabel className="text-center text-foreground pb-2">Upload Image</FormLabel>
           <div className="flex items-center gap-4 justify-center">
             <AvatarInput
               onUploadComplete={handleUploadComplete}
@@ -174,7 +174,7 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
         </div>
 
         <Card className="p-3 col-span-2">
-          <CardTitle className="text-[#09090B] pb-6">Personal Information</CardTitle>
+          <CardTitle className="text-foreground pb-6">Personal Information</CardTitle>
           <CardContent className="p-4 space-y-4 grid grid-cols-1 md:grid-cols-2 gap-x-3">
             <FormField
               control={form.control}
@@ -250,7 +250,7 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
                 type="button"
                 onClick={onCancel}
                 disabled={isSubmitting}
-                className="inline-flex items-center gap-2 rounded-md border border-border bg-white text-text px-4 py-2 text-sm font-medium hover:bg-muted"
+                className="inline-flex items-center gap-2 rounded-md border border-border bg-background text-text px-4 py-2 text-sm font-medium hover:bg-muted"
               >
                 Cancel
               </button>

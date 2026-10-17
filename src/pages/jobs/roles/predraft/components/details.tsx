@@ -19,7 +19,7 @@ const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
 const getFabStatusInfo = (statusId: number | undefined) => {
     if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
     if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
-    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
+    return { className: 'bg-accent text-foreground', text: 'LOADING' };
 };
 
 export function PreDraftDetailsPage() {
@@ -92,7 +92,7 @@ export function PreDraftDetailsPage() {
     if (isLoading) {
         return (
             <div className="flex flex-col min-h-screen">
-                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+                <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
                     <Skeleton className="h-8 w-72 mb-1" />
                     <Skeleton className="h-4 w-48" />
                 </div>
@@ -112,7 +112,7 @@ export function PreDraftDetailsPage() {
     if (isError || !fab) {
         return (
             <div className="flex flex-col min-h-screen">
-                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+                <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
                     <ToolbarHeading title="Error loading FAB" description="Could not load pre-Draft details" />
                 </div>
                 <div className="p-6">
@@ -132,9 +132,9 @@ export function PreDraftDetailsPage() {
     const isTemplatingCompleted = fab.templating_schedule_end_date ? true : false; // adjust logic as needed
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
+        <div className="flex flex-col min-h-screen bg-muted">
             {/* Sticky toolbar */}
-            <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+            <div className="sticky top-0 z-10 bg-background border-b shadow-sm">
                 <div className="px-3 sm:px-4 lg:px-6">
                     <Toolbar className="py-2 sm:py-3">
                         <div className="flex items-center justify-between w-full gap-2 flex-wrap">
@@ -147,10 +147,10 @@ export function PreDraftDetailsPage() {
                                         >
                                             {fab?.job_details?.name || `Job ${fab?.job_id}`}
                                         </a>
-                                        <span className="mx-1 text-gray-400">·</span>
+                                        <span className="mx-1 text-placeholder">·</span>
                                         <a
                                             href={jobNumberLink}
-                                            className="hover:underline text-gray-600"
+                                            className="hover:underline text-secondary-foreground"
                                             target="_blank"
                                             rel="noreferrer"
                                         >
@@ -181,7 +181,7 @@ export function PreDraftDetailsPage() {
                 {/* Sticky sidebar */}
                 <aside
                     className={[
-                        'w-full bg-white border-b',
+                        'w-full bg-background border-b',
                         'lg:w-[220px] xl:w-[260px] lg:shrink-0',
                         'lg:sticky lg:top-[50px]',
                         'lg:self-start',

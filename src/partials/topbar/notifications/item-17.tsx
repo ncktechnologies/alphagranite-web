@@ -39,7 +39,7 @@ export default function Item17() {
         </div>
 
         <div className="kt-card shadow-none flex items-center flex-row gap-1.5 p-2.5 rounded-lg bg-muted/70">
-          <div className="flex items-center justify-center w-[26px] h-[30px] shrink-0 bg-white rounded-sm border border-border">
+          <div className="flex items-center justify-center w-[26px] h-[30px] shrink-0 bg-background rounded-sm border border-border">
             <img
               src={toAbsoluteUrl('/media/brand-logos/jira.svg')}
               className="h-5"

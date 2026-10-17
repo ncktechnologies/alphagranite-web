@@ -12,7 +12,7 @@ export function CompleteProfilePage() {
         caption="Kindly fill all the required details about you below"
         width='560'
       />
-      <Card className="w-full max-w-[560px] overflow-y-auto border-[#DFDFDF]">
+      <Card className="w-full max-w-[560px] overflow-y-auto border-input">
         <CardContent className="px-6 py-12">
          <ProfileForm/>
         </CardContent>

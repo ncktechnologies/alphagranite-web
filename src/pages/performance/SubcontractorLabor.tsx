@@ -84,7 +84,7 @@ export function SubcontractorLaborPage() {
     return (
         <div className="p-5 space-y-6">
             <div className="flex justify-between items-center flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Sub Contractor Labor</h1>
+                <h1 className="text-2xl font-semibold text-secondary-foreground">Sub Contractor Labor</h1>
                 <div className="flex items-center gap-2 flex-wrap">
                     <YearSelect value={year} onChange={setYear} />
                     {canEdit && (

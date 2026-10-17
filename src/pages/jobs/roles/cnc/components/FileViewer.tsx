@@ -71,17 +71,17 @@ export const FileViewer = ({
   const badge = getStageBadge(stage);
 
   return (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col">
+    <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+      <div className="flex items-center justify-between p-4 border-b bg-muted">
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-semibold truncate">{file.name}</h2>
           <div className="flex items-center gap-2 mt-1">
             <span className={badge.className}>{badge.label}</span>
-            <span className="text-sm text-gray-500">{formatFileSize(file.size)}</span>
+            <span className="text-sm text-muted-foreground">{formatFileSize(file.size)}</span>
           </div>
           {(file.stage_name || file.file_design || file.uploaded_by_name) && (
-            <div className="mt-2 text-xs text-gray-500 space-x-2">
+            <div className="mt-2 text-xs text-muted-foreground space-x-2">
               {file.stage_name && <span>Stage: {file.stage_name}</span>}
               {file.file_design && <span>Type: {getFileDesignLabel(file.file_design)}</span>}
               {file.uploaded_by_name && <span>By: {file.uploaded_by_name}</span>}
@@ -95,7 +95,7 @@ export const FileViewer = ({
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex items-center justify-center p-4 overflow-auto bg-gray-100">
+      <div className="flex-1 flex items-center justify-center p-4 overflow-auto bg-accent">
         {file.type?.startsWith('image/') && !imageError ? (
           <Card className="relative max-w-5xl max-h-full overflow-hidden">
             <div
@@ -117,7 +117,7 @@ export const FileViewer = ({
             </div>
           </Card>
         ) : isPdf ? (
-          <div className="w-full h-full flex flex-col bg-white rounded-lg overflow-hidden">
+          <div className="w-full h-full flex flex-col bg-background rounded-lg overflow-hidden">
             <iframe
               src={`${file.url}#toolbar=1&navpanes=0&view=FitH`}
               title={file.name}
@@ -128,10 +128,10 @@ export const FileViewer = ({
             />
           </div>
         ) : (
-          <Card className="p-12 text-center text-gray-500">
+          <Card className="p-12 text-center text-muted-foreground">
             <p className="text-lg">Preview not available</p>
             <p className="text-sm mt-2">{file.name}</p>
-            <p className="text-xs text-gray-400 mt-3">File type: {file.type || 'Unknown'}</p>
+            <p className="text-xs text-placeholder mt-3">File type: {file.type || 'Unknown'}</p>
             <Button onClick={handleDownload} className="mt-4">
               <Download className="h-4 w-4 mr-2" />
               Download File
@@ -141,7 +141,7 @@ export const FileViewer = ({
       </div>
 
       {/* Controls */}
-      <div className="border-t p-4 flex justify-between items-center gap-2 bg-gray-50">
+      <div className="border-t p-4 flex justify-between items-center gap-2 bg-muted">
         <div className="flex gap-2">
           {/* Show zoom controls only for images */}
           {file.type?.startsWith('image/') && !imageError && (

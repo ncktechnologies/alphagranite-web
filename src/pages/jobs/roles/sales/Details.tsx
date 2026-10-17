@@ -24,7 +24,7 @@ import { PlanStageCard } from '@/pages/shop/components/statusDetails';
 const getFabStatusInfo = (statusId: number | undefined) => {
   if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
   if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
-  return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
+  return { className: 'bg-accent text-foreground', text: 'LOADING' };
 };
 
 export function SalesDetailsPage() {
@@ -159,7 +159,7 @@ export function SalesDetailsPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
-        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+        <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
           <Skeleton className="h-8 w-72 mb-1" />
           <Skeleton className="h-4 w-48" />
         </div>
@@ -180,7 +180,7 @@ export function SalesDetailsPage() {
   if (isError || !fab) {
     return (
       <div className="flex flex-col min-h-screen">
-        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+        <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
           <ToolbarHeading title="Error loading FAB" description="Could not load sales details" />
         </div>
         <div className="p-6">
@@ -199,7 +199,7 @@ export function SalesDetailsPage() {
   // ─── Full‑screen file viewer ──────────────────────────────────────────
   if (activeFile) {
     return (
-      <div className="fixed inset-0 z-50 bg-white overflow-auto">
+      <div className="fixed inset-0 z-50 bg-background overflow-auto">
         <FileViewer file={activeFile} onClose={() => setActiveFile(null)} />
       </div>
     );
@@ -208,9 +208,9 @@ export function SalesDetailsPage() {
   const statusInfo = getFabStatusInfo(fab.status_id);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-muted">
       {/* Sticky toolbar */}
-      <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+      <div className="sticky top-0 z-10 bg-background border-b shadow-sm">
         <div className="px-3 sm:px-4 lg:px-6">
           <Toolbar className="py-2 sm:py-3">
             <div className="flex items-center justify-between w-full gap-2 flex-wrap">
@@ -220,10 +220,10 @@ export function SalesDetailsPage() {
                     <a href={jobNameLink} className="hover:underline" target="_blank" rel="noreferrer">
                       {fab?.job_details?.name || `Job ${fab?.job_id}`}
                     </a>
-                    <span className="mx-1 text-gray-400">·</span>
+                    <span className="mx-1 text-placeholder">·</span>
                     <a
                       href={jobNumberLink}
-                      className="hover:underline text-gray-600"
+                      className="hover:underline text-secondary-foreground"
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -249,7 +249,7 @@ export function SalesDetailsPage() {
         {/* Sticky sidebar */}
         <aside
           className={[
-            'w-full bg-white border-b',
+            'w-full bg-background border-b',
             'lg:w-[220px] xl:w-[260px] lg:shrink-0',
             'lg:sticky lg:top-[50px]',
             'lg:self-start',
@@ -267,15 +267,15 @@ export function SalesDetailsPage() {
           <Card>
             <CardHeader>
               <CardHeading className="flex flex-col items-start py-4">
-                <CardTitle className="text-[#111827] leading-[32px] text-2xl font-bold">
+                <CardTitle className="text-foreground leading-[32px] text-2xl font-bold">
                   FAB Files
                   {totalFileCount > 0 && (
-                    <span className="ml-2 text-base font-normal text-gray-400">
+                    <span className="ml-2 text-base font-normal text-placeholder">
                       ({totalFileCount})
                     </span>
                   )}
                 </CardTitle>
-                <p className="text-sm text-[#4B5563]">
+                <p className="text-sm text-secondary-foreground">
                   Drafting, SlabSmith, Sales CT, CNC, Operator, and Shop Revision files
                 </p>
               </CardHeading>

@@ -143,7 +143,7 @@ export function UniversalUpload({
     if (file.type.startsWith('image/')) return <Image className="h-8 w-8 text-blue-500" />;
     if (file.type.startsWith('video/')) return <Video className="h-8 w-8 text-red-500" />;
     if (file.type.startsWith('model/')) return <LayoutGrid className="h-8 w-8 text-indigo-600" />;
-    return <File className="h-8 w-8 text-gray-500" />;
+    return <File className="h-8 w-8 text-muted-foreground" />;
   };
 
   const getFileTypeLabel = (file: File) => {
@@ -288,19 +288,19 @@ export function UniversalUpload({
           className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
             isDragActive
               ? 'border-blue-500 bg-blue-50'
-              : 'border-gray-300 hover:border-gray-400'
+              : 'border-input hover:border-input-hover'
           }`}
         >
           <input {...getInputProps()} />
-          <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <Upload className="h-12 w-12 text-placeholder mx-auto mb-4" />
           {isDragActive ? (
             <p className="text-lg text-blue-600">{t('UPLOAD.DROP_ACTIVE', { defaultMessage: 'Drop the files here...' })}</p>
           ) : (
             <div>
-              <p className="text-lg text-gray-600 mb-2">
+              <p className="text-lg text-secondary-foreground mb-2">
                 {t('UPLOAD.DRAG_DROP')}
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 {t('UPLOAD.SUPPORTS')}
               </p>
             </div>
@@ -322,7 +322,7 @@ export function UniversalUpload({
                       </Badge>
                       <span className="text-sm font-medium truncate">{file.name}</span>
                     </div>
-                    <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                    <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
                   </div>
                   <Button
                     variant="ghost"

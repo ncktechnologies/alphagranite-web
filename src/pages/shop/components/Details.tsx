@@ -73,7 +73,7 @@ export const StationDetailsView = ({ role, onEdit, onDelete, onStatusChange }: R
   // Show full-screen file viewer if a file is selected
   if (activeFile) {
     return (
-      <div className="fixed inset-0 z-50 bg-white overflow-auto">
+      <div className="fixed inset-0 z-50 bg-background overflow-auto">
         <FileViewer file={activeFile} onClose={() => setActiveFile(null)} />
       </div>
     );
@@ -83,23 +83,23 @@ export const StationDetailsView = ({ role, onEdit, onDelete, onStatusChange }: R
     <div className="space-y-6">
       <StationHeader role={role} onEdit={onEdit} onStatusChange={onStatusChange} />
       {/* <UsersSection /> */}
-      <div className="grid grid-cols-2 gap-[14px] rounded-[8px] bg-[#FAFAFA] p-8 space-y-10">
+      <div className="grid grid-cols-2 gap-[14px] rounded-[8px] bg-muted p-8 space-y-10">
         <div>
           <h4 className="text-secondary font-semibold text-sm pb-2.5">Workstation Name</h4>
-          <h2 className="text-black leading-6 font-semibold ">{role.workstationName}</h2>
+          <h2 className="text-foreground leading-6 font-semibold ">{role.workstationName}</h2>
         </div>
 
         <div>
           <h4 className="text-secondary font-semibold text-sm pb-2.5">Shop Activity</h4>
-          <h2 className="text-black leading-6 font-semibold ">{planningSectionName}</h2>
+          <h2 className="text-foreground leading-6 font-semibold ">{planningSectionName}</h2>
         </div>
         <div>
           <h4 className="text-secondary font-semibold text-sm pb-2.5">Assigned Operators</h4>
-          <h2 className="text-black leading-6 font-semibold ">{Array.isArray(operatorNames) ? operatorNames.join(', ') : operatorNames || '-'}</h2>
+          <h2 className="text-foreground leading-6 font-semibold ">{Array.isArray(operatorNames) ? operatorNames.join(', ') : operatorNames || '-'}</h2>
         </div>
         <div>
           <h4 className="text-secondary font-semibold text-sm pb-2.5">Attendance Required</h4>
-          <h2 className="text-black leading-6 font-semibold ">{role.attendance_required ? 'Yes' : 'No'}</h2>
+          <h2 className="text-foreground leading-6 font-semibold ">{role.attendance_required ? 'Yes' : 'No'}</h2>
         </div>
       </div>
 
@@ -107,15 +107,15 @@ export const StationDetailsView = ({ role, onEdit, onDelete, onStatusChange }: R
       {fabId && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-[#111827] leading-[32px] text-2xl font-bold">
+            <CardTitle className="text-foreground leading-[32px] text-2xl font-bold">
               FAB Files
               {totalFileCount > 0 && (
-                <span className="ml-2 text-base font-normal text-gray-400">
+                <span className="ml-2 text-base font-normal text-placeholder">
                   ({totalFileCount})
                 </span>
               )}
             </CardTitle>
-            <p className="text-sm text-[#4B5563]">
+            <p className="text-sm text-secondary-foreground">
               Drafting, SlabSmith, and all other files for this fabrication
             </p>
           </CardHeader>

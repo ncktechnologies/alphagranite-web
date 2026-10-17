@@ -160,7 +160,7 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <h2 className="text-lg font-normal text-black">
+                <h2 className="text-lg font-normal text-foreground">
                     {mode === 'new' ? 'New Role:' : `Edit Role: ${role?.name}`}
                 </h2>
                 <Button variant="ghost" size="sm" onClick={onBack}>
@@ -193,9 +193,9 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
                         placeholder="Department KPIs, financial, operational insights"
                     />
                 </div>
-                <h3 className="font-semibold text-black leading-6">Permissions</h3>
+                <h3 className="font-semibold text-foreground leading-6">Permissions</h3>
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm text-gray-500">Configure access permissions for this role</p>
+                  <p className="text-sm text-muted-foreground">Configure access permissions for this role</p>
                   {/* <Link to="/settings/permissions">
                     <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">
                       <Settings className="w-4 h-4 mr-1" />

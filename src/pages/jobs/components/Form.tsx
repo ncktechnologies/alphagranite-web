@@ -108,7 +108,7 @@ export const JobForm = ({ mode, job, onBack, onSave }: JobFormProps) => {
               <div className="space-y-2">
                 <Label htmlFor="project_value">Project Value *</Label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span>
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-muted-foreground">$</span>
                   <Input
                     id="project_value"
                     value={formData.project_value}

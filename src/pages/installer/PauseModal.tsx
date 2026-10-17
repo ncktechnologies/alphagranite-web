@@ -66,7 +66,7 @@ export const InstallerPauseModal = ({ open, onClose, jobId, fabId, jobNumber, in
                     <div className="border-b">
                         <DialogTitle className="text-[16px] font-semibold py-2">
                             {t('INSTALLER.PAUSE.TITLE')}
-                            <span className="ml-3 text-sm font-normal text-gray-500">
+                            <span className="ml-3 text-sm font-normal text-muted-foreground">
                                 {t('INSTALLER.PAUSE.JOB_NO')} {jobNumber || jobId}
                             </span>
                         </DialogTitle>

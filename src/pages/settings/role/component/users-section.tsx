@@ -48,7 +48,7 @@ const StatusBadge = ({ status }: { status: number | undefined }) => {
   const getStatusInfo = (s: number | undefined) => {
     if (s === 1) return { label: 'Active', color: 'bg-green-100 text-green-700' };
     if (s === 2) return { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' };
-    return { label: 'Inactive', color: 'bg-gray-100 text-gray-700' };
+    return { label: 'Inactive', color: 'bg-accent text-secondary-foreground' };
   };
 
   const statusInfo = getStatusInfo(status);
@@ -141,11 +141,11 @@ const UsersSection = ({ role }: UsersSectionProps) => {
               {row.original.profile_image_url && (
                 <AvatarImage src={row.original.profile_image_url} alt={fullName} />
               )}
-              <AvatarFallback className="bg-gray-200 text-gray-600">
+              <AvatarFallback className="bg-border text-secondary-foreground">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium text-gray-900">{fullName}</span>
+            <span className="text-sm font-medium text-foreground">{fullName}</span>
           </div>
         );
       },
@@ -162,7 +162,7 @@ const UsersSection = ({ role }: UsersSectionProps) => {
         <DataGridColumnHeader title="DATE INVITED" column={column} />
       ),
       cell: ({ row }) => (
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-muted-foreground">
           {row.original.invited_at ? format(new Date(row.original.invited_at), 'MMM dd, yyyy') : '-'}
         </span>
       ),

@@ -38,7 +38,7 @@ export const FabInfoCell: React.FC<FabInfoCellProps> = ({ data, className = "" }
     const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(data);
 
     if (jobInfo.length === 0 && stoneInfo.length === 0 && materialInfo.length === 0) {
-        return <span className="text-xs text-gray-400 italic">No details</span>;
+        return <span className="text-xs text-placeholder italic">No details</span>;
     }
 
     return (
@@ -46,12 +46,12 @@ export const FabInfoCell: React.FC<FabInfoCellProps> = ({ data, className = "" }
             {(jobInfo.length > 0 || stoneInfo.length > 0) && (
                 <div className="flex-1 min-w-0">
                     {jobInfo.length > 0 && (
-                        <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
+                        <div className="truncate text-secondary-foreground" title={jobInfo.join(' - ')}>
                             {jobInfo.join(' - ')}
                         </div>
                     )}
                     {stoneInfo.length > 0 && (
-                        <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
+                        <div className="truncate text-secondary-foreground" title={stoneInfo.join(' - ')}>
                             {stoneInfo.join(' - ')}
                         </div>
                     )}
@@ -60,7 +60,7 @@ export const FabInfoCell: React.FC<FabInfoCellProps> = ({ data, className = "" }
             {materialInfo.length > 0 && (
                 <div className="shrink-0 max-w-[45%] text-right">
                     {materialInfo.map((info, idx) => (
-                        <div key={idx} className="truncate text-gray-600" title={info}>
+                        <div key={idx} className="truncate text-secondary-foreground" title={info}>
                             {info}
                         </div>
                     ))}

@@ -432,12 +432,12 @@ const ShopTable: React.FC<ShopTableProps> = ({
                         {(jobInfo.length > 0 || stoneInfo.length > 0) && (
                             <div className="flex-1 min-w-0">
                                 {jobInfo.length > 0 && (
-                                    <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
+                                    <div className="truncate text-secondary-foreground" title={jobInfo.join(' - ')}>
                                         {jobInfo.join(' - ')}
                                     </div>
                                 )}
                                 {stoneInfo.length > 0 && (
-                                    <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
+                                    <div className="truncate text-secondary-foreground" title={stoneInfo.join(' - ')}>
                                         {stoneInfo.join(' - ')}
                                     </div>
                                 )}
@@ -446,7 +446,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
                         {materialInfo.length > 0 && (
                             <div className="shrink-0 max-w-[45%] text-right">
                                 {materialInfo.map((info, idx) => (
-                                    <div key={idx} className="truncate text-gray-600">
+                                    <div key={idx} className="truncate text-secondary-foreground">
                                         {info}
                                     </div>
                                 ))}
@@ -689,14 +689,14 @@ const ShopTable: React.FC<ShopTableProps> = ({
                     : [];
 
                 if (shopNotes.length === 0) {
-                    return <span className="text-xs text-gray-500 italic">No notes</span>;
+                    return <span className="text-xs text-muted-foreground italic">No notes</span>;
                 }
 
                 const latest = shopNotes[0];
                 return (
                     <div className="text-xs max-w-xs" title={latest.note}>
                         <div className="font-medium truncate">{latest.note}</div>
-                        <div className="text-gray-500 text-xs">by {latest.created_by_name || 'Unknown'}</div>
+                        <div className="text-muted-foreground text-xs">by {latest.created_by_name || 'Unknown'}</div>
                     </div>
                 );
             },
@@ -813,13 +813,13 @@ const ShopTable: React.FC<ShopTableProps> = ({
                                     </div>
                                 ) : (
                                     <table className="w-full border-collapse table-fixed">
-                                        <thead className="sticky top-0 z-10 bg-white">
+                                        <thead className="sticky top-0 z-10 bg-background">
                                             {table.getHeaderGroups().map(headerGroup => (
                                                 <tr key={headerGroup.id}>
                                                     {headerGroup.headers.map(header => (
                                                         <th
                                                             key={header.id}
-                                                            className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-gray-200 bg-gray-50 break-words whitespace-normal relative"
+                                                            className="px-4 py-2 text-left text-xs font-semibold text-secondary-foreground border-b border-border bg-muted break-words whitespace-normal relative"
                                                             style={{ width: header.getSize(), minWidth: header.getSize(), maxWidth: header.getSize() }}
                                                         >
                                                             {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
@@ -828,7 +828,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
                                                                     onDoubleClick={() => header.column.resetSize()}
                                                                     onMouseDown={header.getResizeHandler()}
                                                                     onTouchStart={header.getResizeHandler()}
-                                                                    className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                                    className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                                 />
                                                             )}
                                                         </th>
@@ -863,11 +863,11 @@ const ShopTable: React.FC<ShopTableProps> = ({
 
                                             {/* Data rows */}
                                             {table.getRowModel().rows.map(row => (
-                                                <tr key={row.id} className="border-b border-gray-200" data-fab-type={row.original.fab_type.toLowerCase()}>
+                                                <tr key={row.id} className="border-b border-border" data-fab-type={row.original.fab_type.toLowerCase()}>
                                                     {row.getVisibleCells().map(cell => (
                                                         <td
                                                             key={cell.id}
-                                                            className="px-2 py-1 text-xs text-gray-700 break-words whitespace-normal"
+                                                            className="px-2 py-1 text-xs text-secondary-foreground break-words whitespace-normal"
                                                             style={{ width: cell.column.getSize() }}
                                                         >
                                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}

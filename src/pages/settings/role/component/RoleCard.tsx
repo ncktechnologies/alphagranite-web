@@ -16,14 +16,14 @@ export const RoleCard = ({ role, isSelected, onClick }: RoleCardProps) => {
     <>
     <Card 
       className={`cursor-pointer transition-all hover:shadow-md ${
-        isSelected ? ' border border-[#8BAD2B] bg-[#F0FDF4]' : ''
+        isSelected ? ' border border-[#8BAD2B] bg-primary-soft' : ''
       }`}
       onClick={() => onClick(role)}
     >
       <CardContent className="p-4">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className={` ${isSelected  ? 'text-lg font-normal ' : 'font-bold text-[17px]'} text-black   `}>{role.name}</h3>
+            <h3 className={` ${isSelected  ? 'text-lg font-normal ' : 'font-bold text-[17px]'} text-foreground   `}>{role.name}</h3>
             <Badge 
             //   variant={role.status === 'Active' ? 'default' : 'secondary'}
               className={`${role.status === 1  ? 'bg-[#0BC33F33] text-[#0BC33F]' : 'bg-[#ED143B33] text-[#ED143B]'} px-2 py-1 rounded-[50px] text-sm `}
@@ -38,9 +38,9 @@ export const RoleCard = ({ role, isSelected, onClick }: RoleCardProps) => {
             <span className="text-sm text-text">MEMBERS ({role.member_count})</span>
             <div className="flex -space-x-2">
               {role.top_members?.map((user) => (
-                <Avatar key={user.id} className="w-6 h-6 border-2 border-white">
+                <Avatar key={user.id} className="w-6 h-6 border-2 border-background">
                   <Avatar></Avatar>
-                  <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
+                  <AvatarFallback className="text-xs bg-border text-secondary-foreground">
                     {user.first_name.charAt(0) + user.last_name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>

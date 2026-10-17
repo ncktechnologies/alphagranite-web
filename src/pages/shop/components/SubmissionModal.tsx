@@ -105,8 +105,8 @@ export const ScheduleCuttingModal = ({
         </DialogHeader>
 
         <div className="space-y-2 pt-3 pb-6 border-b">
-          <p className="font-semibold text-black leading-4">FAB-2024-0845</p>
-          <p className="text-sm text-black">Conference Table – Quartz</p>
+          <p className="font-semibold text-foreground leading-4">FAB-2024-0845</p>
+          <p className="text-sm text-foreground">Conference Table – Quartz</p>
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 pt-3">
@@ -194,7 +194,7 @@ export const ScheduleCuttingModal = ({
                 <FormItem>
                   <FormLabel>Assigned operator</FormLabel>
                   <FormControl>
-                    <div className="flex items-center gap-2 border rounded-md px-3 py-2 bg-[#DFDFDF]">
+                    <div className="flex items-center gap-2 border rounded-md px-3 py-2 bg-input">
                       <img
                         src="/images/app/300-2.png"
                         alt="operator"

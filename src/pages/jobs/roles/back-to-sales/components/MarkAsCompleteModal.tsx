@@ -125,7 +125,7 @@ export const MarkAsCompleteModal = ({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Mark as Complete</DialogTitle>
-          <span className="ml-3 text-sm font-normal text-gray-500">
+          <span className="ml-3 text-sm font-normal text-muted-foreground">
             FAB ID: {fabId}
           </span>
         </DialogHeader>

@@ -89,7 +89,7 @@ export function OwnerOverview() {
             accessorKey: 'count',
             header: ({ column }) => <DataGridColumnHeader title="COUNT" column={column} />,
             cell: ({ row }) => (
-                <span className="inline-flex items-center justify-center rounded-full bg-[#eef0f6] text-[#4b545d] text-sm font-semibold px-3 py-0.5 min-w-[36px]">
+                <span className="inline-flex items-center justify-center rounded-full bg-accent text-secondary-foreground text-sm font-semibold px-3 py-0.5 min-w-[36px]">
                     {row.original.count}
                 </span>
             ),
@@ -112,26 +112,26 @@ export function OwnerOverview() {
         columnResizeMode: 'onEnd',
     });
 
-    if (isLoading) return <div className="p-5 text-[#7c8689]">Loading owner overview...</div>;
+    if (isLoading) return <div className="p-5 text-text-foreground">Loading owner overview...</div>;
     if (isError) return <div className="p-5 text-red-500">Error loading report.</div>;
 
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex items-center gap-3 justify-between">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Owner Overview</h1>
+                <h1 className="text-2xl font-semibold text-secondary-foreground">Owner Overview</h1>
                 <BackButton/>
             </div>
             <div>
-                {isFetching && <span className="text-sm text-[#7c8689] animate-pulse">Updating...</span>}
+                {isFetching && <span className="text-sm text-text-foreground animate-pulse">Updating...</span>}
             </div>
 
             {/* KPI Widgets */}
             {kpis.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {kpis.map((kpi) => (
-                        <Card key={kpi.label} className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                            <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider leading-tight">{kpi.label}</p>
-                            <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{kpi.value}</p>
+                        <Card key={kpi.label} className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                            <p className="text-xs text-text-foreground font-medium uppercase tracking-wider leading-tight">{kpi.label}</p>
+                            <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{kpi.value}</p>
                         </Card>
                     ))}
                 </div>
@@ -139,9 +139,9 @@ export function OwnerOverview() {
 
             {/* Stage Breakdown Table */}
             <DataGrid table={table} recordCount={tableData.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
-                <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
-                    <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
-                        <p className="text-base font-semibold text-[#4b545d]">Stage Breakdown</p>
+                <Card className="border border-border rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                    <CardHeader className="py-3 px-5 border-b border-border flex flex-row items-center justify-between bg-background">
+                        <p className="text-base font-semibold text-secondary-foreground">Stage Breakdown</p>
                         <CardToolbar>
                             <Button variant="outline" size="sm" className="h-[34px]" onClick={() => exportTableToCSV(table, 'owner-overview-stage-breakdown')}>
                                 Export CSV
@@ -152,13 +152,13 @@ export function OwnerOverview() {
                         <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
-                                    <thead className="sticky top-0 z-10 bg-white">
+                                    <thead className="sticky top-0 z-10 bg-background">
                                         {table.getHeaderGroups().map(headerGroup => (
                                             <tr key={headerGroup.id}>
                                                 {headerGroup.headers.map(header => (
                                                     <th
                                                         key={header.id}
-                                                        className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50"
+                                                        className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted"
                                                         style={{ width: header.getSize() }}
                                                     >
                                                         {flexRender(header.column.columnDef.header, header.getContext())}
@@ -167,7 +167,7 @@ export function OwnerOverview() {
                                                                 onDoubleClick={() => header.column.resetSize()}
                                                                 onMouseDown={header.getResizeHandler()}
                                                                 onTouchStart={header.getResizeHandler()}
-                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                             />
                                                         )}
                                                     </th>
@@ -177,11 +177,11 @@ export function OwnerOverview() {
                                     </thead>
                                     <tbody>
                                         {table.getRowModel().rows.map(row => (
-                                            <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50">
+                                            <tr key={row.id} className="border-b border-border hover:bg-muted/50">
                                                 {row.getVisibleCells().map(cell => (
                                                     <td
                                                         key={cell.id}
-                                                        className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                        className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0"
                                                         style={{ width: cell.column.getSize() }}
                                                     >
                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -191,7 +191,7 @@ export function OwnerOverview() {
                                         ))}
                                         {tableData.length === 0 && (
                                             <tr>
-                                                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                                                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-text-foreground">
                                                     No data available.
                                                 </td>
                                             </tr>
@@ -202,7 +202,7 @@ export function OwnerOverview() {
                             <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                         </ScrollArea>
                     </CardTable>
-                    <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
+                    <CardFooter className="bg-background border-t border-border px-4 py-2">
                         <DataGridPagination />
                     </CardFooter>
                 </Card>

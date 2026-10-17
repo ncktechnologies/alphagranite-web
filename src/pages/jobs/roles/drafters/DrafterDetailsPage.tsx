@@ -60,7 +60,7 @@ const getFabStatusInfo = (statusId: number | undefined) => {
   } else if (statusId === 1) {
     return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
   } else {
-    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
+    return { className: 'bg-accent text-foreground', text: 'LOADING' };
   }
 };
 
@@ -523,7 +523,7 @@ export function DrafterDetailsPage() {
     return (
       <div className="flex flex-col min-h-screen">
         {/* sticky toolbar skeleton */}
-        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+        <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
           <Skeleton className="h-8 w-72 mb-1" />
           <Skeleton className="h-4 w-48" />
         </div>
@@ -546,10 +546,10 @@ export function DrafterDetailsPage() {
   const statusInfo = getFabStatusInfo(fabData?.status_id);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-muted">
 
       {/* ── Sticky toolbar ──────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+      <div className="sticky top-0 z-10 bg-background border-b shadow-sm">
         <div className="px-3 sm:px-4 lg:px-6">
           <Toolbar className="py-2 sm:py-3">
             <div className="flex items-center justify-between w-full gap-2 flex-wrap">
@@ -562,10 +562,10 @@ export function DrafterDetailsPage() {
                     >
                       {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
                     </a>
-                    <span className="mx-1 text-gray-400">·</span>
+                    <span className="mx-1 text-placeholder">·</span>
                     <a
                       href={jobNumberLink}
-                      className="hover:underline text-gray-600"
+                      className="hover:underline text-secondary-foreground"
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -594,7 +594,7 @@ export function DrafterDetailsPage() {
         <aside
           className={[
             // Mobile: full width, normal flow
-            'w-full bg-white border-b',
+            'w-full bg-background border-b',
             // Desktop: fixed width, sticky, scrollable internally
             'lg:w-[220px] xl:w-[260px] lg:shrink-0',
             'lg:sticky lg:top-[50px]',               // ← adjust to toolbar height
@@ -615,11 +615,11 @@ export function DrafterDetailsPage() {
 
           {viewMode === 'file' && activeFile ? (
             // ── File viewer ─────────────────────────────────────────────────
-            <div className="bg-white rounded-xl border overflow-hidden">
-              <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
+            <div className="bg-background rounded-xl border overflow-hidden">
+              <div className="flex justify-between items-center p-4 bg-muted border-b">
                 <div>
                   <h3 className="font-semibold text-sm">{activeFile.name}</h3>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {formatBytes(activeFile.size)} · {activeFile.stage?.label || activeFile.stage}
                   </p>
                 </div>
@@ -644,16 +644,16 @@ export function DrafterDetailsPage() {
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div>
                       <CardTitle className="text-sm sm:text-base">Drafting activity</CardTitle>
-                      <p className="text-xs text-gray-500 mt-0.5">Update your drafting activity here</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Update your drafting activity here</p>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
-                        idle: 'bg-gray-100 text-gray-800',
+                        idle: 'bg-accent text-foreground',
                         drafting: 'bg-green-100 text-green-800',
                         paused: 'bg-yellow-100 text-yellow-800',
                         on_hold: 'bg-orange-100 text-orange-800',
                         ended: 'bg-blue-100 text-blue-800',
-                      }[sessionStatus] || 'bg-gray-100 text-gray-800'
+                      }[sessionStatus] || 'bg-accent text-foreground'
                         }`}>
                         {{
                           idle: 'Ready to Start',
@@ -727,9 +727,9 @@ export function DrafterDetailsPage() {
                         />
                       </div>
                     ) : (
-                      <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-                        <p className="text-sm text-gray-500">Start the timer to enable file uploads</p>
-                        <p className="text-xs text-gray-400 mt-1">Files will appear here once uploaded</p>
+                      <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
+                        <p className="text-sm text-muted-foreground">Start the timer to enable file uploads</p>
+                        <p className="text-xs text-placeholder mt-1">Files will appear here once uploaded</p>
                       </div>
                     )}
                   </div>

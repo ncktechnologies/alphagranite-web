@@ -218,7 +218,7 @@ export const SubmissionModal = ({
           <div className="border-b">
             <DialogTitle className="text-[16px] font-semibold py-2">
               Submit CNC
-              <span className="ml-3 text-sm font-normal text-gray-500">
+              <span className="ml-3 text-sm font-normal text-muted-foreground">
                 FAB ID: {fabId}
               </span>
             </DialogTitle>
@@ -301,7 +301,7 @@ export const SubmissionModal = ({
                 onCheckedChange={(v) => setIsConfirmed(Boolean(v))}
                 disabled={false}
               />
-              <label className={`font-semibold text-[17px] ${isConfirmed ? 'text-green-600' : 'text-gray-600'}`}>
+              <label className={`font-semibold text-[17px] ${isConfirmed ? 'text-green-600' : 'text-secondary-foreground'}`}>
                CNC Programming Complete
               </label>
             </div>
