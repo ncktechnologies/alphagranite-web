@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatBytes } from '@/hooks/use-file-upload';
@@ -18,6 +18,8 @@ import {
   Filter,
   X,
   File,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -27,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -233,9 +236,14 @@ function FileCard({
   deletePermissionSubject?: string;
 }) {
   const { label: stageLabel, className: stageCls } = resolveStage(file);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
 
   const raw        = (file._raw ?? {}) as any;
   const fileDesign = raw.file_design ?? file.file_design ?? '';
+  const fileType   = raw.file_type ?? '';
+  const category   = getCategory(file.type ?? '');
+  const isImage    = category === 'image';
+  const isPdf      = category === 'pdf';
 
   // Format date with both date and time
   const formattedDate = file.uploadedAt
@@ -249,90 +257,102 @@ function FileCard({
     : null;
 
   return (
-    <div className="relative rounded-lg border border-border p-4 transition-colors hover:border-input-hover bg-background">
-      {/* Top row: icon centred + delete top-right */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex flex-col items-center gap-3 w-full">
-          {/* Icon */}
-          <div className="size-8 flex items-center justify-center rounded">
-            <FileIcon mimeType={file.type ?? ''} className="size-8" />
+    <article className="group overflow-hidden rounded-md border border-border bg-background transition-shadow hover:shadow-md">
+      <button
+        type="button"
+        className="relative block aspect-[16/9] w-full overflow-hidden bg-muted text-left"
+        onClick={() => onView?.(file)}
+        aria-label={`Preview ${file.name}`}
+      >
+        {isImage && file.url && !thumbnailFailed ? (
+          <img
+            src={file.url}
+            alt={file.name}
+            loading="lazy"
+            onError={() => setThumbnailFailed(true)}
+            className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
+        ) : isPdf && file.url ? (
+          <iframe
+            src={`${file.url}${file.url.includes('#') ? '&' : '#'}page=1&toolbar=0&navpanes=0&view=FitH`}
+            title={`Preview of ${file.name}`}
+            tabIndex={-1}
+            className="pointer-events-none size-full border-0 bg-white"
+          />
+        ) : (
+          <div className="flex size-full items-center justify-center">
+            <FileIcon mimeType={file.type ?? ''} className="size-12" />
           </div>
+        )}
+        <span className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+        {(isImage || isPdf) && (
+          <span className="absolute left-3 top-3 rounded-sm bg-black/65 px-2 py-1 text-[11px] font-medium uppercase text-white">
+            {isImage ? 'Image' : 'PDF'}
+          </span>
+        )}
+        {file.size ? (
+          <span className="absolute bottom-3 right-3 rounded-sm bg-black/65 px-2 py-1 text-xs text-white">
+            {formatBytes(file.size)}
+          </span>
+        ) : null}
+      </button>
 
-          {/* Name + meta */}
-          <div className="flex-1 min-w-0 w-full">
-            <p
-              className="text-[15px] text-foreground font-bold truncate cursor-pointer hover:text-primary"
-              title={file.name}
-              onClick={() => onView?.(file)}
-            >
-              {file.name}
-            </p>
-
-            <div className="flex flex-wrap items-center gap-2 mt-1">
-              {/* Size */}
-              {file.size ? (
-                <span className="text-xs text-muted-foreground">{formatBytes(file.size)}</span>
-              ) : null}
-
-              {/* Stage */}
-              <span className={cn('w-fit', stageCls)}>{stageLabel}</span>
-
-              {/* File design */}
-              {fileDesign && (
-                <span className="text-xs text-muted-foreground bg-blue-50 px-2 py-0.5 rounded">
-                  {fileDesign.replace(/_/g, ' ')}
-                </span>
-              )}
-
-              {/* Uploader */}
-              {(file.uploaded_by_name ?? file.uploadedBy) && (
-                <span className="text-xs text-muted-foreground bg-blue-50 px-2 py-0.5 rounded">
-                  {file.uploaded_by_name ?? file.uploadedBy}
-                </span>
-              )}
-
-              {/* Date + Time (NEW) */}
-              {formattedDate && (
-                <span className="text-xs text-muted-foreground">
-                  {formattedDate}
-                </span>
-              )}
-            </div>
-          </div>
+      <div className="space-y-3 p-3.5">
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <button
+            type="button"
+            className="min-w-0 truncate text-left text-sm font-semibold text-foreground hover:text-primary"
+            title={file.name}
+            onClick={() => onView?.(file)}
+          >
+            {file.name}
+          </button>
+          {onDelete && (
+            deletePermissionSubject ? (
+              <Can action="delete" on={deletePermissionSubject}>
+                <button
+                  type="button"
+                  className="flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => onDelete(file)}
+                  aria-label={`Delete ${file.name}`}
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              </Can>
+            ) : (
+              <button
+                type="button"
+                className="flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => onDelete(file)}
+                aria-label={`Delete ${file.name}`}
+              >
+                <Trash2 className="size-4" />
+              </button>
+            )
+          )}
         </div>
 
-        {/* Delete — top right */}
-        {onDelete && (
-          deletePermissionSubject ? (
-            <Can action="delete" on={deletePermissionSubject}>
-              <button
-                className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0"
-                onClick={(e) => { e.stopPropagation(); onDelete(file); }}
-              >
-                <X className="size-6" />
-              </button>
-            </Can>
-          ) : (
-            <button
-              className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0"
-              onClick={(e) => { e.stopPropagation(); onDelete(file); }}
-            >
-              <X className="size-6" />
-            </button>
-          )
-        )}
-      </div>
+        <div className="flex min-h-6 flex-wrap items-center gap-1.5">
+          <span className={cn('w-fit', stageCls)}>{stageLabel}</span>
+          {fileType && (
+            <span className="rounded-sm bg-accent px-2 py-0.5 text-xs font-medium uppercase text-secondary-foreground">
+              {fileType}
+            </span>
+          )}
+          {fileDesign && (
+            <span className="rounded-sm bg-blue-50 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
+              {fileDesign.replace(/_/g, ' ')}
+            </span>
+          )}
+        </div>
 
-      {/* View button */}
-          <Button
-            onClick={() => onView?.(file)}
-        variant="ghost"
-        size="sm"
-        className="h-8 w-8 p-0"
-        title="View file"
-      >
-        <Eye className="w-4 h-4 text-blue-500" />
-      </Button>
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-border pt-2 text-xs text-muted-foreground">
+          <span className="truncate" title={file.uploaded_by_name ?? file.uploadedBy}>
+            {file.uploaded_by_name ?? file.uploadedBy ?? 'Unknown uploader'}
+          </span>
+          {formattedDate && <time className="shrink-0">{formattedDate}</time>}
+        </div>
+      </div>
     </div>
   );
 }
@@ -482,6 +502,7 @@ export function FileGallery({
   const [layout, setLayout]         = useState<'card' | 'table'>(defaultLayout);
   const [search, setSearch]         = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [previewFileId, setPreviewFileId] = useState<string | null>(null);
 
   // Merge + normalise all sources, deduplicate by id
   const allFiles = useMemo(() => {
@@ -514,6 +535,33 @@ export function FileGallery({
     });
   }, [allFiles, search, typeFilter]);
 
+  const previewFiles = useMemo(
+    () => filtered.filter((file) => ['image', 'pdf'].includes(getCategory(file.type ?? ''))),
+    [filtered]
+  );
+  const previewIndex = previewFiles.findIndex((file) => String(file.id) === previewFileId);
+  const previewFile = previewFiles[previewIndex] ?? null;
+
+  const movePreview = useCallback((direction: -1 | 1) => {
+    const nextFile = previewFiles[previewIndex + direction];
+    if (nextFile) setPreviewFileId(String(nextFile.id));
+  }, [previewFiles, previewIndex]);
+
+  useEffect(() => {
+    if (!previewFile) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft' && previewIndex > 0) {
+        event.preventDefault();
+        movePreview(-1);
+      } else if (event.key === 'ArrowRight' && previewIndex < previewFiles.length - 1) {
+        event.preventDefault();
+        movePreview(1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [movePreview, previewFile, previewFiles.length, previewIndex]);
+
   const handleView   = useCallback((file: UnifiedFile) => { onFileClick?.(file);  }, [onFileClick]);
   const handleDelete = useCallback((file: UnifiedFile) => { onDeleteFile?.(file); }, [onDeleteFile]);
 
@@ -542,6 +590,11 @@ export function FileGallery({
     const isModel = String(file.type || '').startsWith('model/');
     if (isModel) {
       openViewer(file);
+      return;
+    }
+    const category = getCategory(file.type ?? '');
+    if (category === 'image' || category === 'pdf') {
+      setPreviewFileId(String(file.id));
       return;
     }
     onFileClick?.(file);
@@ -582,6 +635,82 @@ export function FileGallery({
           </div>
         </div>
       )}
+
+      <Dialog
+        open={Boolean(previewFile)}
+        onOpenChange={(open) => { if (!open) setPreviewFileId(null); }}
+      >
+        <DialogContent
+          variant="fullscreen"
+          className="overflow-hidden border-0 bg-neutral-950 p-0 text-white sm:rounded-none [&>button]:text-white [&>button]:hover:bg-white/10"
+        >
+          {previewFile && (
+            <>
+              <DialogTitle className="sr-only">{previewFile.name}</DialogTitle>
+              <div className="flex min-h-16 items-center gap-4 border-b border-white/10 px-5 py-3 pr-16">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{previewFile.name}</p>
+                  <p className="mt-1 truncate text-xs text-white/60">
+                    {[previewFile.size ? formatBytes(previewFile.size) : null,
+                      resolveStage(previewFile).label,
+                      (previewFile._raw as any)?.file_design ?? previewFile.file_design,
+                      previewFile.uploaded_by_name ?? previewFile.uploadedBy,
+                      previewFile.uploadedAt ? new Date(previewFile.uploadedAt).toLocaleString() : null]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                </div>
+                <span className="shrink-0 text-xs tabular-nums text-white/60">
+                  {previewIndex + 1} / {previewFiles.length}
+                </span>
+              </div>
+              <div className="relative flex min-h-0 flex-1 items-center justify-center bg-neutral-950 p-4 sm:p-8">
+                {getCategory(previewFile.type ?? '') === 'image' ? (
+                  <img
+                    key={String(previewFile.id)}
+                    src={previewFile.url}
+                    alt={previewFile.name}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                ) : (
+                  <iframe
+                    key={String(previewFile.id)}
+                    src={previewFile.url}
+                    title={previewFile.name}
+                    className="size-full max-w-5xl bg-white"
+                  />
+                )}
+                {previewIndex > 0 && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="absolute left-4 top-1/2 size-11 -translate-y-1/2 rounded-full shadow-lg"
+                    onClick={() => movePreview(-1)}
+                    aria-label="Previous file"
+                    title="Previous file (Left arrow)"
+                  >
+                    <ChevronLeft className="size-5" />
+                  </Button>
+                )}
+                {previewIndex < previewFiles.length - 1 && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="absolute right-4 top-1/2 size-11 -translate-y-1/2 rounded-full shadow-lg"
+                    onClick={() => movePreview(1)}
+                    aria-label="Next file"
+                    title="Next file (Right arrow)"
+                  >
+                    <ChevronRight className="size-5" />
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Toolbar */}
       {showToolbar && (
@@ -699,7 +828,7 @@ export function FileGallery({
             <FileCard
               key={String(file.id)}
               file={file}
-              onView={onFileClick   ? handleViewIntercept   : undefined}
+              onView={handleViewIntercept}
               onDelete={onDeleteFile ? handleDelete : undefined}
               deletePermissionSubject={deletePermissionSubject}
             />
@@ -728,7 +857,7 @@ export function FileGallery({
                 <FileRow
                   key={String(file.id)}
                   file={file}
-                  onView={onFileClick   ? handleViewIntercept   : undefined}
+                  onView={handleViewIntercept}
                   onDelete={onDeleteFile ? handleDelete : undefined}
                   deletePermissionSubject={deletePermissionSubject}
                 />
