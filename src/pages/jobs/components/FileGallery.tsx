@@ -353,7 +353,7 @@ function FileCard({
           {formattedDate && <time className="shrink-0">{formattedDate}</time>}
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
