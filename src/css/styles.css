@@ -35,6 +35,16 @@
   .dark [data-fab-type]:hover {
     background-color: color-mix(in oklab, var(--fab-row) 30%, var(--card));
   }
+  /* Rows that tint cells inline from --fab-row (shop status): --fab-tint is the cell color,
+     --fab-track the unfilled part of a progress cell */
+  [data-fab-tint] {
+    --fab-tint: var(--fab-row);
+    --fab-track: #ffffff;
+  }
+  .dark [data-fab-tint] {
+    --fab-tint: color-mix(in oklab, var(--fab-row) 30%, var(--card));
+    --fab-track: var(--card);
+  }
   tr {
     transition: background-color 0.2s ease;
   }

@@ -1279,21 +1279,25 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                                                                                 return (
                                                                                     <>
-                                                                                        <tr className="border-b border-border transition-colors">
+                                                                                        <tr
+                                                                                            className="border-b border-border transition-colors"
+                                                                                            data-fab-tint
+                                                                                            style={{ '--fab-row': rowBgColor } as React.CSSProperties}
+                                                                                        >
                                                                                             {parentRow.getVisibleCells().map(cell => {
                                                                                                 const columnId = cell.column.id;
                                                                                                 let cellStyle = {};
 
                                                                                                 if (parentRow.original.type === 'fab') {
                                                                                                     if (stageColumnIds.has(columnId)) {
+                                                                                                        // Colors come from the row's [data-fab-tint] vars so dark mode can tone them down
                                                                                                         const percent = getStagePercent(parentRow.original.data, columnId);
-                                                                                                        const bgColor = getFabColor(parentRow.original.data.fab_type);
                                                                                                         cellStyle = {
-                                                                                                            background: `linear-gradient(to right, ${bgColor} 0%, ${bgColor} ${percent}%, white ${percent}%, white 100%)`,
+                                                                                                            background: `linear-gradient(to right, var(--fab-tint) 0%, var(--fab-tint) ${percent}%, var(--fab-track) ${percent}%, var(--fab-track) 100%)`,
                                                                                                         };
                                                                                                     } else {
                                                                                                         cellStyle = {
-                                                                                                            backgroundColor: rowBgColor,
+                                                                                                            backgroundColor: 'var(--fab-tint)',
                                                                                                         };
                                                                                                     }
                                                                                                 }
