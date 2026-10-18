@@ -6,6 +6,7 @@ export const APP_SETTINGS: Settings = {
   layouts: {
     demo1: {
       sidebarCollapse: true,
+      sidebarHoverExpand: true,
       sidebarTheme: 'light',
     },
     demo2: {

@@ -74,30 +74,31 @@
         var(--sidebar-transition-timing);
     }
 
-    .demo1.sidebar-collapse .sidebar:hover {
+    /* .sidebar-hover-lock: user turned off expand-on-hover, the collapsed rail stays put */
+    .demo1.sidebar-collapse:not(.sidebar-hover-lock) .sidebar:hover {
       width: var(--sidebar-default-width);
       box-shadow: 8px 0 32px -12px rgb(20 28 12 / 0.35);
     }
 
     /* !important: must beat utility-layer display classes on the same elements */
-    .demo1.sidebar-collapse .sidebar:not(:hover) .sidebar-footer-label {
+    .demo1.sidebar-collapse .sidebar:is(:not(:hover), .sidebar-hover-lock *) .sidebar-footer-label {
       display: none !important;
     }
 
-    .demo1.sidebar-collapse .sidebar:not(:hover) .default-logo {
+    .demo1.sidebar-collapse .sidebar:is(:not(:hover), .sidebar-hover-lock *) .default-logo {
       display: none;
     }
 
-    .demo1.sidebar-collapse .sidebar:not(:hover) .small-logo {
+    .demo1.sidebar-collapse .sidebar:is(:not(:hover), .sidebar-hover-lock *) .small-logo {
       display: flex;
     }
 
     .demo1.sidebar-collapse
-      .sidebar:not(:hover)
+      .sidebar:is(:not(:hover), .sidebar-hover-lock *)
       [data-slot='accordion-menu-title'],
-    .demo1.sidebar-collapse .sidebar:not(:hover) [data-slot='badge'],
+    .demo1.sidebar-collapse .sidebar:is(:not(:hover), .sidebar-hover-lock *) [data-slot='badge'],
     .demo1.sidebar-collapse
-      .sidebar:not(:hover)
+      .sidebar:is(:not(:hover), .sidebar-hover-lock *)
       [data-slot='accordion-menu-sub-indicator'] {
       display: none !important;
       transition: none !important;
@@ -105,7 +106,7 @@
     }
 
     .demo1.sidebar-collapse
-      .sidebar:not(:hover)
+      .sidebar:is(:not(:hover), .sidebar-hover-lock *)
       [data-slot='accordion-menu-sub-content'] {
       visibility: hidden;
       position: absolute;
@@ -114,14 +115,14 @@
     }
 
     .demo1.sidebar-collapse
-      .sidebar:not(:hover)
+      .sidebar:is(:not(:hover), .sidebar-hover-lock *)
       [data-slot='accordion-menu-label'] {
       visibility: hidden;
       position: relative;
     }
 
     .demo1.sidebar-collapse
-      .sidebar:not(:hover)
+      .sidebar:is(:not(:hover), .sidebar-hover-lock *)
       [data-slot='accordion-menu-label']::before {
       content: '...';
       color: currentColor;
