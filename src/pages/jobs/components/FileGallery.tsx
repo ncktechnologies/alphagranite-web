@@ -5,11 +5,6 @@ import { formatBytes } from '@/hooks/use-file-upload';
 import { WORKFLOW_STAGES, getFileStage, getStageBadge, normalizeStageKey } from '@/utils/file-labeling';
 import { Can } from '@/components/permission';
 import {
-  FileTextIcon,
-  FileArchiveIcon,
-  HeadphonesIcon,
-  VideoIcon,
-  FileSpreadsheetIcon,
   Trash2,
   Eye,
   LayoutGrid,
@@ -22,6 +17,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { FileThumbnail } from '@/components/file-list/FileThumbnail';
 import {
   Select,
   SelectContent,
@@ -206,22 +202,6 @@ const normaliseSource = (source: FileSource): UnifiedFile[] => {
   }
 };
 
-// ─── File icon ────────────────────────────────────────────────────────────────
-
-function FileIcon({ mimeType, className }: { mimeType: string; className?: string }) {
-  const cat = getCategory(mimeType);
-  const cls = cn('shrink-0', className);
-  if (cat === 'image')   return <img src="/images/app/img.svg"  alt="img"  className={cls} />;
-  if (cat === 'pdf')     return <img src="/images/app/pdf.svg"  alt="pdf"  className={cls} />;
-  if (cat === 'doc')     return <img src="/images/app/doc.svg"  alt="doc"  className={cls} />;
-  if (cat === 'video')   return <VideoIcon           className={cn('text-red-500',    cls)} />;
-  if (cat === 'audio')   return <HeadphonesIcon      className={cn('text-purple-500', cls)} />;
-  if (cat === 'sheet')   return <FileSpreadsheetIcon className={cn('text-green-600',  cls)} />;
-  if (cat === 'archive') return <FileArchiveIcon     className={cn('text-amber-500',  cls)} />;
-  if (cat === 'model')   return <LayoutGrid className={cn('text-indigo-600', cls)} />;
-  return <FileTextIcon className={cn('text-muted-foreground', cls)} />;
-}
-
 // ─── Card view ────────────────────────────────────────────────────────────────
 
 function FileCard({
@@ -236,8 +216,6 @@ function FileCard({
   deletePermissionSubject?: string;
 }) {
   const { label: stageLabel, className: stageCls } = resolveStage(file);
-  const [thumbnailFailed, setThumbnailFailed] = useState(false);
-
   const raw        = (file._raw ?? {}) as any;
   const fileDesign = raw.file_design ?? file.file_design ?? '';
   const fileType   = raw.file_type ?? '';
@@ -264,26 +242,12 @@ function FileCard({
         onClick={() => onView?.(file)}
         aria-label={`Preview ${file.name}`}
       >
-        {isImage && file.url && !thumbnailFailed ? (
-          <img
-            src={file.url}
-            alt={file.name}
-            loading="lazy"
-            onError={() => setThumbnailFailed(true)}
-            className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-          />
-        ) : isPdf && file.url ? (
-          <iframe
-            src={`${file.url}${file.url.includes('#') ? '&' : '#'}page=1&toolbar=0&navpanes=0&view=FitH`}
-            title={`Preview of ${file.name}`}
-            tabIndex={-1}
-            className="pointer-events-none size-full border-0 bg-white"
-          />
-        ) : (
-          <div className="flex size-full items-center justify-center">
-            <FileIcon mimeType={file.type ?? ''} className="size-12" />
-          </div>
-        )}
+        <FileThumbnail
+          fileName={file.name}
+          mimeType={file.type}
+          src={file.url}
+          className="size-full aspect-auto rounded-none transition-transform duration-300 group-hover:scale-[1.03]"
+        />
         <span className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
         {(isImage || isPdf) && (
           <span className="absolute left-3 top-3 rounded-sm bg-black/65 px-2 py-1 text-[11px] font-medium uppercase text-white">
@@ -385,9 +349,12 @@ function FileRow({
       {/* Icon + name + size */}
       <td className="py-3 px-4">
         <div className="flex items-center gap-3">
-          <div className="size-8 flex items-center justify-center rounded-lg bg-accent shrink-0">
-            <FileIcon mimeType={file.type ?? ''} className="size-4" />
-          </div>
+          <FileThumbnail
+            fileName={file.name}
+            mimeType={file.type}
+            src={file.url}
+            className="size-10 shrink-0 aspect-square rounded-md border border-border"
+          />
           <div className="min-w-0">
             <p
               className="text-sm font-semibold text-foreground truncate max-w-[220px]"

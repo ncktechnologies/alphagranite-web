@@ -30,6 +30,7 @@ import { toAbsoluteUrl } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAddFilesToSlabSmithMutation } from '@/store/api/job';
+import { FileThumbnail } from '@/components/file-list/FileThumbnail';
 
 interface FileUploadItem extends FileWithPreview {
   progress: number;
@@ -417,46 +418,62 @@ export function UploadDocuments({
               )}
             >
               <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <div className={cn(
-                    'size-8 shrink-0 relative flex items-center justify-center rounded',
-                    fileItem.status === 'uploading' ? 'text-primary' : 'text-muted-foreground/80'
-                  )}>
-                    {fileItem.status === 'uploading' ? (
-                      <div className="relative">
-                        <svg className="size-8 -rotate-90" viewBox="0 0 32 32">
-                          <circle
-                            cx="16"
-                            cy="16"
-                            r="14"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            className="text-muted-foreground/20"
-                          />
-                          <circle
-                            cx="16"
-                            cy="16"
-                            r="14"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeDasharray={`${2 * Math.PI * 14}`}
-                            strokeDashoffset={`${2 * Math.PI * 14 * (1 - fileItem.progress / 100)}`}
-                            className="text-primary transition-all duration-300"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                  {fileItem.file.type.startsWith('image/') || fileItem.file.type.includes('pdf') || /\.(jpe?g|png|gif|webp|avif|svg|pdf)$/i.test(fileItem.file.name) ? (
+                    <div className="relative w-32 shrink-0 overflow-hidden rounded-md border border-border">
+                      <FileThumbnail
+                        fileName={fileItem.file.name}
+                        mimeType={fileItem.file.type}
+                        src={fileItem.preview}
+                        className="aspect-[4/3]"
+                      />
+                      {fileItem.status === 'uploading' && (
+                        <span className="absolute bottom-2 right-2 rounded-sm bg-black/70 px-1.5 py-0.5 text-xs text-white">
+                          {Math.round(fileItem.progress)}%
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={cn(
+                      'size-8 shrink-0 relative flex items-center justify-center rounded',
+                      fileItem.status === 'uploading' ? 'text-primary' : 'text-muted-foreground/80'
+                    )}>
+                      {fileItem.status === 'uploading' ? (
+                        <div className="relative">
+                          <svg className="size-8 -rotate-90" viewBox="0 0 32 32">
+                            <circle
+                              cx="16"
+                              cy="16"
+                              r="14"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              className="text-muted-foreground/20"
+                            />
+                            <circle
+                              cx="16"
+                              cy="16"
+                              r="14"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeDasharray={`${2 * Math.PI * 14}`}
+                              strokeDashoffset={`${2 * Math.PI * 14 * (1 - fileItem.progress / 100)}`}
+                              className="text-primary transition-all duration-300"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            {getFileIcon(fileItem.file)}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center">
                           {getFileIcon(fileItem.file)}
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center">
-                        {getFileIcon(fileItem.file)}
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-[15px] text-foreground font-bold truncate">{fileItem.file.name}</p>
                     <p className="text-xs text-muted-foreground">
