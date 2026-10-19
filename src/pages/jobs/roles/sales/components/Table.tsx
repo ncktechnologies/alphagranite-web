@@ -97,6 +97,8 @@ interface JobTableProps {
     canAddNote?: boolean;
     canToggleOnHold?: boolean;
     canExport?: boolean;
+    statusFilter?: 'all' | 'active' | 'on_hold';
+    onStatusFilterChange?: (value: 'all' | 'active' | 'on_hold') => void;
 }
 
 export const JobSalesTable = ({
@@ -133,6 +135,8 @@ export const JobSalesTable = ({
     canAddNote = false,
     canToggleOnHold = false,
     canExport = false,
+    statusFilter = 'all',
+    onStatusFilterChange,
 }: JobTableProps) => {
     const [localSelectedRows, setLocalSelectedRows] = useState<string[]>([]);
     const [localPagination, setLocalPagination] = useState<PaginationState>({
@@ -1542,6 +1546,21 @@ export const JobSalesTable = ({
                                     <SelectItem value="all">All Install Status</SelectItem>
                                     <SelectItem value="complete">Complete</SelectItem>
                                     <SelectItem value="incomplete">Incomplete</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            {/* FAB status filter */}
+                            <Select
+                                value={statusFilter}
+                                onValueChange={(value) => onStatusFilterChange?.(value as typeof statusFilter)}
+                            >
+                                <SelectTrigger className="w-[150px] h-[34px]">
+                                    <SelectValue placeholder="FAB Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All FAB Statuses</SelectItem>
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="on_hold">On Hold</SelectItem>
                                 </SelectContent>
                             </Select>
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router';
 import { Container } from '@/components/common/container';
@@ -72,6 +72,7 @@ const transformFabToJob = (fab: Fab): IJob => {
 export function SalesPage() {
     const location = useLocation();
     const isNewFabForm = location.pathname.includes('/new-fab-id');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'on_hold'>('all');
     const isSuperAdmin = useIsSuperAdmin();
     const permissions = usePermission('View all FABS');
 
@@ -106,6 +107,7 @@ export function SalesPage() {
             skip,
             limit: tableState.pagination.pageSize,
         };
+        if (statusFilter !== 'all') params.status_id = statusFilter === 'active' ? 1 : 0;
         if (tableState.searchQuery) {
             params.search = tableState.searchQuery;
             params.type = (tableState as any).searchType || 'fab_id';
@@ -147,6 +149,7 @@ export function SalesPage() {
         tableState.dateFilter,
         tableState.dateRange,
         salesPersons,
+        statusFilter,
     ]);
 
     const { data, isLoading, error, isError } = useGetFabsQuery(queryParams);
@@ -224,6 +227,11 @@ export function SalesPage() {
                     useBackendPagination={true}
                     totalRecords={data?.total || 0}
                     tableState={tableState}
+                    statusFilter={statusFilter}
+                    onStatusFilterChange={(value) => {
+                        setStatusFilter(value);
+                        tableState.setPagination((previous) => ({ ...previous, pageIndex: 0 }));
+                    }}
                     showSalesPersonFilter={true}
                     showScheduleFilter={false}
                     salesPersons={salesPersons}

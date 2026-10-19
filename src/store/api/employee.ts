@@ -69,7 +69,7 @@ export interface EmployeeListParams {
     limit?: number;
     search?: string;
     department_id?: number;
-    status_id?: number;
+    status_id?: number | null;
     role_id?: number;
     email?: string;
     phone?: string;
@@ -103,7 +103,7 @@ export const employeeApi = createApi({
                             limit: queryParams.limit || 100,
                             ...(queryParams.search && { search: queryParams.search }),
                             ...(queryParams.department_id !== undefined && { department_id: queryParams.department_id }),
-                            ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
+                            ...(queryParams.status_id === null ? {} : { status_id: queryParams.status_id ?? 1 }),
                             ...(queryParams.role_id !== undefined && { role_id: queryParams.role_id }),
                             ...(queryParams.email && { email: queryParams.email }),
                             ...(queryParams.phone && { phone: queryParams.phone }),

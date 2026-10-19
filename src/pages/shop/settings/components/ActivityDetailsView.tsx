@@ -24,7 +24,7 @@ export function ActivityDetailsView({ activity, onEdit, onDelete, onToggleStatus
           {/* Header with actions */}
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-2xl font-semibold text-foreground">{activity.plan_name}</h2>
+              <h2 className="text-2xl font-semibold text-foreground">{activity?.plan_name}</h2>
               <p className="text-sm text-muted-foreground mt-1">Shop Activity Details</p>
             </div>
             <div className="flex flex-col items-end gap-2">

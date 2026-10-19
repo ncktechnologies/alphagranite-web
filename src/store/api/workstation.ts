@@ -46,6 +46,7 @@ export interface WorkstationListParams {
   planning_section_id?: number;
   workstation_id?: number;
   operator_id?: number;
+  status_id?: number | null;
 }
 
 export interface WorkstationListResponse {
@@ -103,6 +104,7 @@ export const workstationApi = createApi({
               ...(queryParams.planning_section_id !== undefined && { planning_section_id: queryParams.planning_section_id }),
               ...(queryParams.workstation_id !== undefined && { workstation_id: queryParams.workstation_id }),
               ...(queryParams.operator_id !== undefined && { operator_id: queryParams.operator_id }),
+              ...(queryParams.status_id === null ? {} : { status_id: queryParams.status_id ?? 1 }),
             }
           };
         },

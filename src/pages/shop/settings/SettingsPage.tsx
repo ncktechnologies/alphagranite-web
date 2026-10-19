@@ -35,6 +35,7 @@ import {
 } from '@/store/api/job';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function SettingsPage() {
     const [viewMode, setViewMode] = useState<ViewMode>('details');
@@ -44,6 +45,7 @@ function SettingsPage() {
     const [editingName, setEditingName] = useState('');
     const [editingDescription, setEditingDescription] = useState('');
     const [editingIsActive, setEditingIsActive] = useState<boolean>(true);
+    const [workstationStatusFilter, setWorkstationStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
     // Stone types state
     const [selectedStoneTypeId, setSelectedStoneTypeId] = useState<number | null>(null);
@@ -58,7 +60,9 @@ function SettingsPage() {
     const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
 
     // Fetch workstations from API
-    const { data: workstationsData, isLoading, isError, refetch } = useGetWorkstationsQuery();
+    const { data: workstationsData, isLoading, isError, refetch } = useGetWorkstationsQuery({
+        status_id: workstationStatusFilter === 'all' ? null : workstationStatusFilter === 'active' ? 1 : 2,
+    });
 
     // Fetch all planning sections (including inactive)
     const { data: planningSectionsData, refetch: refetchPlanningSections } = useGetAllPlanningSectionsQuery();
@@ -419,6 +423,21 @@ function SettingsPage() {
                             <TabsTrigger value="workstations">Workstations</TabsTrigger>
                             <TabsTrigger value="activities">Shop Activities</TabsTrigger>
                         </TabsList>
+                        {activeTab === 'workstations' && (
+                            <Select
+                                value={workstationStatusFilter}
+                                onValueChange={(value) => setWorkstationStatusFilter(value as typeof workstationStatusFilter)}
+                            >
+                                <SelectTrigger className="w-[140px] h-[34px]">
+                                    <SelectValue placeholder="Workstation status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Statuses</SelectItem>
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="inactive">Inactive</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
                     </CardHeader>
 
                     <TabsContent value="workstations" className="mt-0">

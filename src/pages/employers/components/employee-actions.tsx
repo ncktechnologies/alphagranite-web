@@ -37,7 +37,7 @@ export const EmployeeActions = ({ employee, onView, onEdit, onDelete }: Employee
                     </DropdownMenuItem>
                 </Can>
 
-                <Can action="delete" on="employees">
+                <Can action="create" on="employees">
                     <DropdownMenuItem
                         variant="destructive"
                         onClick={() => onDelete(employee)}

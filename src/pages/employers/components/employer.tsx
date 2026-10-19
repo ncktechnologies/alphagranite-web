@@ -41,6 +41,15 @@ import { toast } from 'sonner';
 import { EmployeeActions } from './employee-actions';
 import { usePermission } from '@/hooks/use-permission';
 import { Can } from '@/components/permission';
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const StatusBadge = ({ status }: { status: string }) => {
     const colors: Record<string, string> = {
@@ -69,6 +78,8 @@ const Employees = () => {
     const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
     const [selectedStatus, setSelectedStatus] = useState<string>('all');
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+    const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
+    const [isDeletingEmployee, setIsDeletingEmployee] = useState(false);
     const [sheetMode, setSheetMode] = useState<'create' | 'edit' | 'view'>('create');
     const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -78,6 +89,7 @@ const Employees = () => {
         limit: pagination.pageSize,
         ...(searchQuery && { search: searchQuery }),
         ...(selectedDepartment !== 'all' && { department_id: parseInt(selectedDepartment) }),
+        ...(selectedStatus === 'all' && { status_id: null }),
         ...(selectedStatus !== 'all' && { status_id: parseInt(selectedStatus) }),
     });
 
@@ -119,15 +131,24 @@ const Employees = () => {
         setIsSheetOpen(true);
     };
 
-    const handleDelete = async (employee: Employee) => {
-        if (window.confirm(`Are you sure you want to delete ${employee.first_name} ${employee.last_name}?`)) {
-            try {
-                await deleteEmployee(employee.id).unwrap();
-                toast.success('Employee deleted successfully');
-                refetch();
-            } catch (error) {
-                toast.error('Failed to delete employee');
-            }
+    const handleDelete = (employee: Employee) => {
+        setEmployeeToDelete(employee);
+    };
+
+    const confirmDeleteEmployee = async () => {
+        if (!employeeToDelete) return;
+
+        setIsDeletingEmployee(true);
+        try {
+            await deleteEmployee(employeeToDelete.id).unwrap();
+            toast.success('Employee deleted successfully');
+            setEmployeeToDelete(null);
+            refetch();
+        } catch (error) {
+            console.error('Failed to delete employee:', error);
+            // toast.error('Failed to delete employee');
+        } finally {
+            setIsDeletingEmployee(false);
         }
     };
 
@@ -290,6 +311,35 @@ const Employees = () => {
 
     return (
         <>
+            <AlertDialog
+                open={employeeToDelete !== null}
+                onOpenChange={(open) => {
+                    if (!open && !isDeletingEmployee) setEmployeeToDelete(null);
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete employee?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete{' '}
+                            <span className="font-medium text-foreground">
+                                {employeeToDelete?.first_name} {employeeToDelete?.last_name}
+                            </span>
+                            ? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeletingEmployee}>Cancel</AlertDialogCancel>
+                        <Button
+                            variant="destructive"
+                            onClick={confirmDeleteEmployee}
+                            disabled={isDeletingEmployee}
+                        >
+                            {isDeletingEmployee ? 'Deleting...' : 'Delete'}
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <EmployeeFormSheet
                 trigger={<></>}
                 employee={selectedEmployee || undefined}
