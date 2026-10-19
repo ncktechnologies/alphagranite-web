@@ -191,7 +191,7 @@ export function ResurfacingPage() {
                 tableState={tableState}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}
-                visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft']}
+                visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'resurfacing_notes']}
                 path="resurfacing"
                 showDateFilter={false}
                 canAddNote={canAddNote}

@@ -1422,7 +1422,7 @@ export const jobApi = createApi({
                         url: "/accounts/all",
                         method: "get",
                         params: {
-                            skip: queryParams.skip || 0,
+                            skip: queryParams.skip ,
                             // No limit unless the caller asks for one; the API returns every account by default
                             ...(queryParams.limit !== undefined && { limit: queryParams.limit }),
                             ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),

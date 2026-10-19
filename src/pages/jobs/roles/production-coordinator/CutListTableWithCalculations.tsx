@@ -58,7 +58,7 @@ const formatDateForExport = (value: any): string => {
     try {
         const date = new Date(value);
         if (!isNaN(date.getTime())) return format(date, 'MMM dd, yyyy');
-    } catch {}
+    } catch { }
     return String(value);
 };
 
@@ -102,10 +102,10 @@ export interface CalculatedCutListData {
     // ✨ New fields
     wj_miter_lnft?: number;
     saw_miter_lnft?: number;
-    cost_of_stone: number;
+    cost_of_stone: number | null;
     revenue: number;
     fp_completed: string;
-    cip: string;
+    gp: number | null;
     install_date: string;
     sales_person?: string;
     shop_date_schedule: string;
@@ -128,12 +128,7 @@ export interface CalculatedCutListData {
 export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
     const fabWithExtraFields = fab as any;
 
-    const calculateCostOfStone = (): number => {
-        if (fab?.cost_of_stone) {
-            return parseFloat(fab.cost_of_stone.toString()) * 0.6;
-        }
-        return (fab.cost_of_stone || 0) * 50;
-    };
+
 
     return {
         id: fab.id,
@@ -154,10 +149,10 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         // ✨ Map new fields
         wj_miter_lnft: fabWithExtraFields.wj_miter_lnft || 0,
         saw_miter_lnft: fabWithExtraFields.saw_miter_lnft || 0,
-        cost_of_stone: fabWithExtraFields.cost_of_stone || 0,
+        cost_of_stone: fabWithExtraFields.cost_of_stone || null,
         revenue: fabWithExtraFields.revenue || 0,
         fp_completed: fabWithExtraFields.final_programming_complete ? 'Yes' : 'No',
-        cip: '',
+        gp: fabWithExtraFields.gp || null,
         install_date: fabWithExtraFields.installation_date || '',
         shop_date_schedule: fabWithExtraFields.shop_date_schedule || '',
         sales_person: fabWithExtraFields.sales_person_name || '',
@@ -393,15 +388,15 @@ export const CutListTableWithCalculations = ({
                         <div className="flex gap-4 text-xs max-w-[400px]">
                             {jobInfo.length > 0 && (
                                 <div className="flex-1 min-w-0">
-                                    <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>{jobInfo.join(' - ')}</div>
+                                    <div className=" text-gray-600" title={jobInfo.join(' - ')}>{jobInfo.join(' - ')}</div>
                                     {stoneInfo.length > 0 && (
-                                        <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>{stoneInfo.join(' - ')}</div>
+                                        <div className=" text-gray-600" title={stoneInfo.join(' - ')}>{stoneInfo.join(' - ')}</div>
                                     )}
                                 </div>
                             )}
                             {materialInfo.length > 0 && (
                                 <div className="shrink-0 max-w-[45%] text-right">
-                                    <div className="truncate text-gray-600" title={materialInfo.join(' - ')}>{materialInfo.join(' - ')}</div>
+                                    <div className=" text-gray-600" title={materialInfo.join(' - ')}>{materialInfo.join(' - ')}</div>
                                 </div>
                             )}
                         </div>
@@ -502,9 +497,17 @@ export const CutListTableWithCalculations = ({
                 meta: { format: (value: number) => formatNumber(value, 2) },
             },
             {
-                id: 'cost_of_stone', accessorKey: 'cost_of_stone',
+                id: 'cost_of_stone',
+                accessorKey: 'cost_of_stone',
                 header: ({ column }) => <DataGridColumnHeader title="COST OF STONE" column={column} />,
-                cell: ({ row }) => <span className="text-sm block">${row.original.cost_of_stone.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+                cell: ({ row }) => {
+                    const value = row.original.cost_of_stone;
+                    return (
+                        <span className="text-sm block">
+                            {value == null ? '' : `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        </span>
+                    );
+                },
                 size: 120,
                 meta: { format: (value: number) => formatCurrency(value) },
             },
@@ -516,11 +519,18 @@ export const CutListTableWithCalculations = ({
                 meta: { format: (value: number) => formatCurrency(value) },
             },
             {
-                id: 'cip', accessorKey: 'cip',
+                id: 'gp', accessorKey: 'gp',
                 header: ({ column }) => <DataGridColumnHeader title="GP" column={column} />,
-                cell: ({ row }) => <span className="text-sm">{row.original.cip}</span>,
+                cell: ({ row }) => {
+                    const value = row.original.gp;
+                    return (
+                        <span className="text-sm block">
+                            {value == null ? '' : `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        </span>
+                    );
+                },
                 size: 80,
-                meta: { format: (value: string) => value || '' },
+                meta: { format: (value: number | null) => (value !== null ? `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '') },
             },
             {
                 id: 'sales_person', accessorKey: 'sales_person',
@@ -768,9 +778,9 @@ export const CutListTableWithCalculations = ({
                                     <SelectContent className="max-h-[200px] overflow-y-auto">
                                         <SelectItem value="all">All Sales Persons</SelectItem>
                                         <SelectItem value="no_sales_person">No Sales Person</SelectItem>
-                                         {uniqueSalesPersons?.map(person => (
-                                        <SelectItem key={person || 'N/A'} value={person || ''}>{person || 'N/A'}</SelectItem>
-                                    ))}
+                                        {uniqueSalesPersons?.map(person => (
+                                            <SelectItem key={person || 'N/A'} value={person || ''}>{person || 'N/A'}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
 
