@@ -1229,7 +1229,7 @@ export const JobTable = ({
         meta: {
             format: (value: any, row: IJob) => {
                 const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
-                const stageNotes = notes.filter((n: any) => n.stage === 'resurfacing');
+                const stageNotes = notes.filter((n: any) => n.stage === 'resurface_scheduling');
                 if (stageNotes.length === 0) return 'No notes';
                 const latest = stageNotes[0];
                 return latest.note || 'No notes';
