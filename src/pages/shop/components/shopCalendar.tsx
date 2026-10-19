@@ -872,7 +872,7 @@ const ShopCalendarPage: React.FC = () => {
                     Today
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Jump to today <Kbd size="xs" className="ms-1 bg-background/15 border-white/20 text-white font-sans">T</Kbd></TooltipContent>
+                <TooltipContent>Jump to today <Kbd size="xs" className="ms-1 bg-white/15 border-white/20 text-white font-sans">T</Kbd></TooltipContent>
               </Tooltip>
               <div className="flex items-center">
                 <Tooltip>
@@ -881,7 +881,7 @@ const ShopCalendarPage: React.FC = () => {
                       <ChevronLeft className="size-[18px]!" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Previous {viewMode} <Kbd size="xs" className="ms-1 bg-background/15 border-white/20 text-white font-sans">←</Kbd></TooltipContent>
+                  <TooltipContent>Previous {viewMode} <Kbd size="xs" className="ms-1 bg-white/15 border-white/20 text-white font-sans">←</Kbd></TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -889,7 +889,7 @@ const ShopCalendarPage: React.FC = () => {
                       <ChevronRight className="size-[18px]!" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Next {viewMode} <Kbd size="xs" className="ms-1 bg-background/15 border-white/20 text-white font-sans">→</Kbd></TooltipContent>
+                  <TooltipContent>Next {viewMode} <Kbd size="xs" className="ms-1 bg-white/15 border-white/20 text-white font-sans">→</Kbd></TooltipContent>
                 </Tooltip>
               </div>
               <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>

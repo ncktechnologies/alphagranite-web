@@ -377,7 +377,7 @@ export function OperatorDashboard() {
                             )}
                             {event._height > 68 && event.work_percentage > 0 && (
                                 <div className="flex items-center gap-1 mt-0.5">
-                                    <div className="flex-1 bg-background/50 rounded-full h-1">
+                                    <div className="flex-1 bg-white/50 rounded-full h-1">
                                         <div className="h-1 rounded-full" style={{ width: `${event.work_percentage}%`, backgroundColor: text }} />
                                     </div>
                                     <span className="text-[10px] font-medium" style={{ color: text }}>{event.work_percentage}%</span>
@@ -691,7 +691,7 @@ export function OperatorDashboard() {
                                                                             {event.plan_name && <div className="text-[10px] opacity-70 truncate">{event.plan_name}</div>}
                                                                             {event.work_percentage > 0 && (
                                                                                 <div className="flex items-center gap-1 mt-0.5">
-                                                                                    <div className="flex-1 bg-background/50 rounded-full h-1">
+                                                                                    <div className="flex-1 bg-white/50 rounded-full h-1">
                                                                                         <div className="h-1 rounded-full" style={{ width: `${event.work_percentage}%`, backgroundColor: text }} />
                                                                                     </div>
                                                                                     <span className="text-[9px] font-medium">{event.work_percentage}%</span>
