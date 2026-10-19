@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
-import { X, Download, ZoomIn, ZoomOut, RotateCw, Maximize2, ExternalLink, ImageOff, FileQuestion } from 'lucide-react';
+import { X, Download, ExternalLink, ImageOff, FileQuestion } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ImageViewer } from '@/components/common/image-viewer';
 import { FileViewerProps } from '@/pages/jobs/components/job';
 import { WORKFLOW_STAGES, getFileStage, getStageBadge } from '@/utils/file-labeling';
 
@@ -45,22 +46,8 @@ const isModelFile = (name: string, type?: string): boolean => {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const FileViewer = ({ onClose, file }: FileViewerProps) => {
-  // zoom is relative to "fit to screen" (100 = whole image visible)
-  const [zoom, setZoom]             = useState(100);
-  const [rotation, setRotation]     = useState(0);
   const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [natural, setNatural]       = useState<{ w: number; h: number } | null>(null);
-  const [stageSize, setStageSize]   = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [modelError, setModelError] = useState(false);
-
-  const MIN_ZOOM = 25;
-  const MAX_ZOOM = 400;
-  const clampZoom = (z: number) => Math.round(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z)));
-  const handleZoomIn    = useCallback(() => setZoom(prev => clampZoom(prev * 1.25)), []);
-  const handleZoomOut   = useCallback(() => setZoom(prev => clampZoom(prev / 1.25)), []);
-  const handleResetZoom = useCallback(() => { setZoom(100); setRotation(0); }, []);
-  const handleRotate    = useCallback(() => setRotation(prev => (prev + 90) % 360), []);
 
   const handleDownload = async () => {
     if (!file.url) return;
@@ -151,56 +138,15 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
     return el;
   };
 
-  // ── Image fit / pan ───────────────────────────────────────────────────────
-  const stageRef = useRef<HTMLDivElement | null>(null);
-  const panRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
-  const [isPanning, setIsPanning] = useState(false);
-
+  // New file → clear a previous image error
   useEffect(() => {
-    const el = stageRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      setStageSize({ w: width, h: height });
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [isImage]);
-
-  useEffect(() => {
-    // New file → reset view
-    setZoom(100);
-    setRotation(0);
     setImageError(false);
-    setImageLoaded(false);
-    setNatural(null);
   }, [file.url]);
 
-  const sideways = rotation % 180 !== 0;
-  const PAD = 32;
-  const fitScale = natural && stageSize.w > 0
-    ? Math.min(
-        (stageSize.w - PAD * 2) / (sideways ? natural.h : natural.w),
-        (stageSize.h - PAD * 2) / (sideways ? natural.w : natural.h),
-        1, // never upscale small images when "fit"
-      )
-    : 1;
-  const scale = Math.max(fitScale, 0.01) * (zoom / 100);
-  const imgW = natural ? natural.w * scale : 0;
-  const imgH = natural ? natural.h * scale : 0;
-  const boxW = sideways ? imgH : imgW;
-  const boxH = sideways ? imgW : imgH;
-  const canPan = !!natural && (boxW > stageSize.w || boxH > stageSize.h);
-
-  // ── Keyboard, wheel zoom, scroll lock ───────────────────────────────────
+  // ── Esc to close, scroll lock (image zoom keys live in ImageViewer) ──────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); onClose?.(); return; }
-      if (!isImage || imageError) return;
-      if (e.key === '+' || e.key === '=') { e.preventDefault(); handleZoomIn(); }
-      else if (e.key === '-' || e.key === '_') { e.preventDefault(); handleZoomOut(); }
-      else if (e.key === '0') { e.preventDefault(); handleResetZoom(); }
-      else if (e.key.toLowerCase() === 'r' && !e.metaKey && !e.ctrlKey) { e.preventDefault(); handleRotate(); }
+      if (e.key === 'Escape') { e.preventDefault(); onClose?.(); }
     };
     window.addEventListener('keydown', onKey);
     const prevOverflow = document.body.style.overflow;
@@ -209,34 +155,7 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [isImage, imageError, onClose, handleZoomIn, handleZoomOut, handleResetZoom, handleRotate]);
-
-  useEffect(() => {
-    const el = stageRef.current;
-    if (!el || !isImage) return;
-    // Ctrl/⌘ + wheel (and trackpad pinch, which reports ctrlKey) zooms instead of scrolling
-    const onWheel = (e: WheelEvent) => {
-      if (!e.ctrlKey && !e.metaKey) return;
-      e.preventDefault();
-      setZoom(prev => clampZoom(prev * (e.deltaY < 0 ? 1.1 : 1 / 1.1)));
-    };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-  }, [isImage]);
-
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!canPan || !stageRef.current) return;
-    panRef.current = { x: e.clientX, y: e.clientY, left: stageRef.current.scrollLeft, top: stageRef.current.scrollTop };
-    setIsPanning(true);
-    (e.target as Element).setPointerCapture?.(e.pointerId);
-  };
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const p = panRef.current;
-    if (!p || !stageRef.current) return;
-    stageRef.current.scrollLeft = p.left - (e.clientX - p.x);
-    stageRef.current.scrollTop = p.top - (e.clientY - p.y);
-  };
-  const endPan = () => { panRef.current = null; setIsPanning(false); };
+  }, [onClose]);
 
   // ── Stage / badge ─────────────────────────────────────────────────────────
   const stageKey = file.stage_name ?? file.stage;
@@ -254,7 +173,7 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
   const openInNewTab = () => file.url && window.open(file.url, '_blank', 'noopener,noreferrer');
 
   const toolbarBtn =
-    'inline-flex size-9 items-center justify-center rounded-full text-white/85 transition-colors hover:bg-background/15 hover:text-white disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60';
+    'inline-flex size-9 items-center justify-center rounded-full text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60';
 
   // ── Render ────────────────────────────────────────────────────────────────
   const viewer = (
@@ -281,7 +200,7 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
             variant="ghost"
             size="md"
             onClick={openInNewTab}
-            className="hidden sm:inline-flex text-white/80 hover:bg-background/10 hover:text-white"
+            className="hidden sm:inline-flex text-white/80 hover:bg-white/10 hover:text-white"
             disabled={!file.url}
           >
             <ExternalLink className="size-4" />
@@ -306,94 +225,23 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
 
       {/* Main content */}
       <div className="relative min-h-0 flex-1">
-        {isImage && !imageError ? (
-          <>
-            <div
-              ref={stageRef}
-              className={cn(
-                'absolute inset-0 overflow-auto [scrollbar-color:rgb(255_255_255/0.25)_transparent]',
-                canPan ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in',
-              )}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={endPan}
-              onPointerCancel={endPan}
-              onDoubleClick={() => setZoom(prev => (prev > 100 ? 100 : 200))}
-            >
-              <div className="flex min-h-full min-w-full items-center justify-center" style={{ padding: PAD }}>
-                <div className="relative shrink-0" style={{ width: boxW || undefined, height: boxH || undefined }}>
-                  <img
-                    src={file.url}
-                    alt={file.name}
-                    draggable={false}
-                    onLoad={(e) => {
-                      const img = e.currentTarget;
-                      setNatural({ w: img.naturalWidth || 1, h: img.naturalHeight || 1 });
-                      setImageLoaded(true);
-                    }}
-                    onError={() => {
-                      console.error('[FileViewer] Image failed to load:', file.url);
-                      setImageError(true);
-                    }}
-                    className={cn(
-                      'absolute left-1/2 top-1/2 max-w-none select-none rounded-sm shadow-[0_20px_60px_-12px_rgb(0_0_0/0.6)] transition-[opacity,transform] duration-200',
-                      imageLoaded ? 'opacity-100' : 'opacity-0',
-                    )}
-                    style={{
-                      width: imgW || undefined,
-                      height: imgH || undefined,
-                      transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {!imageLoaded && (
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <span className="size-8 animate-spin rounded-full border-2 border-white/20 border-t-white/80" />
-              </div>
-            )}
-
-            {/* Floating image toolbar */}
-            {imageLoaded && (
-              <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-0.5 rounded-full border border-white/10 bg-black/60 p-1 shadow-lg backdrop-blur-md">
-                <button type="button" className={toolbarBtn} onClick={handleZoomOut} disabled={zoom <= MIN_ZOOM} aria-label="Zoom out (−)" title="Zoom out (−)">
-                  <ZoomOut className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  className="h-9 min-w-14 rounded-full px-2 text-sm font-semibold tabular-nums text-white/90 hover:bg-background/15"
-                  onClick={() => setZoom(100)}
-                  title="Fit to screen (0)"
-                >
-                  {zoom}%
-                </button>
-                <button type="button" className={toolbarBtn} onClick={handleZoomIn} disabled={zoom >= MAX_ZOOM} aria-label="Zoom in (+)" title="Zoom in (+)">
-                  <ZoomIn className="size-4" />
-                </button>
-                <span className="mx-1 h-5 w-px bg-background/15" aria-hidden />
-                <button type="button" className={toolbarBtn} onClick={handleRotate} aria-label="Rotate (R)" title="Rotate (R)">
-                  <RotateCw className="size-4" />
-                </button>
-                <button type="button" className={toolbarBtn} onClick={handleResetZoom} aria-label="Reset view (0)" title="Reset view (0)">
-                  <Maximize2 className="size-4" />
-                </button>
-              </div>
-            )}
-          </>
-
+        {isImage && !imageError && file.url ? (
+          <ImageViewer
+            key={file.url}
+            src={file.url}
+            alt={file.name}
+            fileName={file.name}
+            fileActions={false}
+            onError={() => setImageError(true)}
+            className="absolute inset-0"
+          />
         ) : isPdf ? (
-          <div className="absolute inset-0 p-3 sm:p-5">
-            <div className="h-full w-full overflow-hidden rounded-xl bg-background shadow-2xl">
-              <iframe
-                src={`${file.url}#toolbar=1&navpanes=0&view=FitH`}
-                title={file.name}
-                className="h-full w-full border-0"
-                onError={() => console.error('[FileViewer] PDF iframe failed to load:', file.url)}
-              />
-            </div>
-          </div>
+          // Edge to edge, fitted to width; the browser's PDF toolbar handles zoom and pages
+          <iframe
+            src={`${file.url}#toolbar=1&navpanes=0&view=FitH`}
+            title={file.name}
+            className="absolute inset-0 size-full border-0 bg-neutral-800"
+          />
 
         ) : isModel ? (
           <div className="absolute inset-0 p-3 sm:p-5">
@@ -419,8 +267,8 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
 
         ) : (
           <div className="absolute inset-0 flex items-center justify-center p-6">
-            <div className="flex max-w-sm flex-col items-center gap-3 rounded-2xl border border-white/10 bg-background/5 px-8 py-10 text-center">
-              <span className="flex size-12 items-center justify-center rounded-full bg-background/10">
+            <div className="flex max-w-sm flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-8 py-10 text-center">
+              <span className="flex size-12 items-center justify-center rounded-full bg-white/10">
                 {imageError ? <ImageOff className="size-6 text-white/80" /> : <FileQuestion className="size-6 text-white/80" />}
               </span>
               <p className="text-base font-semibold text-white">
@@ -432,7 +280,7 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
                   : `${file.name}${file.type ? ` · ${file.type}` : ''}`}
               </p>
               <div className="mt-2 flex flex-wrap justify-center gap-2">
-                <Button variant="outline" onClick={openInNewTab} disabled={!file.url} className="border-white/20 bg-transparent text-white hover:bg-background/10 hover:border-white/30">
+                <Button variant="outline" onClick={openInNewTab} disabled={!file.url} className="border-white/20 bg-transparent text-white hover:bg-white/10 hover:border-white/30">
                   <ExternalLink className="size-4" />
                   Open original
                 </Button>
@@ -446,9 +294,9 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
         )}
       </div>
 
-      {isImage && !imageError && imageLoaded && (
+      {isImage && !imageError && (
         <p className="hidden shrink-0 pb-2 text-center text-[12px] text-white/40 sm:block">
-          Scroll with Ctrl/⌘ or pinch to zoom · Double-click to toggle zoom · Drag to pan · R to rotate · Esc to close
+          Scroll or pinch to zoom · Double-click to toggle zoom · Drag to pan · R to rotate · Esc to close
         </p>
       )}
     </div>

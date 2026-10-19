@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { ImageViewer } from '@/components/common/image-viewer';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -609,7 +610,7 @@ export function FileGallery({
       >
         <DialogContent
           variant="fullscreen"
-          className="overflow-hidden border-0 bg-neutral-950 p-0 text-white sm:rounded-none [&>button]:text-white [&>button]:hover:bg-white/10"
+          className="inset-0 overflow-hidden border-0 bg-neutral-950 p-0 text-white sm:rounded-none [&>button]:text-white [&>button]:hover:bg-white/10"
         >
           {previewFile && (
             <>
@@ -631,20 +632,22 @@ export function FileGallery({
                   {previewIndex + 1} / {previewFiles.length}
                 </span>
               </div>
-              <div className="relative flex min-h-0 flex-1 items-center justify-center bg-neutral-950 p-4 sm:p-8">
+              <div className="relative flex min-h-0 flex-1 items-center justify-center bg-neutral-950">
                 {getCategory(previewFile.type ?? '') === 'image' ? (
-                  <img
+                  // Keyed so zoom / rotation reset when paging to another file
+                  <ImageViewer
                     key={String(previewFile.id)}
                     src={previewFile.url}
                     alt={previewFile.name}
-                    className="max-h-full max-w-full object-contain"
+                    fileName={previewFile.name}
                   />
                 ) : (
+                  // Edge to edge: the browser's PDF viewer brings its own zoom / fit controls
                   <iframe
                     key={String(previewFile.id)}
                     src={previewFile.url}
                     title={previewFile.name}
-                    className="size-full max-w-5xl bg-white"
+                    className="size-full border-0 bg-neutral-800"
                   />
                 )}
                 {previewIndex > 0 && (
