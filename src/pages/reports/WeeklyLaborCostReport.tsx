@@ -238,7 +238,7 @@ function PivotTableCard({ title, pivot, className, toolbar }: {
                                                             onDoubleClick={() => header.column.resetSize()}
                                                             onMouseDown={header.getResizeHandler()}
                                                             onTouchStart={header.getResizeHandler()}
-                                                            className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                            className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                         />
                                                     )}
                                                 </th>
@@ -277,7 +277,7 @@ function PivotTableCard({ title, pivot, className, toolbar }: {
                                 </tbody>
                             </table>
                         </div>
-                        <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                        <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                     </ScrollArea>
                 </CardTable>
                 <CardFooter className="bg-white dark:bg-card border-t border-[#e2e4ed] dark:border-border px-4 py-2">

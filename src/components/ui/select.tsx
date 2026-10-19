@@ -44,7 +44,7 @@ function SelectValue({ ...props }: React.ComponentProps<typeof SelectPrimitive.V
 const selectTriggerVariants = cva(
   `
     flex bg-background w-full items-center justify-between outline-none border border-input shadow-xs shadow-black/[0.03] transition-[box-shadow,border-color] cursor-pointer
-    text-foreground data-placeholder:text-muted-foreground hover:border-[#CDD2C6] data-[state=open]:border-primary-light data-[state=open]:ring-[3px] data-[state=open]:ring-ring/25 focus-visible:border-primary-light focus-visible:outline-none focus-visible:ring-[3px] 
+    text-foreground data-placeholder:text-muted-foreground hover:border-input-hover data-[state=open]:border-primary-light data-[state=open]:ring-[3px] data-[state=open]:ring-ring/25 focus-visible:border-primary-light focus-visible:outline-none focus-visible:ring-[3px] 
     focus-visible:ring-ring/25 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 
     aria-invalid:border-destructive/60 aria-invalid:ring-destructive/10 dark:aria-invalid:border-destructive dark:aria-invalid:ring-destructive/20
     [[data-invalid=true]_&]:border-destructive/60 [[data-invalid=true]_&]:ring-destructive/10  dark:[[data-invalid=true]_&]:border-destructive dark:[[data-invalid=true]_&]:ring-destructive/20

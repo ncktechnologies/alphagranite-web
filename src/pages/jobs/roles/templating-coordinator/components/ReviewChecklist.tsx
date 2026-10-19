@@ -128,15 +128,15 @@ export function ReviewChecklistForm() {
                 <div className="space-y-4">
                     <h2 className="text-base font-bold text-text">Review Checklist</h2>
                     {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className="h-6 bg-gray-200 rounded animate-pulse"></div>
+                        <div key={i} className="h-6 bg-border rounded animate-pulse"></div>
                     ))}
                 </div>
-                <div className="h-24 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-24 bg-border rounded animate-pulse"></div>
                 <Separator className="my-4" />
                 <div className="space-y-3 mt-6">
-                    <div className="h-12 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-12 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-12 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-12 bg-border rounded animate-pulse"></div>
+                    <div className="h-12 bg-border rounded animate-pulse"></div>
+                    <div className="h-12 bg-border rounded animate-pulse"></div>
                 </div>
             </div>
         );

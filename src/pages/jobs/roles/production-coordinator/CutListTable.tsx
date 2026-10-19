@@ -428,7 +428,7 @@ export const CutListTable = ({
                             />
                             {isLoading && (
                                 <div className="ml-2">
-                                    <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                                    <div className="h-4 w-4 border-2 border-input border-t-gray-600 rounded-full animate-spin" />
                                 </div>
                             )}
                         </div>
@@ -644,7 +644,7 @@ export const CutListTable = ({
                     <CardTable>
                         <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <DataGridTable />
-                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                         </ScrollArea>
                     </CardTable>
 

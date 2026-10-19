@@ -1,15 +1,10 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatBytes } from '@/hooks/use-file-upload';
 import { WORKFLOW_STAGES, getFileStage, getStageBadge, normalizeStageKey } from '@/utils/file-labeling';
 import { Can } from '@/components/permission';
 import {
-  FileTextIcon,
-  FileArchiveIcon,
-  HeadphonesIcon,
-  VideoIcon,
-  FileSpreadsheetIcon,
   Trash2,
   Eye,
   LayoutGrid,
@@ -18,8 +13,11 @@ import {
   Filter,
   X,
   File,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { FileThumbnail } from '@/components/file-list/FileThumbnail';
 import {
   Select,
   SelectContent,
@@ -27,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -203,22 +202,6 @@ const normaliseSource = (source: FileSource): UnifiedFile[] => {
   }
 };
 
-// ─── File icon ────────────────────────────────────────────────────────────────
-
-function FileIcon({ mimeType, className }: { mimeType: string; className?: string }) {
-  const cat = getCategory(mimeType);
-  const cls = cn('shrink-0', className);
-  if (cat === 'image')   return <img src="/images/app/img.svg"  alt="img"  className={cls} />;
-  if (cat === 'pdf')     return <img src="/images/app/pdf.svg"  alt="pdf"  className={cls} />;
-  if (cat === 'doc')     return <img src="/images/app/doc.svg"  alt="doc"  className={cls} />;
-  if (cat === 'video')   return <VideoIcon           className={cn('text-red-500',    cls)} />;
-  if (cat === 'audio')   return <HeadphonesIcon      className={cn('text-purple-500', cls)} />;
-  if (cat === 'sheet')   return <FileSpreadsheetIcon className={cn('text-green-600',  cls)} />;
-  if (cat === 'archive') return <FileArchiveIcon     className={cn('text-amber-500',  cls)} />;
-  if (cat === 'model')   return <LayoutGrid className={cn('text-indigo-600', cls)} />;
-  return <FileTextIcon className={cn('text-gray-500', cls)} />;
-}
-
 // ─── Card view ────────────────────────────────────────────────────────────────
 
 function FileCard({
@@ -233,9 +216,12 @@ function FileCard({
   deletePermissionSubject?: string;
 }) {
   const { label: stageLabel, className: stageCls } = resolveStage(file);
-
   const raw        = (file._raw ?? {}) as any;
   const fileDesign = raw.file_design ?? file.file_design ?? '';
+  const fileType   = raw.file_type ?? '';
+  const category   = getCategory(file.type ?? '');
+  const isImage    = category === 'image';
+  const isPdf      = category === 'pdf';
 
   // Format date with both date and time
   const formattedDate = file.uploadedAt
@@ -249,91 +235,89 @@ function FileCard({
     : null;
 
   return (
-    <div className="relative rounded-lg border border-[#e2e4ed] p-4 transition-colors hover:border-gray-400 bg-white">
-      {/* Top row: icon centred + delete top-right */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex flex-col items-center gap-3 w-full">
-          {/* Icon */}
-          <div className="size-8 flex items-center justify-center rounded">
-            <FileIcon mimeType={file.type ?? ''} className="size-8" />
-          </div>
+    <article className="group overflow-hidden rounded-md border border-border bg-background transition-shadow hover:shadow-md">
+      <button
+        type="button"
+        className="relative block aspect-[16/9] w-full overflow-hidden bg-muted text-left"
+        onClick={() => onView?.(file)}
+        aria-label={`Preview ${file.name}`}
+      >
+        <FileThumbnail
+          fileName={file.name}
+          mimeType={file.type}
+          src={file.url}
+          className="size-full aspect-auto rounded-none transition-transform duration-300 group-hover:scale-[1.03]"
+        />
+        <span className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+        {(isImage || isPdf) && (
+          <span className="absolute left-3 top-3 rounded-sm bg-black/65 px-2 py-1 text-[11px] font-medium uppercase text-white">
+            {isImage ? 'Image' : 'PDF'}
+          </span>
+        )}
+        {file.size ? (
+          <span className="absolute bottom-3 right-3 rounded-sm bg-black/65 px-2 py-1 text-xs text-white">
+            {formatBytes(file.size)}
+          </span>
+        ) : null}
+      </button>
 
-          {/* Name + meta */}
-          <div className="flex-1 min-w-0 w-full">
-            <p
-              className="text-[15px] text-black font-bold truncate cursor-pointer hover:text-primary"
-              title={file.name}
-              onClick={() => onView?.(file)}
-            >
-              {file.name}
-            </p>
-
-            <div className="flex flex-wrap items-center gap-2 mt-1">
-              {/* Size */}
-              {file.size ? (
-                <span className="text-xs text-muted-foreground">{formatBytes(file.size)}</span>
-              ) : null}
-
-              {/* Stage */}
-              <span className={cn('w-fit', stageCls)}>{stageLabel}</span>
-
-              {/* File design */}
-              {fileDesign && (
-                <span className="text-xs text-muted-foreground bg-blue-50 px-2 py-0.5 rounded">
-                  {fileDesign.replace(/_/g, ' ')}
-                </span>
-              )}
-
-              {/* Uploader */}
-              {(file.uploaded_by_name ?? file.uploadedBy) && (
-                <span className="text-xs text-muted-foreground bg-blue-50 px-2 py-0.5 rounded">
-                  {file.uploaded_by_name ?? file.uploadedBy}
-                </span>
-              )}
-
-              {/* Date + Time (NEW) */}
-              {formattedDate && (
-                <span className="text-xs text-muted-foreground">
-                  {formattedDate}
-                </span>
-              )}
-            </div>
-          </div>
+      <div className="space-y-3 p-3.5">
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <button
+            type="button"
+            className="min-w-0 truncate text-left text-sm font-semibold text-foreground hover:text-primary"
+            title={file.name}
+            onClick={() => onView?.(file)}
+          >
+            {file.name}
+          </button>
+          {onDelete && (
+            deletePermissionSubject ? (
+              <Can action="delete" on={deletePermissionSubject}>
+                <button
+                  type="button"
+                  className="flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => onDelete(file)}
+                  aria-label={`Delete ${file.name}`}
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              </Can>
+            ) : (
+              <button
+                type="button"
+                className="flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => onDelete(file)}
+                aria-label={`Delete ${file.name}`}
+              >
+                <Trash2 className="size-4" />
+              </button>
+            )
+          )}
         </div>
 
-        {/* Delete — top right */}
-        {onDelete && (
-          deletePermissionSubject ? (
-            <Can action="delete" on={deletePermissionSubject}>
-              <button
-                className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0"
-                onClick={(e) => { e.stopPropagation(); onDelete(file); }}
-              >
-                <X className="size-6" />
-              </button>
-            </Can>
-          ) : (
-            <button
-              className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0"
-              onClick={(e) => { e.stopPropagation(); onDelete(file); }}
-            >
-              <X className="size-6" />
-            </button>
-          )
-        )}
-      </div>
+        <div className="flex min-h-6 flex-wrap items-center gap-1.5">
+          <span className={cn('w-fit', stageCls)}>{stageLabel}</span>
+          {fileType && (
+            <span className="rounded-sm bg-accent px-2 py-0.5 text-xs font-medium uppercase text-secondary-foreground">
+              {fileType}
+            </span>
+          )}
+          {fileDesign && (
+            <span className="rounded-sm bg-blue-50 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
+              {fileDesign.replace(/_/g, ' ')}
+            </span>
+          )}
+        </div>
 
-      {/* View button */}
-          <Button
-            onClick={() => onView?.(file)}
-        variant="ghost"
-        size="sm"
-        className="h-8 w-8 p-0"
-        title="View file"
-      >
-        <Eye className="w-4 h-4 text-blue-500" />
-      </Button>
-    </div>
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-border pt-2 text-xs text-muted-foreground">
+          <span className="truncate" title={file.uploaded_by_name ?? file.uploadedBy}>
+            {file.uploaded_by_name ?? file.uploadedBy ?? 'Unknown uploader'}
+          </span>
+          {formattedDate && <time className="shrink-0">{formattedDate}</time>}
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -359,24 +343,27 @@ function FileRow({
 
   return (
     <tr
-      className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+      className="border-b border-border hover:bg-muted transition-colors cursor-pointer"
       onClick={() => onView?.(file)}
     >
       {/* Icon + name + size */}
       <td className="py-3 px-4">
         <div className="flex items-center gap-3">
-          <div className="size-8 flex items-center justify-center rounded-lg bg-gray-100 shrink-0">
-            <FileIcon mimeType={file.type ?? ''} className="size-4" />
-          </div>
+          <FileThumbnail
+            fileName={file.name}
+            mimeType={file.type}
+            src={file.url}
+            className="size-10 shrink-0 aspect-square rounded-md border border-border"
+          />
           <div className="min-w-0">
             <p
-              className="text-sm font-semibold text-gray-800 truncate max-w-[220px]"
+              className="text-sm font-semibold text-foreground truncate max-w-[220px]"
               title={file.name}
             >
               {file.name}
             </p>
             {file.size ? (
-              <p className="text-xs text-gray-400 mt-0.5">{formatBytes(file.size)}</p>
+              <p className="text-xs text-placeholder mt-0.5">{formatBytes(file.size)}</p>
             ) : null}
           </div>
         </div>
@@ -391,22 +378,22 @@ function FileRow({
       <td className="py-3 px-4">
         <div className="flex flex-col gap-1">
           {fileType && (
-            <span className="text-[12px] font-medium text-gray-700 bg-gray-100 px-2 py-0.5 rounded w-fit uppercase">
+            <span className="text-[12px] font-medium text-secondary-foreground bg-accent px-2 py-0.5 rounded w-fit uppercase">
               {fileType}
             </span>
           )}
           {fileDesign && (
-            <span className="text-[12px] text-gray-500 bg-blue-50 px-2 py-0.5 rounded w-fit">
+            <span className="text-[12px] text-blue-700 bg-blue-50 dark:bg-blue-500/15 dark:text-blue-300 px-2 py-0.5 rounded w-fit">
               {fileDesign.replace(/_/g, ' ')}
             </span>
           )}
-          {!fileType && !fileDesign && <span className="text-xs text-gray-400">—</span>}
+          {!fileType && !fileDesign && <span className="text-xs text-placeholder">—</span>}
         </div>
       </td>
 
       {/* Uploaded by */}
       <td className="py-3 px-4">
-        <span className="text-xs text-gray-700 font-medium">
+        <span className="text-xs text-secondary-foreground font-medium">
           {file.uploaded_by_name ?? file.uploadedBy ?? '—'}
         </span>
       </td>
@@ -415,10 +402,10 @@ function FileRow({
       <td className="py-3 px-4 whitespace-nowrap">
         {file.uploadedAt ? (
           <div className="flex flex-col gap-0.5">
-            <span className="text-xs text-gray-700">
+            <span className="text-xs text-secondary-foreground">
               {new Date(file.uploadedAt).toLocaleDateString()}
             </span>
-            <span className="text-[12px] text-gray-400">
+            <span className="text-[12px] text-placeholder">
               {new Date(file.uploadedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
@@ -482,6 +469,7 @@ export function FileGallery({
   const [layout, setLayout]         = useState<'card' | 'table'>(defaultLayout);
   const [search, setSearch]         = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [previewFileId, setPreviewFileId] = useState<string | null>(null);
 
   // Merge + normalise all sources, deduplicate by id
   const allFiles = useMemo(() => {
@@ -514,6 +502,33 @@ export function FileGallery({
     });
   }, [allFiles, search, typeFilter]);
 
+  const previewFiles = useMemo(
+    () => filtered.filter((file) => ['image', 'pdf'].includes(getCategory(file.type ?? ''))),
+    [filtered]
+  );
+  const previewIndex = previewFiles.findIndex((file) => String(file.id) === previewFileId);
+  const previewFile = previewFiles[previewIndex] ?? null;
+
+  const movePreview = useCallback((direction: -1 | 1) => {
+    const nextFile = previewFiles[previewIndex + direction];
+    if (nextFile) setPreviewFileId(String(nextFile.id));
+  }, [previewFiles, previewIndex]);
+
+  useEffect(() => {
+    if (!previewFile) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft' && previewIndex > 0) {
+        event.preventDefault();
+        movePreview(-1);
+      } else if (event.key === 'ArrowRight' && previewIndex < previewFiles.length - 1) {
+        event.preventDefault();
+        movePreview(1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [movePreview, previewFile, previewFiles.length, previewIndex]);
+
   const handleView   = useCallback((file: UnifiedFile) => { onFileClick?.(file);  }, [onFileClick]);
   const handleDelete = useCallback((file: UnifiedFile) => { onDeleteFile?.(file); }, [onDeleteFile]);
 
@@ -544,6 +559,11 @@ export function FileGallery({
       openViewer(file);
       return;
     }
+    const category = getCategory(file.type ?? '');
+    if (category === 'image' || category === 'pdf') {
+      setPreviewFileId(String(file.id));
+      return;
+    }
     onFileClick?.(file);
   }, [onFileClick]);
 
@@ -552,15 +572,15 @@ export function FileGallery({
       {/* Model viewer modal */}
       {viewerOpen && viewerFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="relative w-full max-w-4xl h-[80vh] bg-white rounded-md shadow-lg overflow-hidden">
+          <div className="relative w-full max-w-4xl h-[80vh] bg-background rounded-md shadow-lg overflow-hidden">
             <button
               onClick={closeViewer}
-              className="absolute top-3 end-3 z-50 bg-white rounded-full p-2 shadow"
+              className="absolute top-3 end-3 z-50 bg-background rounded-full p-2 shadow"
               aria-label="Close viewer"
             >
               <X />
             </button>
-            <div className="w-full h-full flex items-center justify-center bg-gray-50">
+            <div className="w-full h-full flex items-center justify-center bg-muted">
               {
                 // Render model-viewer dynamically to avoid TS JSX typing issues
               }
@@ -583,12 +603,88 @@ export function FileGallery({
         </div>
       )}
 
+      <Dialog
+        open={Boolean(previewFile)}
+        onOpenChange={(open) => { if (!open) setPreviewFileId(null); }}
+      >
+        <DialogContent
+          variant="fullscreen"
+          className="overflow-hidden border-0 bg-neutral-950 p-0 text-white sm:rounded-none [&>button]:text-white [&>button]:hover:bg-white/10"
+        >
+          {previewFile && (
+            <>
+              <DialogTitle className="sr-only">{previewFile.name}</DialogTitle>
+              <div className="flex min-h-16 items-center gap-4 border-b border-white/10 px-5 py-3 pr-16">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{previewFile.name}</p>
+                  <p className="mt-1 truncate text-xs text-white/60">
+                    {[previewFile.size ? formatBytes(previewFile.size) : null,
+                      resolveStage(previewFile).label,
+                      (previewFile._raw as any)?.file_design ?? previewFile.file_design,
+                      previewFile.uploaded_by_name ?? previewFile.uploadedBy,
+                      previewFile.uploadedAt ? new Date(previewFile.uploadedAt).toLocaleString() : null]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                </div>
+                <span className="shrink-0 text-xs tabular-nums text-white/60">
+                  {previewIndex + 1} / {previewFiles.length}
+                </span>
+              </div>
+              <div className="relative flex min-h-0 flex-1 items-center justify-center bg-neutral-950 p-4 sm:p-8">
+                {getCategory(previewFile.type ?? '') === 'image' ? (
+                  <img
+                    key={String(previewFile.id)}
+                    src={previewFile.url}
+                    alt={previewFile.name}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                ) : (
+                  <iframe
+                    key={String(previewFile.id)}
+                    src={previewFile.url}
+                    title={previewFile.name}
+                    className="size-full max-w-5xl bg-white"
+                  />
+                )}
+                {previewIndex > 0 && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="absolute left-4 top-1/2 size-11 -translate-y-1/2 rounded-full shadow-lg"
+                    onClick={() => movePreview(-1)}
+                    aria-label="Previous file"
+                    title="Previous file (Left arrow)"
+                  >
+                    <ChevronLeft className="size-5" />
+                  </Button>
+                )}
+                {previewIndex < previewFiles.length - 1 && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="absolute right-4 top-1/2 size-11 -translate-y-1/2 rounded-full shadow-lg"
+                    onClick={() => movePreview(1)}
+                    aria-label="Next file"
+                    title="Next file (Right arrow)"
+                  >
+                    <ChevronRight className="size-5" />
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Toolbar */}
       {showToolbar && (
         <div className="flex items-center gap-3 flex-wrap">
           {/* Search */}
           <div className="relative flex-1 min-w-[200px] max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-placeholder" />
             <Input
               placeholder="Search files…"
               value={search}
@@ -600,7 +696,7 @@ export function FileGallery({
                 onClick={() => setSearch('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2"
               >
-                <X className="size-3.5 text-gray-400 hover:text-gray-600" />
+                <X className="size-3.5 text-placeholder hover:text-secondary-foreground" />
               </button>
             )}
           </div>
@@ -608,7 +704,7 @@ export function FileGallery({
           {/* Type filter */}
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="h-8 w-[150px] text-sm">
-              <Filter className="size-3.5 mr-1.5 text-gray-400" />
+              <Filter className="size-3.5 mr-1.5 text-placeholder" />
               <SelectValue placeholder="All types" />
             </SelectTrigger>
             <SelectContent>
@@ -628,7 +724,7 @@ export function FileGallery({
                   <SelectItem key={value} value={value}>
                     {label}
                     {categoryCounts[value] != null && (
-                      <span className="ml-1.5 text-xs text-gray-400">({categoryCounts[value]})</span>
+                      <span className="ml-1.5 text-xs text-placeholder">({categoryCounts[value]})</span>
                     )}
                   </SelectItem>
                 ))}
@@ -636,19 +732,19 @@ export function FileGallery({
           </Select>
 
           {/* Count */}
-          <span className="text-xs text-gray-400 ml-auto">
+          <span className="text-xs text-placeholder ml-auto">
             {filtered.length} of {allFiles.length} file{allFiles.length !== 1 ? 's' : ''}
           </span>
 
           {/* Layout toggle */}
           {!lockLayout && (
-            <div className="flex items-center rounded-md border border-gray-200 overflow-hidden">
+            <div className="flex items-center rounded-md border border-border overflow-hidden">
               <button
                 className={cn(
                   'p-1.5 transition-colors',
                   layout === 'card'
-                    ? 'bg-gray-100 text-gray-800'
-                    : 'text-gray-400 hover:bg-gray-50'
+                    ? 'bg-accent text-foreground'
+                    : 'text-placeholder hover:bg-muted'
                 )}
                 onClick={() => setLayout('card')}
                 title="Card view"
@@ -659,8 +755,8 @@ export function FileGallery({
                 className={cn(
                   'p-1.5 transition-colors',
                   layout === 'table'
-                    ? 'bg-gray-100 text-gray-800'
-                    : 'text-gray-400 hover:bg-gray-50'
+                    ? 'bg-accent text-foreground'
+                    : 'text-placeholder hover:bg-muted'
                 )}
                 onClick={() => setLayout('table')}
                 title="Table view"
@@ -674,9 +770,9 @@ export function FileGallery({
 
       {/* Empty state */}
       {filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-gray-200 bg-gray-50">
-          <File className="size-10 text-gray-300 mb-3" />
-          <p className="text-sm text-gray-500">
+        <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-border bg-muted">
+          <File className="size-10 text-placeholder mb-3" />
+          <p className="text-sm text-muted-foreground">
             {search || typeFilter !== 'all' ? 'No files match your filter.' : emptyMessage}
           </p>
           {(search || typeFilter !== 'all') && (
@@ -699,7 +795,7 @@ export function FileGallery({
             <FileCard
               key={String(file.id)}
               file={file}
-              onView={onFileClick   ? handleViewIntercept   : undefined}
+              onView={handleViewIntercept}
               onDelete={onDeleteFile ? handleDelete : undefined}
               deletePermissionSubject={deletePermissionSubject}
             />
@@ -709,14 +805,14 @@ export function FileGallery({
 
       {/* ── Table ──────────────────────────────────────────────────────────── */}
       {filtered.length > 0 && layout === 'table' && (
-        <div className="rounded-xl border border-gray-200 overflow-hidden">
+        <div className="rounded-xl border border-border overflow-hidden">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
+              <tr className="bg-muted border-b border-border">
                 {['Name', 'Stage', 'Type ', 'Uploaded by', 'Date', ''].map((h) => (
                   <th
                     key={h}
-                    className="py-2.5 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap"
+                    className="py-2.5 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap"
                   >
                     {h}
                   </th>
@@ -728,7 +824,7 @@ export function FileGallery({
                 <FileRow
                   key={String(file.id)}
                   file={file}
-                  onView={onFileClick   ? handleViewIntercept   : undefined}
+                  onView={handleViewIntercept}
                   onDelete={onDeleteFile ? handleDelete : undefined}
                   deletePermissionSubject={deletePermissionSubject}
                 />

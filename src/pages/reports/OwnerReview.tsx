@@ -149,7 +149,7 @@ export function OwnerOverviewReport() {
         columnResizeMode: 'onEnd',
     });
 
-    if (isLoading) return <div className="p-5 text-[#7c8689]">Loading owner overview...</div>;
+    if (isLoading) return <div className="p-5 text-text-foreground">Loading owner overview...</div>;
 
     const formatCurrency = (val: number) => `$${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
@@ -165,7 +165,7 @@ export function OwnerOverviewReport() {
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Stage Status</h1>
+                <h1 className="text-2xl font-semibold text-secondary-foreground">Stage Status</h1>
                 <div className="flex items-center gap-2 flex-wrap">
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
@@ -191,59 +191,59 @@ export function OwnerOverviewReport() {
             {/* KPI Widgets */}
             {kpis && (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <div className="text-sm text-[#7c8689] uppercase tracking-wider">Total Jobs</div>
-                        <div className="text-2xl font-semibold mt-2 text-[#4b545d]">{kpis.total_jobs}</div>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <div className="text-sm text-text-foreground uppercase tracking-wider">Total Jobs</div>
+                        <div className="text-2xl font-semibold mt-2 text-secondary-foreground">{kpis.total_jobs}</div>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <div className="text-sm text-[#7c8689] uppercase tracking-wider">Total Fabs</div>
-                        <div className="text-2xl font-semibold mt-2 text-[#4b545d]">{kpis.total_fabs}</div>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <div className="text-sm text-text-foreground uppercase tracking-wider">Total Fabs</div>
+                        <div className="text-2xl font-semibold mt-2 text-secondary-foreground">{kpis.total_fabs}</div>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <div className="text-sm text-[#7c8689] uppercase tracking-wider">Active Fabs</div>
-                        <div className="text-2xl font-semibold mt-2 text-[#4b545d]">{kpis.active_fabs}</div>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <div className="text-sm text-text-foreground uppercase tracking-wider">Active Fabs</div>
+                        <div className="text-2xl font-semibold mt-2 text-secondary-foreground">{kpis.active_fabs}</div>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <div className="text-sm text-[#7c8689] uppercase tracking-wider">Pending Installs</div>
-                        <div className="text-2xl font-semibold mt-2 text-[#4b545d]">{kpis.pending_installs}</div>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <div className="text-sm text-text-foreground uppercase tracking-wider">Pending Installs</div>
+                        <div className="text-2xl font-semibold mt-2 text-secondary-foreground">{kpis.pending_installs}</div>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <div className="text-sm text-[#7c8689] uppercase tracking-wider">Completed Installs</div>
-                        <div className="text-2xl font-semibold mt-2 text-[#4b545d]">{kpis.completed_installs}</div>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <div className="text-sm text-text-foreground uppercase tracking-wider">Completed Installs</div>
+                        <div className="text-2xl font-semibold mt-2 text-secondary-foreground">{kpis.completed_installs}</div>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <div className="text-sm text-[#7c8689] uppercase tracking-wider">Completion Rate</div>
-                        <div className="text-2xl font-semibold mt-2 text-[#4b545d]">{kpis.completion_rate_percent}%</div>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <div className="text-sm text-text-foreground uppercase tracking-wider">Completion Rate</div>
+                        <div className="text-2xl font-semibold mt-2 text-secondary-foreground">{kpis.completion_rate_percent}%</div>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <div className="text-sm text-[#7c8689] uppercase tracking-wider">Total Revenue</div>
-                        <div className="text-2xl font-semibold mt-2 text-[#4b545d]">{formatCurrency(kpis.total_revenue)}</div>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <div className="text-sm text-text-foreground uppercase tracking-wider">Total Revenue</div>
+                        <div className="text-2xl font-semibold mt-2 text-secondary-foreground">{formatCurrency(kpis.total_revenue)}</div>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <div className="text-sm text-[#7c8689] uppercase tracking-wider">Gross Margin</div>
-                        <div className="text-2xl font-semibold mt-2 text-[#4b545d]">{kpis.gross_margin_percent}%</div>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <div className="text-sm text-text-foreground uppercase tracking-wider">Gross Margin</div>
+                        <div className="text-2xl font-semibold mt-2 text-secondary-foreground">{kpis.gross_margin_percent}%</div>
                     </Card>
                 </div>
             )}
 
             {/* Stage Breakdown Table */}
             <DataGrid table={table} recordCount={stageData.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
-                <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
-                    <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
-                        <p className="text-base font-semibold text-[#4b545d]">{getTitle()} – Stage Breakdown</p>
+                <Card className="border border-border rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                    <CardHeader className="py-3 px-5 border-b border-border flex flex-row items-center justify-between bg-background">
+                        <p className="text-base font-semibold text-secondary-foreground">{getTitle()} – Stage Breakdown</p>
                         <CardToolbar />
                     </CardHeader>
                     <CardTable>
                         <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
-                                    <thead className="sticky top-0 z-10 bg-white">
+                                    <thead className="sticky top-0 z-10 bg-background">
                                         {table.getHeaderGroups().map(headerGroup => (
                                             <tr key={headerGroup.id}>
                                                 {headerGroup.headers.map(header => (
                                                     <th
                                                         key={header.id}
-                                                        className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50"
+                                                        className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted"
                                                         style={{ width: header.getSize() }}
                                                     >
                                                         {flexRender(header.column.columnDef.header, header.getContext())}
@@ -252,7 +252,7 @@ export function OwnerOverviewReport() {
                                                                 onDoubleClick={() => header.column.resetSize()}
                                                                 onMouseDown={header.getResizeHandler()}
                                                                 onTouchStart={header.getResizeHandler()}
-                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                             />
                                                         )}
                                                     </th>
@@ -262,9 +262,9 @@ export function OwnerOverviewReport() {
                                     </thead>
                                     <tbody>
                                         {table.getRowModel().rows.map(row => (
-                                            <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50">
+                                            <tr key={row.id} className="border-b border-border hover:bg-muted/50">
                                                 {row.getVisibleCells().map(cell => (
-                                                    <td key={cell.id} className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0" style={{ width: cell.column.getSize() }}>
+                                                    <td key={cell.id} className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0" style={{ width: cell.column.getSize() }}>
                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                     </td>
                                                 ))}
@@ -272,7 +272,7 @@ export function OwnerOverviewReport() {
                                         ))}
                                         {stageData.length === 0 && (
                                             <tr>
-                                                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                                                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-text-foreground">
                                                     No data available.
                                                 </td>
                                             </tr>
@@ -280,10 +280,10 @@ export function OwnerOverviewReport() {
                                     </tbody>
                                 </table>
                             </div>
-                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                         </ScrollArea>
                     </CardTable>
-                    <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
+                    <CardFooter className="bg-background border-t border-border px-4 py-2">
                         <DataGridPagination />
                     </CardFooter>
                 </Card>

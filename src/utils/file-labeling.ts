@@ -21,7 +21,7 @@ export const WORKFLOW_STAGES: Record<string, FileLabel> = {
   'cnc': { stage: 'cnc', label: 'CNC', color: 'text-cyan-700', bgColor: 'bg-cyan-100' },
   'cutting': { stage: 'cutting', label: 'Cutting', color: 'text-orange-700', bgColor: 'bg-orange-100' },
   'install':{stage: 'install', label: 'Install', color: 'text-green-700', bgColor: 'bg-green-100' },
-  // 'general': { stage: 'general', label: 'General', color: 'text-gray-700', bgColor: 'bg-gray-100' }
+  // 'general': { stage: 'general', label: 'General', color: 'text-secondary-foreground', bgColor: 'bg-accent' }
 };
 
 // Safe badge getter – returns a fallback if fileLabel is undefined
@@ -29,7 +29,7 @@ export const getStageBadge = (fileLabel?: FileLabel) => {
   if (!fileLabel) {
     return {
       label: 'Unknown',
-      className: 'bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded'
+      className: 'bg-accent text-secondary-foreground text-xs px-2 py-0.5 rounded'
     };
   }
   return {

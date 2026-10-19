@@ -34,6 +34,11 @@ export function Demo1Layout() {
     } else {
       bodyClass.remove('sidebar-collapse');
     }
+    // Collapsed + hover-expand off: the sidebar stays an icon rail (see demo1.css)
+    bodyClass.toggle(
+      'sidebar-hover-lock',
+      settings.layouts.demo1.sidebarCollapse && !settings.layouts.demo1.sidebarHoverExpand,
+    );
   }, [settings]); // Runs only on settings update
 
   useEffect(() => {
@@ -58,6 +63,7 @@ export function Demo1Layout() {
       bodyClass.remove('demo1');
       bodyClass.remove('sidebar-fixed');
       bodyClass.remove('sidebar-collapse');
+      bodyClass.remove('sidebar-hover-lock');
       bodyClass.remove('header-fixed');
       bodyClass.remove('layout-initialized');
       clearTimeout(timer);

@@ -75,3 +75,36 @@ export function addWorkingHours(start: Date, hours: number): Date {
 
   return cursor;
 }
+
+/** Inverse of addWorkingHours: walks back from `end` over productive time only. */
+export function subtractWorkingHours(end: Date, hours: number): Date {
+  let remainingMinutes = Math.max(0, hours * 60);
+  const cursor = new Date(end);
+
+  while (remainingMinutes > 0) {
+    const dayStart = new Date(cursor);
+    dayStart.setHours(SHOP_DAY_START_HOUR, 0, 0, 0);
+    const breakStart = new Date(cursor);
+    breakStart.setHours(SHOP_BREAK_START_HOUR, 0, 0, 0);
+    const breakEnd = new Date(cursor);
+    breakEnd.setHours(SHOP_BREAK_END_HOUR, 0, 0, 0);
+    const dayEnd = new Date(cursor);
+    dayEnd.setHours(SHOP_DAY_END_HOUR, 0, 0, 0);
+
+    if (cursor > dayEnd) cursor.setTime(dayEnd.getTime());
+    if (cursor > breakStart && cursor <= breakEnd) cursor.setTime(breakStart.getTime());
+    if (cursor <= dayStart) {
+      cursor.setDate(cursor.getDate() - 1);
+      cursor.setHours(SHOP_DAY_END_HOUR, 0, 0, 0);
+      continue;
+    }
+
+    const prevBoundary = cursor > breakEnd ? breakEnd : dayStart;
+    const availableMinutes = (cursor.getTime() - prevBoundary.getTime()) / 60000;
+    const consumed = Math.min(remainingMinutes, availableMinutes);
+    cursor.setMinutes(cursor.getMinutes() - consumed);
+    remainingMinutes -= consumed;
+  }
+
+  return cursor;
+}

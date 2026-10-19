@@ -48,7 +48,7 @@ import RevisionDetailsPage from '../jobs/roles/revisiondraft/Revisiondetails';
 const getStatusInfo = (statusId: number | undefined, t: any) => {
     if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: t('JOB.STATUS.ON_HOLD') };
     if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: t('JOB.STATUS.ACTIVE') };
-    return { className: 'bg-gray-100 text-gray-800', text: t('JOB.STATUS.LOADING') };
+    return { className: 'bg-accent text-foreground', text: t('JOB.STATUS.LOADING') };
 };
 
 export function OperatorTaskDetails() {
@@ -503,7 +503,7 @@ export function OperatorTaskDetails() {
     if (isTasksLoading || isTimerLoading) {
         return (
             <div className="flex flex-col min-h-screen">
-                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+                <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
                     <Skeleton className="h-8 w-72 mb-1" />
                     <Skeleton className="h-4 w-48" />
                 </div>
@@ -517,7 +517,7 @@ export function OperatorTaskDetails() {
 
     if (activeFile) {
         return (
-            <div className="fixed inset-0 z-50 bg-white overflow-auto">
+            <div className="fixed inset-0 z-50 bg-background overflow-auto">
                 <FileViewer file={activeFile} onClose={() => setActiveFile(null)} />
             </div>
         );
@@ -528,7 +528,7 @@ export function OperatorTaskDetails() {
     return (
         <>
             {/* Sticky toolbar */}
-            <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+            <div className="sticky top-0 z-10 bg-background border-b shadow-sm">
                 <div className="px-3 sm:px-4 lg:px-6">
                     <Toolbar className="py-2 sm:py-3">
                         <div className="flex items-center justify-between w-full gap-2 flex-wrap">
@@ -541,10 +541,10 @@ export function OperatorTaskDetails() {
                                         >
                                             {jobName}
                                         </a>
-                                        <span className="mx-1 text-gray-400">·</span>
+                                        <span className="mx-1 text-placeholder">·</span>
                                         <a
                                             href={jobNumberLink}
-                                            className="hover:underline text-gray-600"
+                                            className="hover:underline text-secondary-foreground"
                                             target="_blank"
                                             rel="noreferrer"
                                         >
@@ -604,7 +604,7 @@ export function OperatorTaskDetails() {
                             <CardTitle className="text-lg font-semibold">
                                 {t('FAB.FILES')}
                                 {totalFileCount > 0 && (
-                                    <span className="ml-2 text-sm font-normal text-gray-400">
+                                    <span className="ml-2 text-sm font-normal text-placeholder">
                                         ({totalFileCount})
                                     </span>
                                 )}
@@ -663,7 +663,7 @@ export function OperatorTaskDetails() {
                                         <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                                             {revision.revision_note || t('SHOP_REVISION.NO_NOTE')}
                                         </p>
-                                        <p className="text-xs text-gray-400 mt-1">
+                                        <p className="text-xs text-placeholder mt-1">
                                             {t('SHOP_REVISION.REQUESTED_BY')}: {revision.requested_by_name || revision.requested_by || t('COMMON.UNKNOWN')}
                                         </p>
                                     </button>
@@ -714,7 +714,7 @@ export function OperatorTaskDetails() {
                                     </Button>
                                     <Button
                                         onClick={handlePause}
-                                        className="w-full gap-2 bg-[#f5cd4b] hover:bg-[#f0c520] text-black"
+                                        className="w-full gap-2 bg-[#f5cd4b] hover:bg-[#f0c520] text-foreground"
                                         size="lg"
                                         disabled={hasPendingShopRevision}
                                     >

@@ -48,12 +48,12 @@ function InstallerCard({ installer, rows, isExpanded, onToggle }: { installer: s
     const totalIncomplete = rows.reduce((s, r) => s + r.sq_ft_incomplete, 0);
 
     return (
-        <Card className="border border-[#e2e4ed] rounded-[12px] overflow-hidden">
-            <div className="px-4 py-3 bg-gray-50 cursor-pointer hover:bg-gray-100 flex justify-between items-center" onClick={onToggle}>
+        <Card className="border border-border rounded-[12px] overflow-hidden">
+            <div className="px-4 py-3 bg-muted cursor-pointer hover:bg-accent flex justify-between items-center" onClick={onToggle}>
                 <div className="flex items-center gap-4">
                     {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     <span className="font-semibold text-lg">{installer}</span>
-                    <div className="flex gap-4 text-sm text-gray-500">
+                    <div className="flex gap-4 text-sm text-muted-foreground">
                         <span>{rows.length} activities</span>
                         <span>Hours: {totalHours.toFixed(2)}</span>
                         <span>Installed: {totalInstalled.toFixed(0)} sqft</span>
@@ -68,14 +68,14 @@ function InstallerCard({ installer, rows, isExpanded, onToggle }: { installer: s
                             <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4 ">
 
                                 <table className="w-full border-collapse">
-                                    <thead className="sticky top-0 bg-gray-50">
-                                        {table.getHeaderGroups().map(hg => <tr key={hg.id}>{hg.headers.map(h => <th key={h.id} className="px-3 py-2 text-left text-xs font-semibold border-b border-[#e2e4ed]">{flexRender(h.column.columnDef.header, h.getContext())}</th>)}</tr>)}
+                                    <thead className="sticky top-0 bg-muted">
+                                        {table.getHeaderGroups().map(hg => <tr key={hg.id}>{hg.headers.map(h => <th key={h.id} className="px-3 py-2 text-left text-xs font-semibold border-b border-border">{flexRender(h.column.columnDef.header, h.getContext())}</th>)}</tr>)}
                                     </thead>
                                     <tbody>
-                                        {table.getRowModel().rows.map(row => <tr key={row.id} className="border-b">{row.getVisibleCells().map(cell => <td key={cell.id} className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>)}
+                                        {table.getRowModel().rows.map(row => <tr key={row.id} className="border-b">{row.getVisibleCells().map(cell => <td key={cell.id} className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>)}
                                     </tbody>
                                 </table>
-                                <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                                <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
 
                             </ScrollArea>
                         </div>

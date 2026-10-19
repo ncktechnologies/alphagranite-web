@@ -186,7 +186,7 @@ const Popup: React.FC<PopupProps> = ({
               x: centered ? 0 : 100 
             }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className={`relative bg-white rounded-2xl w-full max-w-[307px] h-[230px] py-5 ${className} ${
+            className={`relative bg-background rounded-2xl w-full max-w-[307px] h-[230px] py-5 ${className} ${
               centered ? "" : "mr-4"
             }`}
             onClick={(e) => e.stopPropagation()}

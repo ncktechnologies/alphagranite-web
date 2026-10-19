@@ -375,7 +375,7 @@ export function MonthlyInstallCompletionReport() {
         meta: {
             getRowAttributes: (row) => {
                 if (row.original._isTotalRow) {
-                    return { className: 'bg-[#f0f7e0] font-semibold [&>td]:border-0' };
+                    return { className: 'bg-primary-soft font-semibold [&>td]:border-0' };
                 }
                 const fabType = row.original.fab_type?.toLowerCase();
                 const bgColor = getFabColor(fabType);
@@ -387,7 +387,7 @@ export function MonthlyInstallCompletionReport() {
         },
     });
 
-    if (isLoading) return <div className="p-5 text-[#7c8689]">Loading monthly install completion report...</div>;
+    if (isLoading) return <div className="p-5 text-text-foreground">Loading monthly install completion report...</div>;
 
     const monthName = new Date(year, month - 1, 1).toLocaleString('default', { month: 'long' });
     const getTitle = () => {
@@ -403,12 +403,12 @@ export function MonthlyInstallCompletionReport() {
         <div className="flex flex-col gap-5 p-5">
             {/* ─── Top Bar: Title + Date Controls ────────────────────────── */}
             <div className="flex items-center justify-between flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Install Completion - Monthly</h1>
+                <h1 className="text-2xl font-semibold text-secondary-foreground">Install Completion - Monthly</h1>
                 <div className="flex items-center gap-2 flex-wrap">
                     {dateMode === 'monthly' ? (
                         <>
                             <Select value={String(year)} onValueChange={(v) => setYear(parseInt(v))}>
-                                <SelectTrigger className="w-[100px] h-[34px] border-[#e2e4ed]">
+                                <SelectTrigger className="w-[100px] h-[34px] border-border">
                                     <SelectValue placeholder="Year" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -418,7 +418,7 @@ export function MonthlyInstallCompletionReport() {
                                 </SelectContent>
                             </Select>
                             <Select value={String(month)} onValueChange={(v) => setMonth(parseInt(v))}>
-                                <SelectTrigger className="w-[130px] h-[34px] border-[#e2e4ed]">
+                                <SelectTrigger className="w-[130px] h-[34px] border-border">
                                     <SelectValue placeholder="Month" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -454,43 +454,43 @@ export function MonthlyInstallCompletionReport() {
             {/* ─── Summary Widgets ────────────────────────────────────────── */}
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SQ FT</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sq_ft.toFixed(2)}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">SQ FT</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.sq_ft.toFixed(2)}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">No of Pieces</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.pieces.toLocaleString()}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">No of Pieces</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.pieces.toLocaleString()}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Revenue</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Revenue</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">${summary.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                     </Card>
 
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Cost of Stone</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.cost_of_stone?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Cost of Stone</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">${summary.cost_of_stone?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">GP</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.gp?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">GP</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">${summary.gp?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Revenue / SQFT</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.revenue_per_sq_ft?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Revenue / SQFT</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">${summary.revenue_per_sq_ft?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                     </Card>
                 </div>
             )}
 
             {/* ─── Data Table with filters inside CardToolbar ────────────── */}
             <DataGrid table={table} recordCount={filteredRows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
-                <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
-                    <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
-                        <p className="text-base font-semibold text-[#4b545d]">{getTitle()}</p>
+                <Card className="border border-border rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                    <CardHeader className="py-3 px-5 border-b border-border flex flex-row items-center justify-between bg-background">
+                        <p className="text-base font-semibold text-secondary-foreground">{getTitle()}</p>
                         <CardToolbar className="flex items-center gap-2 flex-wrap">
                             {/* Fab Type Filter */}
                             <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
-                                <SelectTrigger className="w-[150px] h-[34px] border-[#e2e4ed]">
+                                <SelectTrigger className="w-[150px] h-[34px] border-border">
                                     <SelectValue placeholder="Fab Type" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -541,13 +541,13 @@ export function MonthlyInstallCompletionReport() {
                         <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
-                                    <thead className="sticky top-0 z-10 bg-white">
+                                    <thead className="sticky top-0 z-10 bg-background">
                                         {table.getHeaderGroups().map(headerGroup => (
                                             <tr key={headerGroup.id}>
                                                 {headerGroup.headers.map(header => (
                                                     <th
                                                         key={header.id}
-                                                        className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50"
+                                                        className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted"
                                                         style={{ width: header.getSize() }}
                                                     >
                                                         {flexRender(header.column.columnDef.header, header.getContext())}
@@ -556,7 +556,7 @@ export function MonthlyInstallCompletionReport() {
                                                                 onDoubleClick={() => header.column.resetSize()}
                                                                 onMouseDown={header.getResizeHandler()}
                                                                 onTouchStart={header.getResizeHandler()}
-                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                             />
                                                         )}
                                                     </th>
@@ -570,13 +570,13 @@ export function MonthlyInstallCompletionReport() {
                                             return (
                                                 <tr
                                                     key={row.id}
-                                                    className={`border-b border-[#e2e4ed] hover:bg-gray-50/50 ${rowAttrs.className || ''}`}
+                                                    className={`border-b border-border hover:bg-muted/50 ${rowAttrs.className || ''}`}
                                                     {...rowAttrs}
                                                 >
                                                     {row.getVisibleCells().map(cell => (
                                                         <td
                                                             key={cell.id}
-                                                            className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                            className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0"
                                                             style={{ width: cell.column.getSize() }}
                                                         >
                                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -587,7 +587,7 @@ export function MonthlyInstallCompletionReport() {
                                         })}
                                         {filteredRows.length === 0 && (
                                             <tr>
-                                                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                                                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-text-foreground">
                                                     No data available.
                                                 </td>
                                             </tr>
@@ -595,10 +595,10 @@ export function MonthlyInstallCompletionReport() {
                                     </tbody>
                                 </table>
                             </div>
-                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                         </ScrollArea>
                     </CardTable>
-                    <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
+                    <CardFooter className="bg-background border-t border-border px-4 py-2">
                         <DataGridPagination />
                     </CardFooter>
                 </Card>

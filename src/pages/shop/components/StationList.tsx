@@ -22,7 +22,7 @@ export const StationList = ({
     return (
         <div className="w-80 space-y-4 pr-6 border-r">
             <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-black">Workstation</h2>
+                <h2 className="text-xl font-semibold text-foreground">Workstation</h2>
                 <Button onClick={onNewRole} className="font-semibold text-sm">
                     + New workstation
                 </Button>

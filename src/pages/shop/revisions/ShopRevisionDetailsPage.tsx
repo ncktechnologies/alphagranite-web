@@ -230,7 +230,7 @@ const ShopRevisionDetailsPage = () => {
 
   if (activeFile) {
     return (
-      <div className="fixed inset-0 z-50 bg-white overflow-auto">
+      <div className="fixed inset-0 z-50 bg-background overflow-auto">
         <FileViewer file={activeFile} onClose={() => setActiveFile(null)} />
       </div>
     );
@@ -241,7 +241,7 @@ const ShopRevisionDetailsPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <div className="sticky top-0 z-10 bg-white border-b">
+      <div className="sticky top-0 z-10 bg-background border-b">
         <div className="px-4 py-3">
           <Toolbar>
             <div className="flex items-center justify-between w-full">
@@ -361,7 +361,7 @@ const ShopRevisionDetailsPage = () => {
                     </div>
                     <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{revision.revision_note}</p>
                     <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{revision.shop_revision_type}</p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-placeholder mt-1">
                       Requested by: {revision.requested_by_name || `Operator ${revision.requested_by}`}
                     </p>
                   </button>

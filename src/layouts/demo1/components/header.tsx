@@ -100,10 +100,15 @@ export function Header() {
               >
                 <SheetHeader className="p-0 space-y-0">
                   <SheetTitle className="sr-only">Navigation</SheetTitle>
-                  <div className="flex h-16 items-center bg-white px-5">
+                  <div className="flex h-16 items-center bg-white dark:bg-transparent px-5">
                     <img
                       src={toAbsoluteUrl('/images/logo/ody-logo.png')}
-                      className="h-[73px] w-auto -ms-2"
+                      className="h-[73px] w-auto -ms-2 dark:hidden"
+                      alt="The Odyssey Tracker"
+                    />
+                    <img
+                      src={toAbsoluteUrl('/images/logo/ody/white-odyssey-logo.png')}
+                      className="hidden h-[73px] w-auto -ms-2 dark:block"
                       alt="The Odyssey Tracker"
                     />
                   </div>
@@ -137,7 +142,7 @@ export function Header() {
           <button
             type="button"
             onClick={openCommandPalette}
-            className="group hidden md:flex h-9 w-[240px] lg:w-[300px] items-center gap-2 rounded-lg border border-input bg-muted/70 ps-3 pe-1.5 text-sm text-muted-foreground transition-colors hover:border-[#CDD2C6] hover:bg-background focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/25"
+            className="group hidden md:flex h-9 w-[240px] lg:w-[300px] items-center gap-2 rounded-lg border border-input bg-muted/70 ps-3 pe-1.5 text-sm text-muted-foreground transition-colors hover:border-input-hover hover:bg-background focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/25"
           >
             <Search className="size-4" />
             <span className="truncate">Search or jump to…</span>

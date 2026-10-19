@@ -215,7 +215,7 @@ export function ResurfacingStatusDetailsPage() {
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
               0: 'bg-red-100 text-red-800',
               1: 'bg-green-100 text-green-800',
-            }[fab?.status_id] || 'bg-gray-100 text-gray-800'
+            }[fab?.status_id] || 'bg-accent text-foreground'
               }`}
           >
             {{
@@ -233,7 +233,7 @@ export function ResurfacingStatusDetailsPage() {
           {/* 🔹 JOB DETAILS CARD */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-[#111827] text-2xl font-bold">Fab Details</CardTitle>
+              <CardTitle className="text-foreground text-2xl font-bold">Fab Details</CardTitle>
             </CardHeader>
             <CardContent>
               {/* Responsive grid: 1 column on smallest, 2 on sm, 3 on lg, 4 on xl */}

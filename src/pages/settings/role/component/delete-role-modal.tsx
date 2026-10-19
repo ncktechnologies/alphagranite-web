@@ -41,15 +41,15 @@ const DeleteRoleModal = ({ open, onOpenChange, role }: DeleteRoleModalProps) => 
   if (isDeleted) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div className="bg-background rounded-lg shadow-xl w-full max-w-md">
           <CardContent className="p-6 text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               Role deleted successfully
             </h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-secondary-foreground mb-4">
               The role '{role.name}' has been deleted successfully.
             </p>
             <Button onClick={() => onOpenChange(false)} className="w-full">
@@ -63,11 +63,11 @@ const DeleteRoleModal = ({ open, onOpenChange, role }: DeleteRoleModalProps) => 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+      <div className="bg-background rounded-lg shadow-xl w-full max-w-md">
         <div className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Delete Role</h2>
+            <h2 className="text-lg font-semibold text-foreground">Delete Role</h2>
             <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
               <X className="w-4 h-4" />
             </Button>
@@ -75,13 +75,13 @@ const DeleteRoleModal = ({ open, onOpenChange, role }: DeleteRoleModalProps) => 
 
           {/* Content */}
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-secondary-foreground">
               Do you wish to continue? Deleting this role means that all users under this role would lose their admin permissions.
             </p>
             
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <p className="text-sm font-medium text-gray-900">{role.name}</p>
-              <p className="text-xs text-gray-600">{role.description}</p>
+            <div className="bg-muted p-3 rounded-lg">
+              <p className="text-sm font-medium text-foreground">{role.name}</p>
+              <p className="text-xs text-secondary-foreground">{role.description}</p>
             </div>
           </div>
 

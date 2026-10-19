@@ -63,6 +63,13 @@
   /* text on --primary-soft */
   --sidebar: #7A9705;
   --sidebar-deep: #667F01;
+
+  /** Interaction / chrome **/
+  --input-hover: #CDD2C6;
+  --scrollbar-track: #F1F2EF;
+  --scrollbar-thumb: #8A9096;
+  /* a step darker than gray-400 so table scrollbars read clearly */
+  --scrollbar-thumb-hover: #6B7177;
 }
 
 /** Proxima Nova (brand font) — Regular, Semibold, Bold, Extrabold **/
@@ -99,55 +106,60 @@
 }
 
 .dark {
+  /* Neutrals carry a faint olive tint so the brand green sits naturally on them */
   /** Base Colors **/
-  --background: oklch(14.1% 0.005 285.823);
-  /* --color-zinc-950 */
-  --foreground: oklch(98.5% 0 0);
-  /* --color-zinc-50 */
-  --card: oklch(14.1% 0.005 285.823);
-  /* --color-zinc-950 */
-  --card-foreground: oklch(98.5% 0 0);
-  /* --color-zinc-50 */
-  --popover: oklch(14.1% 0.005 285.823);
-  /* --color-zinc-950 */
-  --popover-foreground: oklch(98.5% 0 0);
-  /* --color-zinc-50 */
+  --background: #171916;
+  /* raised surface: cards, header, popovers */
+  --foreground: #ECEEE9;
+  --text: #F4F5F2;
+  --text-foreground: #A3AAA0;
+  --card: #171916;
+  --card-foreground: #ECEEE9;
+  --popover: #1C1F1A;
+  --popover-foreground: #ECEEE9;
   --primary: #7A9705;
   /* custom color  */
   --primary-foreground: oklch(1 0 0);
   /* --color-white */
-  --secondary: oklch(27.4% 0.006 286.033);
-  /* --color-zinc-800 */
-  --secondary-foreground: oklch(70.5% 0.015 286.067);
-  /* --color-zinc-400 */
-  --muted: oklch(21% 0.006 285.885);
-  /* --color-zinc-900 */
-  --muted-foreground: oklch(55.2% 0.016 285.938);
-  /* --color-zinc-500 */
-  --accent: oklch(21% 0.006 285.885);
-  /* --color-zinc-900 */
-  --accent-foreground: oklch(98.5% 0 0);
-  /* --color-zinc-50 */
-  --destructive: oklch(57.7% 0.245 27.325);
-  /* --color-red-600 */
+  --secondary: #2A2E27;
+  --secondary-foreground: #B4BAB1;
+  --muted: #20231E;
+  --muted-foreground: #969D93;
+  /* 6.5:1 on --card */
+  --accent: #252922;
+  --accent-foreground: #ECEEE9;
+  --destructive: #EF4444;
+  /* red-500: red-600 is too dim on dark surfaces */
   --destructive-foreground: oklch(1 0 0);
   /* --color-white */
   --mono: oklch(87.1% 0.006 286.286);
   /* --color-zinc-300 */
   --mono-foreground: oklch(0 0 0);
   /* --color-black */
-  --placeholder: #9C9BAB;
+  --placeholder: #7B8279;
 
   /** Base Styles **/
-  --border: oklch(27.4% 0.006 286.033);
-  /* --color-zinc-800 */
-  --input: oklch(27.4% 0.006 286.033);
-  /* --color-zinc-800 */
-  --ring: oklch(27.4% 0.006 286.033);
-  /* --color-zinc-600 */
+  --border: #2C3029;
+  --input: #363B33;
+  --ring: #9CC15E;
   --sidbar-muted: #667F01;
 
+  /** Brand extensions **/
+  --canvas: #0F110E;
+  /* app background behind cards */
+  --primary-light: #9CC15E;
+  --primary-dark: #5E7504;
+  --primary-soft: #252E12;
+  --primary-accent: #B5D46E;
+  /* text on --primary-soft */
+  --sidebar: #3F4E06;
+  --sidebar-deep: #252E03;
 
+  /** Interaction / chrome **/
+  --input-hover: #4A5046;
+  --scrollbar-track: #1E211C;
+  --scrollbar-thumb: #5C6359;
+  --scrollbar-thumb-hover: #767E73;
 }
 
 /** Theme Setup **/
@@ -195,6 +207,10 @@
   --color-primary-accent: var(--primary-accent);
   --color-sidebar: var(--sidebar);
   --color-sidebar-deep: var(--sidebar-deep);
+  --color-input-hover: var(--input-hover);
+  --color-scrollbar-track: var(--scrollbar-track);
+  --color-scrollbar-thumb: var(--scrollbar-thumb);
+  --color-scrollbar-thumb-hover: var(--scrollbar-thumb-hover);
   --color-success: #16A34A;
   --color-warning: #D97706;
   --color-info: #0284C7;

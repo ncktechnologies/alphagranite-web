@@ -43,14 +43,14 @@ export const StationCard = ({ role, isSelected, onClick }: StationCardProps) => 
   return (
     <Card 
       className={`cursor-pointer transition-all hover:shadow-md ${
-        isSelected ? ' border-3 border-[#8BAD2B] bg-[#F0FDF4]' : ''
+        isSelected ? ' border-3 border-[#8BAD2B] bg-primary-soft' : ''
       }`}
       onClick={() => onClick(role)}
     >
       <CardContent className="p-4">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className={` ${isSelected  ? 'text-lg font-normal ' : 'font-bold text-[17px]'} text-black   `}>{role.workstationName}</h3>
+            <h3 className={` ${isSelected  ? 'text-lg font-normal ' : 'font-bold text-[17px]'} text-foreground   `}>{role.workstationName}</h3>
             <div className="flex items-center gap-2">
               <Badge 
               //   variant={role.status === 'Active' ? 'default' : 'secondary'}
@@ -69,7 +69,7 @@ export const StationCard = ({ role, isSelected, onClick }: StationCardProps) => 
             <div className="flex -space-x-2">
               {role.operators && role.operators.length > 0 ? (
                 role.operators.map((operator: string, index: number) => (
-                  <Avatar key={index} className="w-6 h-6 border-2 border-white">
+                  <Avatar key={index} className="w-6 h-6 border-2 border-background">
                     <AvatarFallback className={`text-xs font-medium text-white ${getAvatarColor(operator)}`}>
                       {getInitials(operator)}
                     </AvatarFallback>

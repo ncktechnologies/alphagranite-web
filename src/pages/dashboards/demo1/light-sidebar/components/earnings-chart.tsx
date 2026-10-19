@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { ApexOptions } from 'apexcharts';
 import ApexChart from 'react-apexcharts';
 import { Card, CardContent, CardDescription, CardHeader, CardHeading, CardTitle, CardToolbar } from '@/components/ui/card';
+import { useChartColors } from '@/hooks/use-chart-colors';
 
 interface EarningsChartProps {
   months?: string[];
@@ -41,6 +42,7 @@ export const EarningsChart = ({
   description = 'Monthly performance for the selected period',
   toolbar,
 }: EarningsChartProps) => {
+  const chartColors = useChartColors();
   const axis = niceAxis(Math.max(...data, 0));
   const latestIndex = data.length - 1;
   const latest = data[latestIndex];
@@ -70,7 +72,7 @@ export const EarningsChart = ({
     markers: {
       size: 0,
       colors: [SERIES_COLOR],
-      strokeColors: '#ffffff',
+      strokeColors: chartColors.surface,
       strokeWidth: 2,
       hover: { size: 5 },
     },
@@ -80,11 +82,11 @@ export const EarningsChart = ({
       axisTicks: { show: false },
       crosshairs: {
         show: true,
-        stroke: { color: '#C9CDD4', width: 1, dashArray: 0 },
+        stroke: { color: chartColors.crosshair, width: 1, dashArray: 0 },
       },
       tooltip: { enabled: false },
       labels: {
-        style: { colors: '#6F777B', fontSize: '13px' },
+        style: { colors: chartColors.axisLabel, fontSize: '13px' },
       },
     },
     yaxis: {
@@ -92,12 +94,12 @@ export const EarningsChart = ({
       max: axis.max,
       tickAmount: axis.ticks,
       labels: {
-        style: { colors: '#6F777B', fontSize: '13px' },
+        style: { colors: chartColors.axisLabel, fontSize: '13px' },
         formatter: (v) => numberFmt.format(Math.round(v)),
       },
     },
     grid: {
-      borderColor: '#EEF0F2',
+      borderColor: chartColors.grid,
       strokeDashArray: 0,
       padding: { left: 4, right: 8, top: -8 },
       yaxis: { lines: { show: true } },

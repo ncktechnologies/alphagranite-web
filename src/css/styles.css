@@ -20,41 +20,30 @@
   }
   
   /* Job table row coloring */
-  [data-fab-type="standard"] {
-    background-color: #9eeb47;
+  [data-fab-type="standard"] { --fab-row: #9eeb47; }
+  [data-fab-type="fab only"] { --fab-row: #5bd1d7; }
+  [data-fab-type="cust redo"] { --fab-row: #f0bf4c; }
+  [data-fab-type="resurface"] { --fab-row: #d094ea; }
+  [data-fab-type="fast track"] { --fab-row: #f59794; }
+  [data-fab-type="ag redo"] { --fab-row: #f5cc94; }
+  [data-fab-type],
+  [data-fab-type]:hover {
+    background-color: var(--fab-row);
   }
-  [data-fab-type="standard"]:hover {
-    background-color: #9eeb47;
+  /* Dark mode: keep the hue but sink it into the surface so light text stays readable */
+  .dark [data-fab-type],
+  .dark [data-fab-type]:hover {
+    background-color: color-mix(in oklab, var(--fab-row) 30%, var(--card));
   }
-  [data-fab-type="fab only"] {
-    background-color: #5bd1d7;
+  /* Rows that tint cells inline from --fab-row (shop status): --fab-tint is the cell color,
+     --fab-track the unfilled part of a progress cell */
+  [data-fab-tint] {
+    --fab-tint: var(--fab-row);
+    --fab-track: #ffffff;
   }
-  [data-fab-type="fab only"]:hover {
-    background-color: #5bd1d7;
-  }
-  [data-fab-type="cust redo"] {
-    background-color: #f0bf4c;
-  }
-  [data-fab-type="cust redo"]:hover {
-    background-color: #f0bf4c;
-  }
-  [data-fab-type="resurface"] {
-    background-color: #d094ea;
-  }
-  [data-fab-type="resurface"]:hover {
-    background-color: #d094ea;
-  }
-  [data-fab-type="fast track"] {
-    background-color: #f59794;
-  }
-  [data-fab-type="fast track"]:hover {
-    background-color: #f59794;
-  }
-  [data-fab-type="ag redo"] {
-    background-color: #f5cc94;
-  }
-  [data-fab-type="ag redo"]:hover {
-    background-color: #f5cc94;
+  .dark [data-fab-tint] {
+    --fab-tint: color-mix(in oklab, var(--fab-row) 30%, var(--card));
+    --fab-track: var(--card);
   }
   tr {
     transition: background-color 0.2s ease;
@@ -74,6 +63,7 @@
 @import './components/rating.css';
 @import './components/image-input.css';
 @import './components/scrollable.css';
+@import './components/dark-palette.css';
 
 /* Demos */
 @import './demos/demo1.css';
@@ -111,4 +101,22 @@ html:not([data-density='compact']) [data-slot='data-grid-table']:not([data-dense
 
 html[data-density='compact'] [data-slot='data-grid-table'] > thead > tr > th {
   height: 2.25rem;
+}
+
+/* Shop calendar drag: no hover tooltips, text selection or grab cursor flicker mid-drag */
+body[data-calendar-dragging] {
+  user-select: none;
+  cursor: grabbing;
+}
+body[data-calendar-dragging='resize-x'] {
+  cursor: ew-resize;
+}
+body[data-calendar-dragging='resize-y'] {
+  cursor: ns-resize;
+}
+body[data-calendar-dragging] * {
+  cursor: inherit !important;
+}
+body[data-calendar-dragging] [data-radix-popper-content-wrapper]:has([data-slot='tooltip-content']) {
+  display: none;
 }

@@ -112,7 +112,7 @@ export function ResurfacingDetailsPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
-        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+        <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
           <Skeleton className="h-8 w-72 mb-1" />
           <Skeleton className="h-4 w-48" />
         </div>
@@ -162,7 +162,7 @@ export function ResurfacingDetailsPage() {
   if (isError) {
     return (
       <div className="flex flex-col min-h-screen">
-        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+        <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
           <ToolbarHeading title="Error loading FAB" description="Could not load resurfacing details" />
         </div>
         <div className="p-6">
@@ -184,9 +184,9 @@ export function ResurfacingDetailsPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-muted">
       {/* 🔹 STICKY TOOLBAR – updated to match drafter details pattern */}
-      <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+      <div className="sticky top-0 z-10 bg-background border-b shadow-sm">
         <div className="px-3 sm:px-4 lg:px-6">
           <Toolbar className="py-2 sm:py-3">
             <div className="flex items-center justify-between w-full gap-2 flex-wrap">
@@ -199,10 +199,10 @@ export function ResurfacingDetailsPage() {
                     >
                       {fab?.job_details?.name || `Job ${fab?.job_id}`}
                     </a>
-                    <span className="mx-1 text-gray-400">·</span>
+                    <span className="mx-1 text-placeholder">·</span>
                     <a
                       href={jobNumberLink}
-                      className="hover:underline text-gray-600"
+                      className="hover:underline text-secondary-foreground"
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -230,7 +230,7 @@ export function ResurfacingDetailsPage() {
           {/* 🔹 JOB DETAILS CARD */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-[#111827] text-2xl font-bold">Fab Details</CardTitle>
+              <CardTitle className="text-foreground text-2xl font-bold">Fab Details</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 text-sm">

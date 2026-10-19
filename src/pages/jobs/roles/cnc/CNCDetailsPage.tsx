@@ -61,7 +61,7 @@ const getFabStatusInfo = (statusId: number | undefined) => {
     } else if (statusId === 1) {
         return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
     } else {
-        return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
+        return { className: 'bg-accent text-foreground', text: 'LOADING' };
     }
 };
 
@@ -527,7 +527,7 @@ export function CNCDetailsPage() {
     if (isFabLoading || isCNCLoading || isSessionLoading || isHistoryLoading) {
         return (
             <div className="flex flex-col min-h-screen">
-                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+                <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 lg:px-8 py-3">
                     <Skeleton className="h-8 w-72 mb-1" />
                     <Skeleton className="h-4 w-48" />
                 </div>
@@ -547,9 +547,9 @@ export function CNCDetailsPage() {
     const statusInfo = getFabStatusInfo(fabData?.status_id);
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
+        <div className="flex flex-col min-h-screen bg-muted">
 
-            <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+            <div className="sticky top-0 z-10 bg-background border-b shadow-sm">
                 <div className="px-3 sm:px-4 lg:px-6">
                     <Toolbar className="py-2 sm:py-3">
                         <div className="flex items-center justify-between w-full gap-2 flex-wrap">
@@ -562,10 +562,10 @@ export function CNCDetailsPage() {
                                         >
                                             {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
                                         </a>
-                                        <span className="mx-1 text-gray-400">·</span>
+                                        <span className="mx-1 text-placeholder">·</span>
                                         <a
                                             href={jobNumberLink}
-                                            className="hover:underline text-gray-600"
+                                            className="hover:underline text-secondary-foreground"
                                             target="_blank"
                                             rel="noreferrer"
                                         >
@@ -590,7 +590,7 @@ export function CNCDetailsPage() {
 
                 <aside
                     className={[
-                        'w-full bg-white border-b',
+                        'w-full bg-background border-b',
                         'lg:w-[220px] xl:w-[260px] lg:shrink-0',
                         'lg:sticky lg:top-[50px]',
                         'lg:self-start',
@@ -608,11 +608,11 @@ export function CNCDetailsPage() {
                 <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
 
                     {viewMode === 'file' && activeFile ? (
-                        <div className="bg-white rounded-xl border overflow-hidden">
-                            <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
+                        <div className="bg-background rounded-xl border overflow-hidden">
+                            <div className="flex justify-between items-center p-4 bg-muted border-b">
                                 <div>
                                     <h3 className="font-semibold text-sm">{activeFile.name}</h3>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-muted-foreground">
                                         {formatBytes(activeFile.size)} · {activeFile.stage?.label || activeFile.stage}
                                     </p>
                                 </div>
@@ -636,10 +636,10 @@ export function CNCDetailsPage() {
                                     <div className="flex items-center justify-between gap-2 flex-wrap">
                                         <div>
                                             <CardTitle className="text-sm sm:text-base">CNC activity</CardTitle>
-                                            <p className="text-xs text-gray-500 mt-0.5">Update your CNC activity here</p>
+                                            <p className="text-xs text-muted-foreground mt-0.5">Update your CNC activity here</p>
                                         </div>
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{ idle: 'bg-gray-100 text-gray-800', drafting: 'bg-green-100 text-green-800', paused: 'bg-yellow-100 text-yellow-800', on_hold: 'bg-orange-100 text-orange-800', ended: 'bg-blue-100 text-blue-800' }[sessionStatus] || 'bg-gray-100 text-gray-800'}`}>
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{ idle: 'bg-accent text-foreground', drafting: 'bg-green-100 text-green-800', paused: 'bg-yellow-100 text-yellow-800', on_hold: 'bg-orange-100 text-orange-800', ended: 'bg-blue-100 text-blue-800' }[sessionStatus] || 'bg-accent text-foreground'}`}>
                                                 {{ idle: 'Ready to Start', drafting: 'CNC Active', paused: 'Paused', on_hold: 'On Hold', ended: 'Completed' }[sessionStatus] || 'Unknown'}
                                             </span>
                                             {fabData?.status_id === 0 && (
@@ -706,9 +706,9 @@ export function CNCDetailsPage() {
                                                 />
                                             </div>
                                         ) : (
-                                            <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-                                                <p className="text-sm text-gray-500">Start the timer to enable file uploads</p>
-                                                <p className="text-xs text-gray-400 mt-1">Files will appear here once uploaded</p>
+                                            <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
+                                                <p className="text-sm text-muted-foreground">Start the timer to enable file uploads</p>
+                                                <p className="text-xs text-placeholder mt-1">Files will appear here once uploaded</p>
                                             </div>
                                         )}
                                     </div>

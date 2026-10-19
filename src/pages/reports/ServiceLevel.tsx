@@ -364,8 +364,8 @@ export function ServiceLevelReport() {
     // ─── Helper to render a table with DataGrid wrapper ────────────────────
     const renderTable = (table: any, title: string, exportName: string) => (
         <DataGrid table={table} recordCount={table.getCoreRowModel().rows.length} tableLayout={{ columnsResizable: true, cellBorder: true }}>
-            <Card className="border border-[#e2e4ed] rounded-[12px] overflow-hidden">
-                <CardHeader className="py-3 px-5 border-b flex justify-between items-center bg-white">
+            <Card className="border border-border rounded-[12px] overflow-hidden">
+                <CardHeader className="py-3 px-5 border-b flex justify-between items-center bg-background">
                     <p className="font-semibold">{title}</p>
                     <CardToolbar>
                         <Button variant="outline" size="sm" onClick={() => exportTableToCSV(table, exportName)}>Export CSV</Button>
@@ -375,18 +375,18 @@ export function ServiceLevelReport() {
                     <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                         <div className="relative">
                             <table className="w-full border-collapse table-fixed">
-                                <thead className="sticky top-0 z-10 bg-white">
+                                <thead className="sticky top-0 z-10 bg-background">
                                     {table.getHeaderGroups().map(headerGroup => (
                                         <tr key={headerGroup.id}>
                                             {headerGroup.headers.map(header => (
-                                                <th key={header.id} className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50" style={{ width: header.getSize() }}>
+                                                <th key={header.id} className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted" style={{ width: header.getSize() }}>
                                                     {flexRender(header.column.columnDef.header, header.getContext())}
                                                     {header.column.getCanResize() && (
                                                         <div
                                                             onDoubleClick={() => header.column.resetSize()}
                                                             onMouseDown={header.getResizeHandler()}
                                                             onTouchStart={header.getResizeHandler()}
-                                                            className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                            className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                         />
                                                     )}
                                                 </th>
@@ -398,9 +398,9 @@ export function ServiceLevelReport() {
                                     {table.getRowModel().rows.map(row => {
                                         const rowAttrs = table.options.meta?.getRowAttributes?.(row) || {};
                                         return (
-                                            <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50" {...rowAttrs}>
+                                            <tr key={row.id} className="border-b border-border hover:bg-muted/50" {...rowAttrs}>
                                                 {row.getVisibleCells().map(cell => (
-                                                    <td key={cell.id} className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0" style={{ width: cell.column.getSize() }}>
+                                                    <td key={cell.id} className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0" style={{ width: cell.column.getSize() }}>
                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                     </td>
                                                 ))}
@@ -410,10 +410,10 @@ export function ServiceLevelReport() {
                                 </tbody>
                             </table>
                         </div>
-                        <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                        <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                     </ScrollArea>
                 </CardTable>
-                <CardFooter className="bg-white border-t px-4 py-2">
+                <CardFooter className="bg-background border-t px-4 py-2">
                     <DataGridPagination />
                 </CardFooter>
             </Card>
@@ -423,7 +423,7 @@ export function ServiceLevelReport() {
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex justify-between items-center flex-wrap gap-2">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Service Level</h1>
+                <h1 className="text-2xl font-semibold text-secondary-foreground">Service Level</h1>
                 <div className="flex items-center gap-2">
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
@@ -457,16 +457,16 @@ export function ServiceLevelReport() {
 
             {widgets && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                    <Card className="p-4"><div className="text-sm text-[#7c8689]">Total Active FABs</div><div className="text-2xl font-semibold">{widgets.total_active_fab_ids}</div></Card>
-                    <Card className="p-4"><div className="text-sm text-[#7c8689]">On Track (Green)</div><div className="text-2xl font-semibold text-green-600">{widgets.on_track_green}</div></Card>
-                    <Card className="p-4"><div className="text-sm text-[#7c8689]">At Risk (Yellow)</div><div className="text-2xl font-semibold text-yellow-600">{widgets.at_risk_yellow}</div></Card>
-                    <Card className="p-4"><div className="text-sm text-[#7c8689]">Overdue (Red)</div><div className="text-2xl font-semibold text-red-600">{widgets.overdue_red}</div></Card>
-                    <Card className="p-4"><div className="text-sm text-[#7c8689]">Avg Cycle Time</div><div className="text-2xl font-semibold">{widgets.avg_cycle_time_days?.toFixed(1)} days</div></Card>
+                    <Card className="p-4"><div className="text-sm text-text-foreground">Total Active FABs</div><div className="text-2xl font-semibold">{widgets.total_active_fab_ids}</div></Card>
+                    <Card className="p-4"><div className="text-sm text-text-foreground">On Track (Green)</div><div className="text-2xl font-semibold text-green-600">{widgets.on_track_green}</div></Card>
+                    <Card className="p-4"><div className="text-sm text-text-foreground">At Risk (Yellow)</div><div className="text-2xl font-semibold text-yellow-600">{widgets.at_risk_yellow}</div></Card>
+                    <Card className="p-4"><div className="text-sm text-text-foreground">Overdue (Red)</div><div className="text-2xl font-semibold text-red-600">{widgets.overdue_red}</div></Card>
+                    <Card className="p-4"><div className="text-sm text-text-foreground">Avg Cycle Time</div><div className="text-2xl font-semibold">{widgets.avg_cycle_time_days?.toFixed(1)} days</div></Card>
                     {widgets.oldest_open_job && (
                         <Card className="p-4">
-                            <div className="text-sm text-[#7c8689]">Oldest Open Job</div>
+                            <div className="text-sm text-text-foreground">Oldest Open Job</div>
                             <div className="flex flex-col">
-                                <span className="text-xs font-medium text-[#7c8689]">Fab ID</span>
+                                <span className="text-xs font-medium text-text-foreground">Fab ID</span>
                                 <span className="text-xl font-bold">{widgets.oldest_open_job.fab_id}</span>
                             </div>
                             <div className="text-xs">{formatStage(widgets.oldest_open_job.current_stage)} – {widgets.oldest_open_job.age_days} days</div>
@@ -482,14 +482,14 @@ export function ServiceLevelReport() {
             {/* ─── Fab Status Details with Filters and Search ──────────────── */}
             {fabStatusRows.length > 0 && (
                 <DataGrid table={fabTable} recordCount={filteredFabRows.length} tableLayout={{ columnsResizable: true, cellBorder: true }}>
-                    <Card className="border border-[#e2e4ed] rounded-[12px] overflow-hidden">
-                        <CardHeader className="py-3 px-5 border-b flex flex-wrap items-center gap-2 bg-white">
+                    <Card className="border border-border rounded-[12px] overflow-hidden">
+                        <CardHeader className="py-3 px-5 border-b flex flex-wrap items-center gap-2 bg-background">
                             <p className="font-semibold mr-2">Fab Status Details</p>
                             <CardToolbar>
                                 <div className="flex flex-wrap items-center gap-2">
                                     {/* Fab Type Filter */}
                                     <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
-                                        <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed]">
+                                        <SelectTrigger className="w-[140px] h-[34px] border-border">
                                             <SelectValue placeholder="Fab Type" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -502,7 +502,7 @@ export function ServiceLevelReport() {
 
                                     {/* Stage Filter */}
                                     <Select value={stageFilter} onValueChange={setStageFilter}>
-                                        <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed]">
+                                        <SelectTrigger className="w-[140px] h-[34px] border-border">
                                             <SelectValue placeholder="Stage" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -515,7 +515,7 @@ export function ServiceLevelReport() {
 
                                     {/* Risk Filter */}
                                     <Select value={riskFilter} onValueChange={setRiskFilter}>
-                                        <SelectTrigger className="w-[120px] h-[34px] border-[#e2e4ed]">
+                                        <SelectTrigger className="w-[120px] h-[34px] border-border">
                                             <SelectValue placeholder="Risk" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -528,7 +528,7 @@ export function ServiceLevelReport() {
 
                                     {/* Status Filter */}
                                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                        <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed]">
+                                        <SelectTrigger className="w-[140px] h-[34px] border-border">
                                             <SelectValue placeholder="Status" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -578,18 +578,18 @@ export function ServiceLevelReport() {
                             <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                                 <div className="relative">
                                     <table className="w-full border-collapse table-fixed">
-                                        <thead className="sticky top-0 z-10 bg-white">
+                                        <thead className="sticky top-0 z-10 bg-background">
                                             {fabTable.getHeaderGroups().map(headerGroup => (
                                                 <tr key={headerGroup.id}>
                                                     {headerGroup.headers.map(header => (
-                                                        <th key={header.id} className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50" style={{ width: header.getSize() }}>
+                                                        <th key={header.id} className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted" style={{ width: header.getSize() }}>
                                                             {flexRender(header.column.columnDef.header, header.getContext())}
                                                             {header.column.getCanResize() && (
                                                                 <div
                                                                     onDoubleClick={() => header.column.resetSize()}
                                                                     onMouseDown={header.getResizeHandler()}
                                                                     onTouchStart={header.getResizeHandler()}
-                                                                    className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                                    className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                                 />
                                                             )}
                                                         </th>
@@ -601,9 +601,9 @@ export function ServiceLevelReport() {
                                             {fabTable.getRowModel().rows.map(row => {
                                                 const rowAttrs = fabTable.options.meta?.getRowAttributes?.(row) || {};
                                                 return (
-                                                    <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50" {...rowAttrs}>
+                                                    <tr key={row.id} className="border-b border-border hover:bg-muted/50" {...rowAttrs}>
                                                         {row.getVisibleCells().map(cell => (
-                                                            <td key={cell.id} className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0" style={{ width: cell.column.getSize() }}>
+                                                            <td key={cell.id} className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0" style={{ width: cell.column.getSize() }}>
                                                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                             </td>
                                                         ))}
@@ -612,7 +612,7 @@ export function ServiceLevelReport() {
                                             })}
                                             {filteredFabRows.length === 0 && (
                                                 <tr>
-                                                    <td colSpan={fabColumns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                                                    <td colSpan={fabColumns.length} className="px-4 py-8 text-center text-sm text-text-foreground">
                                                         No data matches the current filters.
                                                     </td>
                                                 </tr>
@@ -620,10 +620,10 @@ export function ServiceLevelReport() {
                                         </tbody>
                                     </table>
                                 </div>
-                                <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                                <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                             </ScrollArea>
                         </CardTable>
-                        <CardFooter className="bg-white border-t px-4 py-2">
+                        <CardFooter className="bg-background border-t px-4 py-2">
                             <DataGridPagination />
                         </CardFooter>
                     </Card>

@@ -1,38 +1,12 @@
 import { useMemo, useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { formatBytes } from '@/hooks/use-file-upload';
-import {
-  FileArchiveIcon,
-  FileTextIcon,
-  HeadphonesIcon,
-  VideoIcon,
-  X,
-  Eye,
-} from 'lucide-react';
 import { Drafting, useDeleteFileMutation } from '@/store/api/job';
-import {
-  getFileStage,
-  getStageBadge,
-  normalizeStageKey,
-  WORKFLOW_STAGES,
-} from '@/utils/file-labeling';
+import { getFileStage } from '@/utils/file-labeling';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import Popup from '@/components/ui/popup'; // 👈 new import
 import { FileViewer } from '@/pages/jobs/roles/drafters/components';
-
-// Helper function to convert file_design value to label
-const getFileDesignLabel = (value: string): string => {
-  const designMap: Record<string, string> = {
-    block_drawing: 'Block Drawing',
-    layout: 'Layout',
-    ss_layout: 'SS Layout',
-    shop_drawing: 'Shop Drawing',
-    photo_media: 'Photo / Media',
-  };
-  return designMap[value] || value;
-};
+import { FileGallery } from '@/pages/jobs/components/FileGallery';
 
 interface FileMetadata {
   id: string;
@@ -60,32 +34,6 @@ interface UploadBoxProps {
   cncData?: any;
   showDeleteButton?: boolean;
   fab?: any;
-}
-
-// ─── Resolve stage label + className (mirrors FileGallery) ───────────────────
-function resolveStage(file: FileMetadata): { label: string; className: string } {
-  // 1. Get raw stage from backend (stage_name > stage > fallback)
-  const rawStage = file.stage_name || file.stage || 'general';
-
-  // 2. Normalise to match WORKFLOW_STAGES keys (e.g. "CNC" → "cnc", "Cut List" → "cut_list")
-  const normalisedKey = normalizeStageKey(rawStage);
-
-  // 3. Try to find exact match in WORKFLOW_STAGES
-  let stageObj = WORKFLOW_STAGES[normalisedKey];
-
-  // 4. If not found, use filename-based detection (pass normalised key as currentStage hint)
-  if (!stageObj) {
-    stageObj = getFileStage(file.name, { currentStage: normalisedKey });
-  }
-
-  // 5. Get badge (safe against undefined)
-  const badge = getStageBadge(stageObj);
-
-  // 6. Return label (use rawStage for display if badge label is fallback)
-  return {
-    label: badge.label === 'Unknown' ? rawStage.replace(/_/g, ' ') : badge.label,
-    className: badge.className,
-  };
 }
 
 export function Documents({
@@ -283,17 +231,6 @@ export function Documents({
     return allFiles;
   }, [draftingData, uploadedFileMetas, currentStage, slabsmithData, sctData, cncData]);
 
-  const getFileIcon = useCallback((file: FileMetadata) => {
-    const { type } = file;
-    if (type.startsWith('image/')) return <img src="/images/app/img.svg" alt="Image" />;
-    if (type.startsWith('video/')) return <VideoIcon className="size-4" />;
-    if (type.startsWith('audio/')) return <HeadphonesIcon className="size-4" />;
-    if (type.includes('pdf')) return <img src="/images/app/pdf.svg" alt="PDF" />;
-    if (type.includes('word') || type.includes('doc')) return <img src="/images/app/doc.svg" alt="Document" />;
-    if (type.includes('excel') || type.includes('sheet')) return <img src="/images/app/doc.svg" alt="Spreadsheet" />;
-    if (type.includes('zip') || type.includes('rar')) return <FileArchiveIcon className="size-4" />;
-    return <FileTextIcon className="size-4" />;
-  }, []);
   const [activeFile, setActiveFile] = useState<FileMetadata | null>(null);
 
   // Replace the existing handleViewFile (or add it)
@@ -346,94 +283,18 @@ export function Documents({
     );
   }
 
-  // Format date with both date and time
-  const formatDateTime = (date?: Date) => {
-    if (!date) return null;
-    return date.toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   return (
     <div className="border-none">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {files.map((file) => {
-          const { label: stageLabel, className: stageCls } = resolveStage(file);
-          const dateTime = formatDateTime(file.uploadedAt);
-          return (
-            <div
-              key={file.id}
-              className={cn(
-                'relative rounded-lg border p-4 transition-colors border-muted-foreground/25 hover:border-muted-foreground/50 bg-white'
-              )}
-            >
-              {/* Delete button - absolutely positioned top-right */}
-              {showDeleteButton && (
-                <button
-                  className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-md hover:bg-gray-100"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteClick(file.id, file.name);
-                  }}
-                  title="Delete file"
-                >
-                  <X className="size-6" />
-                </button>
-              )}
-
-              {/* Content - no longer includes delete button in flow */}
-              <div className="flex flex-col items-center gap-3 mb-3">
-                <div className="size-8 flex items-center justify-center rounded">
-                  {getFileIcon(file)}
-                </div>
-                <div className="flex-1 min-w-0 w-full text-left">
-                  <p className="text-[15px] text-black font-bold truncate" title={file.name}>
-                    {file.name}
-                  </p>
-                  <div className="flex flex-wrap justify-start items-center gap-2 mt-1">
-                    <span className="text-xs text-muted-foreground">
-                      {formatBytes(file.size)}
-                    </span>
-                    <span className={cn('w-fit', stageCls)}>{stageLabel}</span>
-                    {file.file_design && (
-                      <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-0.5 rounded">
-                        {getFileDesignLabel(file.file_design)}
-                      </span>
-                    )}
-                    {file.uploaded_by_name && (
-                      <span className="text-xs text-muted-foreground bg-blue-50 px-2 py-0.5 rounded">
-                        {file.uploaded_by_name}
-                      </span>
-                    )}
-                    {dateTime && (
-                      <span className="text-xs text-muted-foreground">
-                        {dateTime}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* View button at bottom */}
-              <div className="flex justify-start">
-                <Button
-                  onClick={() => handleViewFile(file)}
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  title="View file"
-                >
-                  <Eye className="w-4 h-4 text-blue-500" />
-                </Button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <FileGallery
+        sources={[{ kind: 'raw', data: files }]}
+        showToolbar={false}
+        lockLayout
+        onFileClick={handleViewFile}
+        onDeleteFile={showDeleteButton
+          ? (file) => handleDeleteClick(String(file.id), file.name)
+          : undefined}
+        emptyMessage={t('FILES.NO_FILES')}
+      />
 
       {/* ─── Delete Confirmation Popup ───────────────────────────────────────── */}
       <Popup
@@ -459,7 +320,7 @@ export function Documents({
         </div>
       </Popup>
       {activeFile && (
-        <div className="fixed inset-0 z-50 bg-white overflow-auto">
+        <div className="fixed inset-0 z-50 bg-background overflow-auto">
           <FileViewer file={activeFile} onClose={handleCloseViewer} />
         </div>
       )}

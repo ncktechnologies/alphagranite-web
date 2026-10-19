@@ -196,27 +196,27 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
   };
 
   return (
-    <Card className="border border-[#ecedf0] rounded-[12px] overflow-hidden">
-      <CardHeader className="pb-3 border-b border-[#ecedf0] cursor-pointer select-none px-4" onClick={onToggleExpand}>
+    <Card className="border border-border rounded-[12px] overflow-hidden">
+      <CardHeader className="pb-3 border-b border-border cursor-pointer select-none px-4" onClick={onToggleExpand}>
         <div className="flex items-center gap-2 w-full">
           <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-            <ChevronDown className={cn('h-5 w-5 text-[#7c8689] transition-transform shrink-0', !isExpanded && '-rotate-90')} />
-            <CardTitle className="text-[16px] text-[#4b545d] font-semibold truncate">
+            <ChevronDown className={cn('h-5 w-5 text-text-foreground transition-transform shrink-0', !isExpanded && '-rotate-90')} />
+            <CardTitle className="text-[16px] text-secondary-foreground font-semibold truncate">
               {stageName || `Plan Section ${idx + 1}`}
             </CardTitle>
             {stageName && (
-              <span className={cn('px-2 py-0.5 rounded-full text-xs font-semibold shrink-0 border', entry.isTouchup ? 'bg-orange-50 border-orange-300 text-orange-700' : 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]')}>
+              <span className={cn('px-2 py-0.5 rounded-full text-xs font-semibold shrink-0 border', entry.isTouchup ? 'bg-orange-50 border-orange-300 text-orange-700' : 'bg-primary-soft border-[#9cc15e] text-primary-accent')}>
                 {stageName}
               </span>
             )}
             {!isExpanded && collapsedTimeLabel && (
-              <span className="text-xs text-[#7c8689] shrink-0 hidden sm:inline">{collapsedTimeLabel}</span>
+              <span className="text-xs text-text-foreground shrink-0 hidden sm:inline">{collapsedTimeLabel}</span>
             )}
           </div>
           <div className="flex items-center gap-2 ml-auto pl-4 shrink-0" onClick={e => e.stopPropagation()}>
             {!entry.isTouchup ? (
               <Select value={entry.sequence} onValueChange={value => onUpdate({ sequence: value })}>
-                <SelectTrigger className="h-7 w-auto text-[14px] border-[#e2e4ed] rounded-[4px] font-bold">
+                <SelectTrigger className="h-7 w-auto text-[14px] border-border rounded-[4px] font-bold">
                   <SelectValue placeholder="Seq" />
                 </SelectTrigger>
                 <SelectContent>
@@ -224,9 +224,9 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                 </SelectContent>
               </Select>
             ) : (
-              <span className="text-[13px] text-[#b0b7bc] px-2 py-1 rounded border border-dashed border-[#e2e4ed]">Last</span>
+              <span className="text-[13px] text-placeholder px-2 py-1 rounded border border-dashed border-border">Last</span>
             )}
-            <button type="button" onClick={onRemove} className="h-7 w-7 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-red-50 transition-colors shrink-0">
+            <button type="button" onClick={onRemove} className="h-7 w-7 rounded-[6px] border border-border flex items-center justify-center hover:bg-red-50 transition-colors shrink-0">
               <X className="h-4 w-4 text-red-500" />
             </button>
           </div>
@@ -237,13 +237,13 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
         <CardContent className="pt-5 space-y-5">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label className="text-[15px] text-[#4b545d] font-semibold">Shop Activity</Label>
+              <Label className="text-[15px] text-secondary-foreground font-semibold">Shop Activity</Label>
               <Select value={entry.planning_section_id} onValueChange={value => {
                 const ps = planningSections.find((s: any) => String(s.id) === value);
                 const name = ps?.name || ps?.plan_name || ps?.title || '';
                 onUpdate({ planning_section_id: value, stageName: name, workstation_id: '', operator_id: '' });
               }}>
-                <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[15px]">
+                <SelectTrigger className="mt-2 h-[44px] border-border rounded-[6px] text-[15px]">
                   <SelectValue placeholder="Select section" />
                 </SelectTrigger>
                 <SelectContent>
@@ -253,14 +253,14 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
             </div>
 
             <div>
-              <Label className="text-[15px] text-[#4b545d] font-semibold">Est. Hours *</Label>
-              <Input type="number" min="0.5" step="0.5" placeholder="e.g. 2.5" value={entry.estimated_hours} onChange={e => handleHoursChange(e.target.value)} className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[15px]" />
+              <Label className="text-[15px] text-secondary-foreground font-semibold">Est. Hours *</Label>
+              <Input type="number" min="0.5" step="0.5" placeholder="e.g. 2.5" value={entry.estimated_hours} onChange={e => handleHoursChange(e.target.value)} className="mt-2 h-[44px] border-border rounded-[6px] text-[15px]" />
             </div>
 
             <div>
-              <Label className="text-[15px] text-[#4b545d] font-semibold">Workstation *</Label>
+              <Label className="text-[15px] text-secondary-foreground font-semibold">Workstation *</Label>
               <Select value={entry.workstation_id} onValueChange={value => onUpdate({ workstation_id: value, operator_id: '' })} disabled={!entry.planning_section_id || isLoadingWorkstations}>
-                <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[15px]">
+                <SelectTrigger className="mt-2 h-[44px] border-border rounded-[6px] text-[15px]">
                   <SelectValue placeholder={isLoadingWorkstations ? 'Loading…' : !entry.planning_section_id ? 'Select a section first' : workstationsForSection.length === 0 ? 'None for this section' : 'Select workstation'} />
                 </SelectTrigger>
                 <SelectContent>
@@ -272,9 +272,9 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-[15px] text-[#4b545d] font-semibold">Operator *</Label>
+              <Label className="text-[15px] text-secondary-foreground font-semibold">Operator *</Label>
               <Select value={entry.operator_id} onValueChange={value => onUpdate({ operator_id: value })} disabled={!entry.workstation_id}>
-                <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[15px]">
+                <SelectTrigger className="mt-2 h-[44px] border-border rounded-[6px] text-[15px]">
                   <SelectValue placeholder={!entry.workstation_id ? 'Select workstation first' : filteredEmployees.length === 0 ? 'No operators assigned' : 'Select operator'} />
                 </SelectTrigger>
                 <SelectContent>
@@ -286,12 +286,12 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
             </div>
 
             <div>
-              <Label className="text-[15px] text-[#4b545d] font-semibold">Date</Label>
+              <Label className="text-[15px] text-secondary-foreground font-semibold">Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <button type="button" className={cn('mt-2 w-full h-[44px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[15px] flex items-center gap-2', !entry.date && 'text-muted-foreground')}>
-                    <Calendar className="h-4 w-4 text-[#7a9705]" />
-                    {entry.date ? format(entry.date, 'MMM d, yyyy') : <span className="text-[#b0b7bc]">Auto-filled</span>}
+                  <button type="button" className={cn('mt-2 w-full h-[44px] px-3 text-left border border-border rounded-[6px] text-[15px] flex items-center gap-2', !entry.date && 'text-muted-foreground')}>
+                    <Calendar className="h-4 w-4 text-primary" />
+                    {entry.date ? format(entry.date, 'MMM d, yyyy') : <span className="text-placeholder">Auto-filled</span>}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -303,9 +303,9 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-[15px] text-[#4b545d] font-semibold">Start Time</Label>
+              <Label className="text-[15px] text-secondary-foreground font-semibold">Start Time</Label>
               <Select value={entry.start_time} onValueChange={value => handleTimeUpdate(value, undefined)}>
-                <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[15px]">
+                <SelectTrigger className="mt-2 h-[44px] border-border rounded-[6px] text-[15px]">
                   <SelectValue placeholder="Select start" />
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
@@ -315,9 +315,9 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
             </div>
 
             <div>
-              <Label className="text-[15px] text-[#4b545d] font-semibold">End Time</Label>
+              <Label className="text-[15px] text-secondary-foreground font-semibold">End Time</Label>
               <Select value={entry.end_time} onValueChange={value => handleTimeUpdate(undefined, value)}>
-                <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[15px]">
+                <SelectTrigger className="mt-2 h-[44px] border-border rounded-[6px] text-[15px]">
                   <SelectValue placeholder="Select end" />
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
@@ -329,11 +329,11 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
 
           {proposals.length > 0 && (
             <div>
-              <Label className="text-[14px] text-[#7c8689] mb-2 block">Available slots — click to apply</Label>
+              <Label className="text-[14px] text-text-foreground mb-2 block">Available slots — click to apply</Label>
               <div className="flex flex-wrap gap-2">
                 {proposals.map((proposal, pIdx) => {
                   const isActive = entry.scheduled_time ? entry.scheduled_time === proposal.scheduled_time : (entry.start_time === format(new Date(proposal.start), 'HH:mm') && entry.date && format(entry.date, 'yyyy-MM-dd') === format(new Date(proposal.start), 'yyyy-MM-dd'));
-                  return (<button key={pIdx} type="button" onClick={() => onApplyProposal(proposal)} className={cn('px-3 py-1.5 rounded-[6px] border text-[14px] font-medium transition-colors', isActive ? 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]' : 'bg-white border-[#e2e4ed] text-[#4b545d] hover:border-[#9cc15e] hover:bg-[#f0f4e8]')}>
+                  return (<button key={pIdx} type="button" onClick={() => onApplyProposal(proposal)} className={cn('px-3 py-1.5 rounded-[6px] border text-[14px] font-medium transition-colors', isActive ? 'bg-primary-soft border-[#9cc15e] text-primary-accent' : 'bg-background border-border text-secondary-foreground hover:border-[#9cc15e] hover:bg-primary-soft')}>
                     {proposal.scheduled_time || `${format(new Date(proposal.start), 'MMM d · hh:mm a')}–${format(new Date(proposal.end), 'hh:mm a')}`}
                   </button>);
                 })}
@@ -342,8 +342,8 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
           )}
 
           <div>
-            <Label className="text-[15px] text-[#4b545d] font-semibold">Description / Notes</Label>
-            <Textarea placeholder="Add any notes about this plan..." value={entry.notes} onChange={e => onUpdate({ notes: e.target.value })} className="mt-2 min-h-[80px] border-[#e2e4ed] rounded-[6px] text-[15px]" />
+            <Label className="text-[15px] text-secondary-foreground font-semibold">Description / Notes</Label>
+            <Textarea placeholder="Add any notes about this plan..." value={entry.notes} onChange={e => onUpdate({ notes: e.target.value })} className="mt-2 min-h-[80px] border-border rounded-[6px] text-[15px]" />
           </div>
         </CardContent>
       )}
@@ -855,20 +855,20 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   const disableActions = hasPendingRevision || hasExistingPlans || isCheckingPlans;
 
   return (
-    <div className="bg-white min-h-screen">
-      <div className="border-b border-[#dfdfdf]">
+    <div className="bg-background min-h-screen">
+      <div className="border-b border-input">
         <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
           <div className="flex items-center gap-4">
-            <p className="text-[29px] leading-[32px] text-black font-semibold">
+            <p className="text-[29px] leading-[32px] text-foreground font-semibold">
               {isEditing ? 'Edit Plan' : 'Auto Schedule Plan'}
             </p>
             {entries[0]?.fab_id && (
               <Link
                 to={`/sales/${entries[0].fab_id}`}
-                className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2"
+                className="flex items-center gap-2 bg-primary-soft border border-[#9cc15e] rounded-[8px] px-4 py-2"
               >
-                <span className="text-[15px] text-[#4a4d59]">FAB ID</span>
-                <span className="text-[21px] text-[#7a9705] font-semibold">#{entries[0].fab_id}</span>
+                <span className="text-[15px] text-secondary-foreground">FAB ID</span>
+                <span className="text-[21px] text-primary font-semibold">#{entries[0].fab_id}</span>
               </Link>
             )}
           </div>
@@ -876,7 +876,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
           {!hideBackButton && (
             <button
               onClick={handleBack}
-              className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
+              className="h-[34px] px-3 py-[7px] rounded-[6px] border border-border bg-background flex items-center gap-2 text-secondary-foreground hover:bg-muted transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
               <span className="text-[15px] font-semibold">Back</span>
@@ -897,15 +897,15 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
 
 
-          <Card className="border border-[#ecedf0] rounded-[12px]">
+          <Card className="border border-border rounded-[12px]">
             <CardContent className="pt-5">
-              <Label className="text-[15px] text-[#4b545d] font-semibold">FAB ID *</Label>
+              <Label className="text-[15px] text-secondary-foreground font-semibold">FAB ID *</Label>
               <Select
                 value={entries[0]?.fab_id || ''}
                 onValueChange={value => updateEntry(0, { fab_id: value })}
                 disabled={isLoadingFabs || (!!effectivePrefillFabId && !isEditing)}
               >
-                <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[15px]">
+                <SelectTrigger className="mt-2 h-[44px] border-border rounded-[6px] text-[15px]">
                   <SelectValue placeholder={isLoadingFabs ? 'Loading FABs…' : 'Select FAB ID'} />
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
@@ -918,9 +918,9 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
           </Card>
 
           {selectedFabId && selectedFab && (
-            <Card className="border border-[#ecedf0] rounded-[12px]">
-              <CardHeader className="pb-3 border-b border-[#ecedf0]">
-                <CardTitle className="text-[17px] text-[#4b545d] font-semibold">FAB Details</CardTitle>
+            <Card className="border border-border rounded-[12px]">
+              <CardHeader className="pb-3 border-b border-border">
+                <CardTitle className="text-[17px] text-secondary-foreground font-semibold">FAB Details</CardTitle>
                 {showCncWarning && (
                   <Badge variant="destructive" className="ml-2">
                     <Info className="h-3 w-3 mr-1" />
@@ -942,8 +942,8 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
                     { label: 'Miter LinFt', val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
                   ].map(({ label, val }) => (
                     <div key={label}>
-                      <Label className="text-[14px] text-[#7c8689]">{label}</Label>
-                      <p className="text-[15px] font-medium text-[#4b545d]">{val || '-'}</p>
+                      <Label className="text-[14px] text-text-foreground">{label}</Label>
+                      <p className="text-[15px] font-medium text-secondary-foreground">{val || '-'}</p>
                     </div>
                   ))}
                 </div>
@@ -958,8 +958,8 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
                         className={cn(
                           'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[14px] font-medium border',
                           active
-                            ? 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]'
-                            : 'bg-gray-50 border-[#e2e4ed] text-[#b0b7bc]'
+                            ? 'bg-primary-soft border-[#9cc15e] text-primary-accent'
+                            : 'bg-muted border-border text-placeholder'
                         )}
                       >
                         {s.label}
@@ -995,7 +995,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
           <button
             type="button"
             onClick={addEntry}
-            className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#9cc15e] hover:text-[#7a9705] hover:bg-[#f0f4e8] transition-all"
+            className="w-full h-[44px] border border-dashed border-border rounded-[8px] flex items-center justify-center gap-2 text-muted-foreground hover:border-[#9cc15e] hover:text-primary hover:bg-primary-soft transition-all"
             disabled={isLoading || isAutoScheduling || disableActions}
           >
             <Plus className="h-4 w-4" />
@@ -1011,7 +1011,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
                     type="button"
                     onClick={handleAutoPopulate}
                     disabled={isAutoScheduling || disableActions}
-                    className="w-full h-[44px] border border-[#9cc15e] rounded-[8px] flex items-center justify-center gap-2 text-[#5a7a00] bg-[#f0f4e8] hover:bg-[#e6f0d4] transition-colors disabled:opacity-60 text-[15px] font-semibold"
+                    className="w-full h-[44px] border border-[#9cc15e] rounded-[8px] flex items-center justify-center gap-2 text-primary-accent bg-primary-soft hover:bg-primary-soft transition-colors disabled:opacity-60 text-[15px] font-semibold"
                   >
                     {isAutoScheduling ? (
                       <><LoaderCircle className="h-4 w-4 animate-spin" />Finding earliest slots…</>
@@ -1041,7 +1041,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             <button
               type="button"
               onClick={handleBack}
-              className="flex-1 h-[44px] border border-[#e2e4ed] rounded-[8px] text-[15px] text-[#4b545d] hover:bg-gray-50 transition-colors"
+              className="flex-1 h-[44px] border border-border rounded-[8px] text-[15px] text-secondary-foreground hover:bg-muted transition-colors"
               disabled={isLoading || isAutoScheduling}
             >
               Cancel

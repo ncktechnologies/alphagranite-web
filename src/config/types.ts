@@ -27,6 +27,8 @@ export interface Settings {
   layouts: {
     demo1: {
       sidebarCollapse: boolean;
+      /** Collapsed sidebar widens while hovered; off keeps it an icon rail */
+      sidebarHoverExpand: boolean;
       sidebarTheme: 'light' | 'dark';
     };
     demo2: {

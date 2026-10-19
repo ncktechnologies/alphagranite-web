@@ -398,7 +398,7 @@ const ShopCalendarPage: React.FC = () => {
             </div>
           </div>
         </TooltipTrigger>
-        <TooltipContent side="right" className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
+        <TooltipContent side="right" className="bg-background border border-border shadow-lg rounded-md p-2 text-xs text-secondary-foreground">
           <div className="space-y-1">
             <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
             <p><span className="font-semibold">Operator:</span> {event.operator_name || 'N/A'}</p>
@@ -437,7 +437,7 @@ const ShopCalendarPage: React.FC = () => {
         : format(currentDate, 'MMMM yyyy');
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-background min-h-screen">
       {/* FAB Picker Dialog – unchanged */}
       {fabPickerOpen && (
         <div
@@ -445,30 +445,30 @@ const ShopCalendarPage: React.FC = () => {
           onClick={() => setFabPickerOpen(false)}
         >
           <div
-            className="bg-white rounded-[16px] border border-[#ecedf0] shadow-xl w-[420px] p-6 flex flex-col gap-5"
+            className="bg-background rounded-[16px] border border-border shadow-xl w-[420px] p-6 flex flex-col gap-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold text-[21px] text-black">Select FAB ID</p>
-                <p className="text-[14px] text-[#7c8689] mt-1">Enter the FAB ID to create a plan for</p>
+                <p className="font-semibold text-[21px] text-foreground">Select FAB ID</p>
+                <p className="text-[14px] text-text-foreground mt-1">Enter the FAB ID to create a plan for</p>
               </div>
-              <button onClick={() => setFabPickerOpen(false)} className="h-8 w-8 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-gray-50">
-                <X className="h-4 w-4 text-[#7c8689]" />
+              <button onClick={() => setFabPickerOpen(false)} className="h-8 w-8 rounded-[6px] border border-border flex items-center justify-center hover:bg-muted">
+                <X className="h-4 w-4 text-text-foreground" />
               </button>
             </div>
 
-            <div className="flex items-center gap-3 bg-[#f0f4e8] rounded-[8px] px-4 py-3">
-              <CalendarIcon className="h-4 w-4 text-[#7a9705]" />
-              <span className="font-semibold text-[14px] text-[#4b545d]">
+            <div className="flex items-center gap-3 bg-primary-soft rounded-[8px] px-4 py-3">
+              <CalendarIcon className="h-4 w-4 text-primary" />
+              <span className="font-semibold text-[14px] text-secondary-foreground">
                 {selectedDate ? format(selectedDate, 'EEEE, MMMM d, yyyy') : format(currentDate, 'EEEE, MMMM d, yyyy')}
               </span>
             </div>
 
             <div>
-              <label className="font-semibold text-[14px] text-[#4b545d] block mb-2">FAB ID *</label>
+              <label className="font-semibold text-[14px] text-secondary-foreground block mb-2">FAB ID *</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#78829d]" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="number"
                   placeholder="e.g. 2390"
@@ -476,7 +476,7 @@ const ShopCalendarPage: React.FC = () => {
                   onChange={(e) => setFabPickerInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && fabPickerInput.trim()) handleOpenCreatePlanWithFab(fabPickerInput.trim()); }}
                   autoFocus
-                  className="w-full h-[44px] bg-white border border-[#e2e4ed] rounded-[8px] pl-9 pr-4 text-[15px] text-[#4b545d] placeholder:text-[#78829d] outline-none focus:border-[#9cc15e] focus:ring-1 focus:ring-[#9cc15e]"
+                  className="w-full h-[44px] bg-background border border-border rounded-[8px] pl-9 pr-4 text-[15px] text-secondary-foreground placeholder:text-muted-foreground outline-none focus:border-[#9cc15e] focus:ring-1 focus:ring-[#9cc15e]"
                 />
               </div>
             </div>
@@ -484,7 +484,7 @@ const ShopCalendarPage: React.FC = () => {
             <div className="flex gap-3">
               <button
                 onClick={() => setFabPickerOpen(false)}
-                className="flex-1 h-[44px] border border-[#e2e4ed] rounded-[8px] text-[15px] text-[#4b545d] hover:bg-gray-50 font-semibold"
+                className="flex-1 h-[44px] border border-border rounded-[8px] text-[15px] text-secondary-foreground hover:bg-muted font-semibold"
               >
                 Cancel
               </button>
@@ -502,11 +502,11 @@ const ShopCalendarPage: React.FC = () => {
       )}
 
       {/* Page Header */}
-      <div className="border-b border-[#dfdfdf]">
+      <div className="border-b border-input">
         <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
           <div className="flex flex-col gap-2">
-            <p className="font-semibold text-[29px] leading-[32px] text-black">Shop Plan</p>
-            <p className="font-semibold text-[21px] leading-[24px] text-[#4a4d59]">{calLabel}</p>
+            <p className="font-semibold text-[29px] leading-[32px] text-foreground">Shop Plan</p>
+            <p className="font-semibold text-[21px] leading-[24px] text-secondary-foreground">{calLabel}</p>
           </div>
           <button
             onClick={() => navigate('/shop/create-plan')}
@@ -519,14 +519,14 @@ const ShopCalendarPage: React.FC = () => {
         </div>
 
         <div className="flex items-center px-10 h-[65px]">
-          <div className="bg-[#f9f9f9] h-[45px] rounded-[6px] flex items-start pt-[4px] px-[4px] gap-2">
+          <div className="bg-muted h-[45px] rounded-[6px] flex items-start pt-[4px] px-[4px] gap-2">
             {(['day', 'week', 'month'] as const).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
                 className={`px-[15px] py-[8px] rounded-[4px] font-semibold text-[15px] leading-[21px] capitalize transition-all ${viewMode === mode
-                  ? 'bg-white text-black shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
-                  : 'text-[#78829d]'
+                  ? 'bg-background text-foreground shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
+                  : 'text-muted-foreground'
                   }`}
               >
                 {mode}
@@ -538,14 +538,14 @@ const ShopCalendarPage: React.FC = () => {
         <div className="flex items-center justify-between px-10 h-[65px]">
           <div className="flex items-center gap-[10px]">
             {isSearchLocked ? (
-              <div className="flex items-center gap-2 h-[36px] bg-[#f0f4e8] border border-[#9cc15e] rounded-[6px] px-3">
-                <Lock className="size-3.5 text-[#7a9705]" />
-                <span className="font-semibold text-[14px] text-[#4b545d]">{lockedFabId}</span>
+              <div className="flex items-center gap-2 h-[36px] bg-primary-soft border border-[#9cc15e] rounded-[6px] px-3">
+                <Lock className="size-3.5 text-primary" />
+                <span className="font-semibold text-[14px] text-secondary-foreground">{lockedFabId}</span>
               </div>
             ) : (
               <div className="flex items-center gap-0">
                 <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number')}>
-                  <SelectTrigger className="w-[130px] h-[36px] bg-white border border-[#e2e4ed] rounded-[6px] rounded-e-none border-r-0 text-[14px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                  <SelectTrigger className="w-[130px] h-[36px] bg-background border border-border rounded-[6px] rounded-e-none border-r-0 text-[14px] text-secondary-foreground shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
                     <SelectValue placeholder="Search by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -554,16 +554,16 @@ const ShopCalendarPage: React.FC = () => {
                   </SelectContent>
                 </Select>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#78829d]" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                   <input
                     placeholder={`Search by ${searchType === 'fab_id' ? 'FAB ID' : 'Job Number'}...`}
                     value={searchFabId}
                     onChange={(e) => setSearchFabId(e.target.value)}
-                    className="w-[194px] h-[36px] bg-white border border-[#e2e4ed] rounded-[6px] rounded-s-none pl-9 pr-3 text-[14px] text-[#4b545d] placeholder:text-[#78829d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] outline-none focus:ring-1 focus:ring-[#e2e4ed]"
+                    className="w-[194px] h-[36px] bg-background border border-border rounded-[6px] rounded-s-none pl-9 pr-3 text-[14px] text-secondary-foreground placeholder:text-muted-foreground shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] outline-none focus:ring-1 focus:ring-border"
                   />
                   {searchFabId && (
                     <button className="absolute right-2 top-1/2 -translate-y-1/2" onClick={() => setSearchFabId('')}>
-                      <X className="size-3.5 text-[#78829d]" />
+                      <X className="size-3.5 text-muted-foreground" />
                     </button>
                   )}
                 </div>
@@ -571,7 +571,7 @@ const ShopCalendarPage: React.FC = () => {
             )}
 
             <Select value={filterFabType || 'all'} onValueChange={(v) => setFilterFabType(v === 'all' ? '' : v)}>
-              <SelectTrigger className="min-w-[133px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[14px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+              <SelectTrigger className="min-w-[133px] w-auto h-[34px] bg-background border border-border rounded-[6px] text-[14px] text-secondary-foreground shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
                 <SelectValue placeholder="All FAB Types" />
               </SelectTrigger>
               <SelectContent className="max-h-[200px] overflow-y-auto">
@@ -583,7 +583,7 @@ const ShopCalendarPage: React.FC = () => {
             {/* ── WORKSTATION multi‑select ── */}
             <Popover open={workstationPopoverOpen} onOpenChange={setWorkstationPopoverOpen}>
               <PopoverTrigger asChild>
-                <button className="min-w-[150px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[14px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
+                <button className="min-w-[150px] h-[34px] bg-background border border-border rounded-[6px] text-[14px] text-secondary-foreground shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
                   <span className="truncate">
                     {filterWorkstation.length === 0 ? 'All Workstations' : `${filterWorkstation.length} selected`}
                   </span>
@@ -629,7 +629,7 @@ const ShopCalendarPage: React.FC = () => {
             {/* ── OPERATOR multi‑select ── */}
             <Popover open={operatorPopoverOpen} onOpenChange={setOperatorPopoverOpen}>
               <PopoverTrigger asChild>
-                <button className="min-w-[137px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[14px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
+                <button className="min-w-[137px] h-[34px] bg-background border border-border rounded-[6px] text-[14px] text-secondary-foreground shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
                   <span className="truncate">
                     {filterOperator.length === 0 ? 'All Operators' : `${filterOperator.length} selected`}
                   </span>
@@ -675,7 +675,7 @@ const ShopCalendarPage: React.FC = () => {
             {/* ── PLANNING SECTION multi‑select ── */}
             <Popover open={sectionPopoverOpen} onOpenChange={setSectionPopoverOpen}>
               <PopoverTrigger asChild>
-                <button className="min-w-[150px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[14px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
+                <button className="min-w-[150px] h-[34px] bg-background border border-border rounded-[6px] text-[14px] text-secondary-foreground shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
                   <span className="truncate">
                     {filterPlanningSections.length === 0 ? 'All Plans' : `${filterPlanningSections.length} selected`}
                   </span>
@@ -720,17 +720,17 @@ const ShopCalendarPage: React.FC = () => {
           </div>
 
           {viewMode !== 'month' && (
-            <div className="bg-[#eaebe7] rounded-[8px] flex items-center gap-[2px] p-[2px]">
+            <div className="bg-accent rounded-[8px] flex items-center gap-[2px] p-[2px]">
               <button
                 onClick={() => setIsAxisSwapped(false)}
-                className={`p-[8px] rounded-[6px] transition-all ${!isAxisSwapped ? 'bg-white shadow-sm' : ''}`}
+                className={`p-[8px] rounded-[6px] transition-all ${!isAxisSwapped ? 'bg-background shadow-sm' : ''}`}
                 title="Column view"
               >
-                <Columns3 className="size-6 text-black" strokeWidth={2} />
+                <Columns3 className="size-6 text-foreground" strokeWidth={2} />
               </button>
               <button
                 onClick={() => setIsAxisSwapped(true)}
-                className={`p-[8px] rounded-[6px] transition-all ${isAxisSwapped ? 'bg-white shadow-sm' : ''}`}
+                className={`p-[8px] rounded-[6px] transition-all ${isAxisSwapped ? 'bg-background shadow-sm' : ''}`}
                 title="Row view"
               >
                 <Rows3 className="size-6 text-[#93948e]" strokeWidth={2} />
@@ -742,21 +742,21 @@ const ShopCalendarPage: React.FC = () => {
 
       {/* Calendar Card */}
       <div className="p-4 md:p-6">
-        <div className="border border-[#ecedf0] rounded-[16px] px-4 py-6 flex flex-col gap-4">
+        <div className="border border-border rounded-[16px] px-4 py-6 flex flex-col gap-4">
           <div className="flex items-center justify-between pl-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={handlePrevious}
-                className="bg-white h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] flex items-center justify-center hover:bg-gray-50"
+                className="bg-background h-[34px] px-3 py-[7px] rounded-[6px] border border-border flex items-center justify-center hover:bg-muted"
               >
-                <ChevronLeft className="h-5 w-5 text-[#74798b]" />
+                <ChevronLeft className="h-5 w-5 text-muted-foreground" />
               </button>
 
               <Popover>
                 <PopoverTrigger asChild>
                   <button className="flex items-center gap-3">
-                    <CalendarIcon className="size-6 text-[#4b545d]" strokeWidth={2} />
-                    <span className="font-semibold text-[21px] leading-[24px] text-[#4a4d59] whitespace-nowrap">{calLabel}</span>
+                    <CalendarIcon className="size-6 text-secondary-foreground" strokeWidth={2} />
+                    <span className="font-semibold text-[21px] leading-[24px] text-secondary-foreground whitespace-nowrap">{calLabel}</span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -766,27 +766,27 @@ const ShopCalendarPage: React.FC = () => {
 
               <button
                 onClick={handleNext}
-                className="bg-white h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] flex items-center justify-center hover:bg-gray-50"
+                className="bg-background h-[34px] px-3 py-[7px] rounded-[6px] border border-border flex items-center justify-center hover:bg-muted"
               >
-                <ChevronRight className="h-5 w-5 text-[#74798b]" />
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
 
             <div className="flex flex-col items-end gap-1">
-              <p className="font-semibold text-[17px] leading-[24px] text-[#7c8689] whitespace-nowrap">
+              <p className="font-semibold text-[17px] leading-[24px] text-text-foreground whitespace-nowrap">
                 Total Scheduled Plans
-                {isSearchLocked && <span className="ml-2 text-[#7a9705]">. {lockedFabId}</span>}
+                {isSearchLocked && <span className="ml-2 text-primary">. {lockedFabId}</span>}
                 {isFetching && !isLoading && (
                   <span className="ml-2 inline-flex items-center gap-1.5">
-                    <svg className="animate-spin h-3.5 w-3.5 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-3.5 w-3.5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span className="text-[13px] font-medium text-[#7a9705]">Refreshing...</span>
+                    <span className="text-[13px] font-medium text-primary">Refreshing...</span>
                   </span>
                 )}
               </p>
-              <p className="font-semibold text-[21px] leading-[24px] text-black">
+              <p className="font-semibold text-[21px] leading-[24px] text-foreground">
                 {isLoading ? '–' : totalPlans}
               </p>
             </div>
@@ -794,36 +794,36 @@ const ShopCalendarPage: React.FC = () => {
 
           {isLoading ? (
             <div className="flex items-center justify-center py-16">
-              <p className="text-[#7c8689]">Loading calendar events…</p>
+              <p className="text-text-foreground">Loading calendar events…</p>
             </div>
           ) : (
             <>
               {isFetching && !isLoading && (
                 <div className="relative">
-                  <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-[8px]">
-                    <div className="bg-white border border-[#e2e4ed] rounded-[8px] px-4 py-2 shadow-sm flex items-center gap-2">
-                      <svg className="animate-spin h-4 w-4 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-[8px]">
+                    <div className="bg-background border border-border rounded-[8px] px-4 py-2 shadow-sm flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      <span className="text-[14px] font-medium text-[#4b545d]">Updating calendar...</span>
+                      <span className="text-[14px] font-medium text-secondary-foreground">Updating calendar...</span>
                     </div>
                   </div>
                 </div>
               )}
               <TooltipProvider>
-                <div className="border border-[#ecedf0] rounded-[8px] overflow-x-auto">
+                <div className="border border-border rounded-[8px] overflow-x-auto">
                   {/* Month view – unchanged */}
                   {viewMode === 'month' && (
                     <div className="min-w-max">
                       <div className="grid" style={{ gridTemplateColumns: 'auto repeat(7, 1fr)' }}>
-                        <div className="p-2 border-b border-[#e2e4ed]" />
+                        <div className="p-2 border-b border-border" />
                         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-                          <div key={d} className="text-center text-[13px] font-medium text-[#4b545d] uppercase p-2 border-b border-l border-[#ecedf0]">{d}</div>
+                          <div key={d} className="text-center text-[13px] font-medium text-secondary-foreground uppercase p-2 border-b border-l border-border">{d}</div>
                         ))}
                         {monthWeeks.map((week, wi) => (
                           <React.Fragment key={wi}>
-                            <div className="text-[13px] font-medium text-[#7c8689] p-2 text-right pr-4 border-b border-[#ecedf0]">
+                            <div className="text-[13px] font-medium text-text-foreground p-2 text-right pr-4 border-b border-border">
                               Wk {format(week[0], 'w')}
                             </div>
                             {week.map((day) => {
@@ -833,10 +833,10 @@ const ShopCalendarPage: React.FC = () => {
                               return (
                                 <div
                                   key={dk}
-                                  className={`border-b border-l border-[#ecedf0] p-2 min-h-[80px] cursor-pointer hover:bg-gray-50 transition-colors ${!inMonth ? 'bg-gray-50' : ''}`}
+                                  className={`border-b border-l border-border p-2 min-h-[80px] cursor-pointer hover:bg-muted transition-colors ${!inMonth ? 'bg-muted' : ''}`}
                                   onClick={() => { setCurrentDate(day); setViewMode('day'); }}
                                 >
-                                  <div className={`text-right text-[14px] font-medium ${!inMonth ? 'text-[#c0c4cc]' : 'text-[#4b545d]'}`}>{format(day, 'd')}</div>
+                                  <div className={`text-right text-[14px] font-medium ${!inMonth ? 'text-placeholder' : 'text-secondary-foreground'}`}>{format(day, 'd')}</div>
                                   {evs.length > 0 && (
                                     <Badge variant="outline" className="mt-1 text-[15px] font-semibold">
                                       {evs.length} plan{evs.length !== 1 ? 's' : ''}
@@ -854,16 +854,16 @@ const ShopCalendarPage: React.FC = () => {
                   {/* Day / Week column view – unchanged */}
                   {viewMode !== 'month' && !isAxisSwapped && (
                     <div className="min-w-max">
-                      <div className="flex sticky top-0 z-10 bg-white border-b border-[#e2e4ed]">
-                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0]" />
+                      <div className="flex sticky top-0 z-10 bg-background border-b border-border">
+                        <div className="w-[90px] flex-shrink-0 border-r border-border" />
                         {displayDays.map((day) => (
                           <div
                             key={format(day, 'yyyy-MM-dd')}
-                            className="flex-1 min-w-[160px] border-r border-[#ecedf0] flex flex-col items-center py-3 gap-1"
+                            className="flex-1 min-w-[160px] border-r border-border flex flex-col items-center py-3 gap-1"
                           >
-                            <span className="text-[13px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
+                            <span className="text-[13px] text-text-foreground uppercase tracking-wide">{format(day, 'EEE')}</span>
                             <span
-                              className={`text-[23px] font-semibold w-9 h-9 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'}`}
+                              className={`text-[23px] font-semibold w-9 h-9 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-secondary-foreground'}`}
                             >
                               {format(day, 'd')}
                             </span>
@@ -872,7 +872,7 @@ const ShopCalendarPage: React.FC = () => {
                       </div>
 
                       <div className="relative flex pt-5" style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}>
-                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] relative">
+                        <div className="w-[90px] flex-shrink-0 border-r border-border relative">
                           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                             const hour = DAY_START_HOUR + i;
                             // skip break labels
@@ -887,7 +887,7 @@ const ShopCalendarPage: React.FC = () => {
                                 className="absolute w-full pr-3 flex items-start justify-end"
                                 style={{ top: position - 9, height: HOUR_HEIGHT }}
                               >
-                                <span className="text-[12px] font-medium text-[#7c8689] whitespace-nowrap">{label}</span>
+                                <span className="text-[12px] font-medium text-text-foreground whitespace-nowrap">{label}</span>
                               </div>
                             );
                           })}
@@ -902,7 +902,7 @@ const ShopCalendarPage: React.FC = () => {
                           return (
                             <div
                               key={dk}
-                              className="flex-1 min-w-[160px] border-r border-[#ecedf0] relative"
+                              className="flex-1 min-w-[160px] border-r border-border relative"
                               style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(true); } : undefined}
                             >
@@ -911,7 +911,7 @@ const ShopCalendarPage: React.FC = () => {
                                 if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) return null;
                                 const position = getTimePosition(hour);
                                 return (
-                                  <div key={i} className="absolute w-full border-t border-[#ecedf0]" style={{ top: position }} />
+                                  <div key={i} className="absolute w-full border-t border-border" style={{ top: position }} />
                                 );
                               })}
 
@@ -953,8 +953,8 @@ const ShopCalendarPage: React.FC = () => {
                   {/* ─── Time‑row view (axis swapped) – FIXED ─── */}
                   {viewMode !== 'month' && isAxisSwapped && (
                     <div className="min-w-max">
-                      <div className="flex border-b border-[#e2e4ed] bg-white sticky top-0 z-10">
-                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0]" />
+                      <div className="flex border-b border-border bg-background sticky top-0 z-10">
+                        <div className="w-[90px] flex-shrink-0 border-r border-border" />
                         <div className="relative" style={{ minWidth: (DISPLAY_HOURS + 1) * HOUR_WIDTH, height: 50 }}>
                           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                             const hour = DAY_START_HOUR + i;
@@ -966,10 +966,10 @@ const ShopCalendarPage: React.FC = () => {
                             return (
                               <div
                                 key={hour}
-                                className="absolute top-0 bottom-0 border-r border-[#ecedf0] flex items-center justify-center px-1"
+                                className="absolute top-0 bottom-0 border-r border-border flex items-center justify-center px-1"
                                 style={{ left: position, width: HOUR_WIDTH, overflow: 'visible' }}
                               >
-                                <span className="text-[11px] font-medium text-[#7c8689] whitespace-nowrap text-center">{label}</span>
+                                <span className="text-[11px] font-medium text-text-foreground whitespace-nowrap text-center">{label}</span>
                               </div>
                             );
                           })}
@@ -999,18 +999,18 @@ const ShopCalendarPage: React.FC = () => {
                         const rowHeight = Math.max(lanes.length, 1) * (ROW_LANE_H + GAP) + GAP;
 
                         return (
-                          <div key={dk} className="flex border-b border-[#e2e4ed]" style={{ minHeight: rowHeight }}>
-                            <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] flex flex-col justify-center items-center py-2 gap-0 bg-white">
-                              <span className="text-[11px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
+                          <div key={dk} className="flex border-b border-border" style={{ minHeight: rowHeight }}>
+                            <div className="w-[90px] flex-shrink-0 border-r border-border flex flex-col justify-center items-center py-2 gap-0 bg-background">
+                              <span className="text-[11px] text-text-foreground uppercase tracking-wide">{format(day, 'EEE')}</span>
                               <span
-                                className={`text-[19px] font-semibold w-8 h-8 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'}`}
+                                className={`text-[19px] font-semibold w-8 h-8 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-secondary-foreground'}`}
                               >
                                 {format(day, 'd')}
                               </span>
                             </div>
 
                             <div
-                              className="relative border-r border-[#ecedf0]"
+                              className="relative border-r border-border"
                               style={{ height: rowHeight, minWidth: (DISPLAY_HOURS + 1) * HOUR_WIDTH }}
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(false); } : undefined}
                             >
@@ -1020,12 +1020,12 @@ const ShopCalendarPage: React.FC = () => {
                                 if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) return null;
                                 const position = getHorizontalPosition(hour);
                                 return (
-                                  <div key={i} className="absolute top-0 bottom-0 border-l border-[#ecedf0]" style={{ left: position }} />
+                                  <div key={i} className="absolute top-0 bottom-0 border-l border-border" style={{ left: position }} />
                                 );
                               })}
                               {/* Rightmost border at 4 PM – ensure it's visible */}
                               <div
-                                className="absolute top-0 bottom-0 border-l border-[#ecedf0]"
+                                className="absolute top-0 bottom-0 border-l border-border"
                                 style={{ left: getHorizontalPosition(DAY_END_HOUR), width: 0 }}
                               />
 
@@ -1076,7 +1076,7 @@ const ShopCalendarPage: React.FC = () => {
                                           </div>
                                         </div>
                                       </TooltipTrigger>
-                                      <TooltipContent side="right" className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
+                                      <TooltipContent side="right" className="bg-background border border-border shadow-lg rounded-md p-2 text-xs text-secondary-foreground">
                                         <div className="space-y-1">
                                           <p><span className="font-semibold">FAB ID:</span> {ev.fab_id}</p>
                                           <p><span className="font-semibold">Operator:</span> {ev.operator_name || 'N/A'}</p>

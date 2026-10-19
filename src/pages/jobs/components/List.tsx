@@ -46,7 +46,7 @@ export const JobsList = ({
             </div>
 
             <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-placeholder" />
                 <Input
                     placeholder="Search jobs..."
                     value={searchQuery}
@@ -59,12 +59,12 @@ export const JobsList = ({
                 {isLoading ? (
                     Array.from({ length: 5 }).map((_, index) => (
                         <div key={index} className="p-3 border rounded-lg animate-pulse">
-                            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                            <div className="h-4 bg-border rounded w-3/4 mb-2"></div>
+                            <div className="h-3 bg-border rounded w-1/2"></div>
                         </div>
                     ))
                 ) : filteredJobs.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-muted-foreground">
                         {searchQuery ? 'No jobs found' : 'No jobs available'}
                     </div>
                 ) : (
@@ -72,12 +72,12 @@ export const JobsList = ({
                         <div
                             key={job.id}
                             className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedJobId === job.id
-                                    ? 'border border-[#8BAD2B] bg-[#F0FDF4]' : ''
+                                    ? 'border border-[#8BAD2B] bg-primary-soft' : ''
                                 }`}
                             onClick={() => onJobSelect(job)}
                         >
                             <div className="font-medium">{job.name}</div>
-                            <div className="text-sm text-gray-500 flex justify-between">
+                            <div className="text-sm text-muted-foreground flex justify-between">
                                 <span>{job.job_number}</span>
                                 {job.created_at && (
                                     <span>{format(new Date(job.created_at), 'MMM dd, yyyy')}</span>

@@ -335,7 +335,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                                     )}
                                 </Button>
                                 {submitHint && (
-                                    <p className="text-xs text-gray-500 mt-1 text-center">
+                                    <p className="text-xs text-muted-foreground mt-1 text-center">
                                         {submitHint}
                                     </p>
                                 )}

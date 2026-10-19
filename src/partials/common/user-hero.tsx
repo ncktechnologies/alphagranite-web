@@ -60,7 +60,7 @@ export function UserHero({ image, name, username, role, info }: UserHeroProps) {
             <div className="text-base leading-5 font-semibold text-text">
               {name}
             </div>
-            <div className="text-base leading-5  text-[#9094A4]">
+            <div className="text-base leading-5  text-muted-foreground">
               {username}
             </div>
             <Badge variant="secondary" className={` px-3 py-3 mt-3 rounded-4xl text-xs font-normal bg-[#EEEEEE] text-[#2E3A59]`}>

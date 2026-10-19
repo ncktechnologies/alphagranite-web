@@ -33,7 +33,7 @@ const getActionIcon = (action: string) => {
         case 'stop':
             return <CheckCircle className="w-4 h-4 text-purple-600" />;
         default:
-            return <Clock className="w-4 h-4 text-gray-600" />;
+            return <Clock className="w-4 h-4 text-secondary-foreground" />;
     }
 };
 
@@ -44,7 +44,7 @@ const getActionBadge = (action: string, t: (key: string) => string) => {
         resume: { className: 'bg-blue-100 text-blue-800', labelKey: 'INSTALLER.TIMER_HISTORY.RESUMED' },
         stop: { className: 'bg-purple-100 text-purple-800', labelKey: 'INSTALLER.TIMER_HISTORY.STOPPED' },
     };
-    const badge = badges[action] || { className: 'bg-gray-100 text-gray-800', labelKey: action };
+    const badge = badges[action] || { className: 'bg-accent text-foreground', labelKey: action };
     return (
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.className}`}>
             {t(badge.labelKey)}
@@ -63,7 +63,7 @@ export const InstallerTimerHistory = ({ jobId, installerId, fabId }: InstallerTi
     if (isLoading) {
         return (
             <Card className="mt-4">
-                <CardContent className="p-4 text-center text-gray-500">
+                <CardContent className="p-4 text-center text-muted-foreground">
                     {t('INSTALLER.TIMER_HISTORY.LOADING')}
                 </CardContent>
             </Card>
@@ -104,7 +104,7 @@ export const InstallerTimerHistory = ({ jobId, installerId, fabId }: InstallerTi
                         {sortedEvents.map((event) => (
                             <div
                                 key={event.id}
-                                className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                                className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted transition-colors"
                             >
                                 <div className="flex-shrink-0 mt-1">
                                     {getActionIcon(event.action)}
@@ -112,12 +112,12 @@ export const InstallerTimerHistory = ({ jobId, installerId, fabId }: InstallerTi
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
                                         {getActionBadge(event.action, t)}
-                                        <span className="text-sm text-gray-500">
+                                        <span className="text-sm text-muted-foreground">
                                             {formatTimestamp(event.event_at)}
                                         </span>
                                     </div>
                                     {event.note && (
-                                        <div className="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-700 italic">
+                                        <div className="mt-2 p-2 bg-muted rounded text-sm text-secondary-foreground italic">
                                             "{event.note}"
                                         </div>
                                     )}

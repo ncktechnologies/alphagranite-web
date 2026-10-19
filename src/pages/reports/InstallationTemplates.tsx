@@ -307,7 +307,7 @@ export function InstallationTemplateReport() {
                         const hasSubRows = row.original.subRows && row.original.subRows.length > 0;
                         if (!hasSubRows) return null;
                         return (
-                            <button onClick={row.getToggleExpandedHandler()} className="p-1 hover:bg-gray-100 rounded">
+                            <button onClick={row.getToggleExpandedHandler()} className="p-1 hover:bg-accent rounded">
                                 {row.getIsExpanded() ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                             </button>
                         );
@@ -529,11 +529,11 @@ export function InstallationTemplateReport() {
         meta: {
             getRowAttributes: (row) => {
                 if (row.original.type === 'installer') {
-                    return { className: 'bg-[#f6ffe7] hover:bg-[#edffd4] transition-colors' };
+                    return { className: 'bg-primary-soft hover:bg-[#edffd4] dark:hover:bg-primary-soft/70 transition-colors' };
                 } else if (row.original.type === 'timer') {
-                    return { className: 'bg-gray-50/30 hover:bg-gray-100/40 transition-colors text-xs' };
+                    return { className: 'bg-muted/30 hover:bg-accent/40 transition-colors text-xs' };
                 }
-                return { className: 'bg-white hover:bg-gray-50/50' };
+                return { className: 'bg-background hover:bg-muted/50' };
             },
         },
     });
@@ -567,11 +567,11 @@ export function InstallationTemplateReport() {
         meta: {
             getRowAttributes: (row) => {
                 if (row.original.type === 'installer') {
-                    return { className: 'bg-[#f6ffe7] hover:bg-[#edffd4] transition-colors' };
+                    return { className: 'bg-primary-soft hover:bg-[#edffd4] dark:hover:bg-primary-soft/70 transition-colors' };
                 } else if (row.original.type === 'timer') {
-                    return { className: 'bg-gray-50/30 hover:bg-gray-100/40 transition-colors text-xs' };
+                    return { className: 'bg-muted/30 hover:bg-accent/40 transition-colors text-xs' };
                 }
-                return { className: 'bg-white hover:bg-gray-50/50' };
+                return { className: 'bg-background hover:bg-muted/50' };
             },
         },
     });
@@ -796,11 +796,11 @@ export function InstallationTemplateReport() {
             recordCount={dataLength}
             tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}
         >
-            <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
-                <CardHeader className="py-3.5 border-b border-[#e2e4ed]">
+            <Card className="border border-border rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                <CardHeader className="py-3.5 border-b border-border">
                     <CardHeading>
                         <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="text-base font-semibold text-[#4b545d]">{title}</span>
+                            <span className="text-base font-semibold text-secondary-foreground">{title}</span>
                         </div>
                     </CardHeading>
                     <CardToolbar>
@@ -811,16 +811,16 @@ export function InstallationTemplateReport() {
                 </CardHeader>
 
                 <CardTable>
-                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-10px)] bg-white [&>[data-radix-scroll-area-viewport]]:pb-4">
+                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-10px)] bg-background [&>[data-radix-scroll-area-viewport]]:pb-4">
                         <div className="relative">
                             <table className="w-full border-collapse table-fixed">
-                                <thead className="sticky top-0 z-10 bg-white">
+                                <thead className="sticky top-0 z-10 bg-background">
                                     {table.getHeaderGroups().map((headerGroup: any) => (
                                         <tr key={headerGroup.id}>
                                             {headerGroup.headers.map((header: any) => (
                                                 <th
                                                     key={header.id}
-                                                    className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50"
+                                                    className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted"
                                                     style={{ width: header.getSize() }}
                                                 >
                                                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
@@ -829,7 +829,7 @@ export function InstallationTemplateReport() {
                                                             onDoubleClick={() => header.column.resetSize()}
                                                             onMouseDown={header.getResizeHandler()}
                                                             onTouchStart={header.getResizeHandler()}
-                                                            className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                            className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                         />
                                                     )}
                                                 </th>
@@ -841,11 +841,11 @@ export function InstallationTemplateReport() {
                                     {table.getRowModel().rows.map((row: any) => {
                                         const rowAttrs = table.options.meta?.getRowAttributes?.(row) || {};
                                         return (
-                                            <tr key={row.id} className={`border-b border-[#e2e4ed] ${rowAttrs.className || ''}`}>
+                                            <tr key={row.id} className={`border-b border-border ${rowAttrs.className || ''}`}>
                                                 {row.getVisibleCells().map((cell: any) => (
                                                     <td
                                                         key={cell.id}
-                                                        className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                        className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0"
                                                         style={{ width: cell.column.getSize() }}
                                                     >
                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -856,7 +856,7 @@ export function InstallationTemplateReport() {
                                     })}
                                     {dataLength === 0 && (
                                         <tr>
-                                            <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                                            <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-text-foreground">
                                                 No data available.
                                             </td>
                                         </tr>
@@ -864,23 +864,23 @@ export function InstallationTemplateReport() {
                                 </tbody>
                             </table>
                         </div>
-                        <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                        <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                     </ScrollArea>
                 </CardTable>
-                <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
+                <CardFooter className="bg-background border-t border-border px-4 py-2">
                     <DataGridPagination />
                 </CardFooter>
             </Card>
         </DataGrid>
     );
 
-    if (isLoading) return <div className="p-5 text-[#7c8689]">Loading report...</div>;
+    if (isLoading) return <div className="p-5 text-text-foreground">Loading report...</div>;
 
     return (
         <div className="flex flex-col gap-5 p-5">
             {/* ── Header ── */}
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Installation And Template</h1>
+                <h1 className="text-2xl font-semibold text-secondary-foreground">Installation And Template</h1>
                 <div className="flex items-center gap-2">
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
@@ -937,37 +937,37 @@ export function InstallationTemplateReport() {
             {/* ── Summary Cards ── */}
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Template Hours</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_hours_templated ?? '0:00'}</p>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Template Hours</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.total_hours_templated ?? '0:00'}</p>
                     </div>
-                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SQFT Templated</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sqft_templated?.toFixed(0) ?? '0'}</p>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">SQFT Templated</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.sqft_templated?.toFixed(0) ?? '0'}</p>
                     </div>
-                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SQFT Not Templated </p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sqft_not_templated?.toFixed(0) ?? '0'}</p>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">SQFT Not Templated </p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.sqft_not_templated?.toFixed(0) ?? '0'}</p>
                     </div>
-                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Average SQFT Templated </p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.average_sqft_templated?.toFixed(0) ?? '0'}</p>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Average SQFT Templated </p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.average_sqft_templated?.toFixed(0) ?? '0'}</p>
                     </div>
-                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Install Hours</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_hours_installed ?? '0:00'}</p>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Install Hours</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.total_hours_installed ?? '0:00'}</p>
                     </div>
-                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SQFT Installed</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sqft_installed?.toFixed(0) ?? '0'}</p>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">SQFT Installed</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.sqft_installed?.toFixed(0) ?? '0'}</p>
                     </div>
-                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SQFT Not Installed</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sqft_not_installed?.toFixed(0) ?? '0'}</p>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">SQFT Not Installed</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.sqft_not_installed?.toFixed(0) ?? '0'}</p>
                     </div>
-                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Average SQFT Installed</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.average_sqft_installed?.toFixed(0) ?? '0'}</p>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Average SQFT Installed</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.average_sqft_installed?.toFixed(0) ?? '0'}</p>
                     </div>
                 </div>
             )}

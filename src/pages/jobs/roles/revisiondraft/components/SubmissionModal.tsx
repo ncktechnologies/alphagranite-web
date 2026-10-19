@@ -211,10 +211,10 @@ export const RevisionForm = ({
                 htmlFor="revision-confirm"
                 className={`font-semibold text-[17px] leading-none ${
                   uploadedFilesCount === 0 
-                    ? 'text-gray-400 cursor-not-allowed' 
+                    ? 'text-placeholder cursor-not-allowed' 
                     : isConfirmed 
                       ? 'text-green-600 cursor-pointer' 
-                      : 'text-gray-700 cursor-pointer'
+                      : 'text-secondary-foreground cursor-pointer'
                 }`}
                 onClick={() => {
                   if (uploadedFilesCount > 0) {

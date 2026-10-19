@@ -138,7 +138,7 @@ export function ChangePasswordPage() {
       <FormHeader title="Change password" caption={isFirstTimeLogin() 
         ? 'Please change your default password to a new desired password' 
         : 'Please change your password to a new desired password'} />
-      <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-[#DFDFDF]">
+      <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-input">
         <CardContent className="px-6 py-12">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

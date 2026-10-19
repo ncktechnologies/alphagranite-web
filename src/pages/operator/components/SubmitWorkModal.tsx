@@ -151,12 +151,12 @@ export function SubmitWorkModal({
                         <DialogTitle className="text-[16px] font-semibold">
                             Complete
                             {fabId && (
-                                <span className="ml-3 text-sm font-normal text-gray-500">
+                                <span className="ml-3 text-sm font-normal text-muted-foreground">
                                     {fabId}
                                 </span>
                             )}
                         </DialogTitle>
-                        <p className="text-sm text-gray-500 mt-0.5">
+                        <p className="text-sm text-muted-foreground mt-0.5">
                             Record your final progress before ending this session.
                         </p>
                     </div>
@@ -167,17 +167,17 @@ export function SubmitWorkModal({
 
                         {/* Time summary */}
                         {estimatedHours && (
-                            <div className="bg-gray-50 rounded-lg p-4 flex justify-between text-sm">
+                            <div className="bg-muted rounded-lg p-4 flex justify-between text-sm">
                                 <div>
-                                    <p className="text-gray-500 uppercase text-xs tracking-wide">Estimated</p>
-                                    <p className="font-semibold text-[#111827]">{estimatedHours}h</p>
+                                    <p className="text-muted-foreground uppercase text-xs tracking-wide">Estimated</p>
+                                    <p className="font-semibold text-foreground">{estimatedHours}h</p>
                                 </div>
                                 <div>
-                                    <p className="text-gray-500 uppercase text-xs tracking-wide">Actual</p>
-                                    <p className="font-semibold text-[#111827]">{actualHours.toFixed(2)}h</p>
+                                    <p className="text-muted-foreground uppercase text-xs tracking-wide">Actual</p>
+                                    <p className="font-semibold text-foreground">{actualHours.toFixed(2)}h</p>
                                 </div>
                                 <div>
-                                    <p className="text-gray-500 uppercase text-xs tracking-wide">Variance</p>
+                                    <p className="text-muted-foreground uppercase text-xs tracking-wide">Variance</p>
                                     <p className={`font-semibold ${actualHours > estimatedHours ? 'text-red-600' : 'text-green-600'}`}>
                                         {actualHours > estimatedHours ? '+' : ''}
                                         {(actualHours - estimatedHours).toFixed(2)}h
@@ -223,7 +223,7 @@ export function SubmitWorkModal({
                             name="notes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Notes <span className="text-gray-400 font-normal">(optional)</span></FormLabel>
+                                    <FormLabel>Notes <span className="text-placeholder font-normal">(optional)</span></FormLabel>
                                     <FormControl>
                                         <Textarea
                                             placeholder="Any notes about this session..."
@@ -250,7 +250,7 @@ export function SubmitWorkModal({
                                                 disabled={!isFullyComplete}
                                             />
                                         </FormControl>
-                                        <FormLabel className={`text-[17px] font-semibold ${field.value ? 'text-green-600' : 'text-gray-600'}`}>
+                                        <FormLabel className={`text-[17px] font-semibold ${field.value ? 'text-green-600' : 'text-secondary-foreground'}`}>
                                             Mark task as completed
                                         </FormLabel>
                                     </div>

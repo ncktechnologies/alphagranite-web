@@ -148,7 +148,7 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-black">
+                    <h2 className="text-xl font-semibold text-foreground">
                         {mode === 'new' ? 'New Workstation:' : `Edit Workstation: ${role?.workstationName}`}
                     </h2>
                     <Button variant="ghost" size="sm" onClick={onCancel}>

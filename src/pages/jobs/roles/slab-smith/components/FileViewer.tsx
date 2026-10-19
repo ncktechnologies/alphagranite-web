@@ -100,9 +100,9 @@ export const FileViewer = ({
       <div className="flex items-center justify-between">
         <div>
           <div className="text-xl font-bold">FAB ID: {file.id}</div>
-          <p className="text-sm text-gray-600 mt-1">Viewing file: {file.name}</p>
+          <p className="text-sm text-secondary-foreground mt-1">Viewing file: {file.name}</p>
           {(file.stage_name || file.file_design || file.uploaded_by_name) && (
-            <div className="text-xs text-gray-500 mt-2 space-x-3">
+            <div className="text-xs text-muted-foreground mt-2 space-x-3">
               {file.stage_name && <span>Stage: {file.stage_name}</span>}
               {file.file_design && <span>Design: {getFileDesignLabel(file.file_design)}</span>}
               {file.uploaded_by_name && <span>By: {file.uploaded_by_name}</span>}
@@ -132,8 +132,8 @@ export const FileViewer = ({
                     className="max-w-full max-h-full object-contain"
                   />
                 ) : file.type === 'application/pdf' ? (
-                  <div className="bg-white p-8 rounded-lg shadow-lg">
-                    <div className="text-center text-gray-500">
+                  <div className="bg-background p-8 rounded-lg shadow-lg">
+                    <div className="text-center text-muted-foreground">
                       <p className="text-lg font-medium">PDF Preview</p>
                       <p className="text-sm">{file.name}</p>
                       <p className="text-xs mt-2">{formatFileSize(file.size)}</p>
@@ -141,7 +141,7 @@ export const FileViewer = ({
                   </div>
                 ) : file.type.includes('dwg') || file.type.includes('cad') ? (
                   // Mock DWG/CAD file display - showing a technical drawing
-                  <div className="bg-white p-8 rounded-lg shadow-lg border">
+                  <div className="bg-background p-8 rounded-lg shadow-lg border">
                     <div className="w-full h-full min-h-[400px] relative">
                       {/* Mock technical drawing */}
                       <svg
@@ -215,8 +215,8 @@ export const FileViewer = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white p-8 rounded-lg shadow-lg">
-                    <div className="text-center text-gray-500">
+                  <div className="bg-background p-8 rounded-lg shadow-lg">
+                    <div className="text-center text-muted-foreground">
                       <p className="text-lg font-medium">File Preview</p>
                       <p className="text-sm">{file.name}</p>
                       <p className="text-xs mt-2">{formatFileSize(file.size)}</p>
@@ -233,8 +233,8 @@ export const FileViewer = ({
                 {/* File Info */}
                 <div className="flex items-center gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                    <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                    <p className="text-sm font-medium text-foreground">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
                   </div>
                 </div>
 

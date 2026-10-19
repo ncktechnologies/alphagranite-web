@@ -20,7 +20,7 @@ interface InstallerRateRow {
 }
 
 const formatHeader = (label: string) => (
-    <div className="text-xs font-semibold text-[#7c8689] uppercase tracking-wider">{label}</div>
+    <div className="text-xs font-semibold text-text-foreground uppercase tracking-wider">{label}</div>
 );
 
 function SimplePagination({ table }: { table: any }) {
@@ -29,7 +29,7 @@ function SimplePagination({ table }: { table: any }) {
     if (pageCount <= 1) return null;
     return (
         <div className="flex items-center justify-between px-4 py-2 border-t">
-            <div className="text-sm text-[#7c8689]">Page {pageIndex + 1} of {pageCount}</div>
+            <div className="text-sm text-text-foreground">Page {pageIndex + 1} of {pageCount}</div>
             <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
                     <ChevronLeft className="h-4 w-4" />
@@ -107,7 +107,7 @@ export function InstallerRatesReport() {
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex justify-between items-center flex-wrap gap-2">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Installer Rates</h1>
+                <h1 className="text-2xl font-semibold text-secondary-foreground">Installer Rates</h1>
                 <div className="flex items-center gap-2">
                     <Select value={installerFilter} onValueChange={setInstallerFilter}>
                         <SelectTrigger className="w-[180px] h-[34px]">
@@ -124,17 +124,17 @@ export function InstallerRatesReport() {
                 </div>
             </div>
 
-            <Card className="border border-[#e2e4ed] rounded-[12px] overflow-hidden">
-                <CardHeader className="py-3 px-5 border-b bg-white" />
+            <Card className="border border-border rounded-[12px] overflow-hidden">
+                <CardHeader className="py-3 px-5 border-b bg-background" />
                 <CardTable>
-                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] bg-white">
+                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] bg-background">
                         {hasData ? (
                             <table className="w-full border-collapse table-fixed">
-                                <thead className="sticky top-0 z-10 bg-white">
+                                <thead className="sticky top-0 z-10 bg-background">
                                     {table.getHeaderGroups().map(headerGroup => (
                                         <tr key={headerGroup.id}>
                                             {headerGroup.headers.map(header => (
-                                                <th key={header.id} className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50" style={{ width: header.getSize() }}>
+                                                <th key={header.id} className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted" style={{ width: header.getSize() }}>
                                                     {flexRender(header.column.columnDef.header, header.getContext())}
                                                 </th>
                                             ))}
@@ -143,9 +143,9 @@ export function InstallerRatesReport() {
                                 </thead>
                                 <tbody>
                                     {table.getRowModel().rows.map(row => (
-                                        <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50">
+                                        <tr key={row.id} className="border-b border-border hover:bg-muted/50">
                                             {row.getVisibleCells().map(cell => (
-                                                <td key={cell.id} className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0" style={{ width: cell.column.getSize() }}>
+                                                <td key={cell.id} className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0" style={{ width: cell.column.getSize() }}>
                                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                 </td>
                                             ))}
@@ -154,13 +154,13 @@ export function InstallerRatesReport() {
                                 </tbody>
                             </table>
                         ) : (
-                            <div className="p-8 text-center text-[#7c8689]">No data available</div>
+                            <div className="p-8 text-center text-text-foreground">No data available</div>
                         )}
                         <ScrollBar orientation="horizontal" />
                     </ScrollArea>
                 </CardTable>
                 {hasData && (
-                    <CardFooter className="bg-white border-t px-0 py-0">
+                    <CardFooter className="bg-background border-t px-0 py-0">
                         <SimplePagination table={table} />
                     </CardFooter>
                 )}

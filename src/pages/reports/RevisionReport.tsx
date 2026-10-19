@@ -331,10 +331,10 @@ export function RevisionReport() {
         onSearchChange?: (value: string) => void,
     ) => (
         <DataGrid table={table} recordCount={table.getCoreRowModel().rows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
-            <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
-                <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white flex-wrap gap-2">
+            <Card className="border border-border rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                <CardHeader className="py-3 px-5 border-b border-border flex flex-row items-center justify-between bg-background flex-wrap gap-2">
                     <div className="flex items-center gap-3 flex-wrap">
-                        <p className="text-base font-semibold text-[#4b545d]">{title}</p>
+                        <p className="text-base font-semibold text-secondary-foreground">{title}</p>
                         {filterComponent}
                         {onSearchChange && (
                             <div className="relative">
@@ -366,13 +366,13 @@ export function RevisionReport() {
                     <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                         <div className="relative">
                             <table className="w-full border-collapse table-fixed">
-                                <thead className="sticky top-0 z-10 bg-white">
+                                <thead className="sticky top-0 z-10 bg-background">
                                     {table.getHeaderGroups().map(headerGroup => (
                                         <tr key={headerGroup.id}>
                                             {headerGroup.headers.map(header => (
                                                 <th
                                                     key={header.id}
-                                                    className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50"
+                                                    className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted"
                                                     style={{ width: header.getSize() }}
                                                 >
                                                     {flexRender(header.column.columnDef.header, header.getContext())}
@@ -381,7 +381,7 @@ export function RevisionReport() {
                                                             onDoubleClick={() => header.column.resetSize()}
                                                             onMouseDown={header.getResizeHandler()}
                                                             onTouchStart={header.getResizeHandler()}
-                                                            className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                            className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                         />
                                                     )}
                                                 </th>
@@ -393,9 +393,9 @@ export function RevisionReport() {
                                     {table.getRowModel().rows.map(row => {
                                         const rowAttrs = table.options.meta?.getRowAttributes?.(row) || {};
                                         return (
-                                            <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50" {...rowAttrs}>
+                                            <tr key={row.id} className="border-b border-border hover:bg-muted/50" {...rowAttrs}>
                                                 {row.getVisibleCells().map(cell => (
-                                                    <td key={cell.id} className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0" style={{ width: cell.column.getSize() }}>
+                                                    <td key={cell.id} className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0" style={{ width: cell.column.getSize() }}>
                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                     </td>
                                                 ))}
@@ -405,17 +405,17 @@ export function RevisionReport() {
                                 </tbody>
                             </table>
                         </div>
-                        <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                        <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                     </ScrollArea>
                 </CardTable>
-                <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
+                <CardFooter className="bg-background border-t border-border px-4 py-2">
                     <DataGridPagination />
                 </CardFooter>
             </Card>
         </DataGrid>
     );
 
-    if (isLoading) return <div className="p-5 text-[#7c8689]">Loading revision report...</div>;
+    if (isLoading) return <div className="p-5 text-text-foreground">Loading revision report...</div>;
     if (isError) return <div className="p-5 text-red-500">Error loading report.</div>;
 
     const getTitle = () => {
@@ -432,7 +432,7 @@ export function RevisionReport() {
     const sctFilters = (
         <>
             <Select value={sctFabTypeFilter} onValueChange={setSctFabTypeFilter}>
-                <SelectTrigger className="min-w-[130px] w-auto h-[34px] border-[#e2e4ed]">
+                <SelectTrigger className="min-w-[130px] w-auto h-[34px] border-border">
                     <SelectValue placeholder="Fab Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -443,7 +443,7 @@ export function RevisionReport() {
                 </SelectContent>
             </Select>
             <Select value={sctRevisionTypeFilter} onValueChange={setSctRevisionTypeFilter}>
-                <SelectTrigger className="min-w-[130px] w-auto h-[34px] border-[#e2e4ed]">
+                <SelectTrigger className="min-w-[130px] w-auto h-[34px] border-border">
                     <SelectValue placeholder="Revision Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -458,7 +458,7 @@ export function RevisionReport() {
 
     const shopFilters = (
         <Select value={shopFabTypeFilter} onValueChange={setShopFabTypeFilter}>
-            <SelectTrigger className="min-w-[130px] w-auto h-[34px] border-[#e2e4ed]">
+            <SelectTrigger className="min-w-[130px] w-auto h-[34px] border-border">
                 <SelectValue placeholder="Fab Type" />
             </SelectTrigger>
             <SelectContent>
@@ -474,12 +474,12 @@ export function RevisionReport() {
         <div className="flex flex-col gap-5 p-5">
             {/* ─── Top Bar ─────────────────────────────────────────────────────── */}
             <div className="flex items-center justify-between flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Revision Analysis</h1>
+                <h1 className="text-2xl font-semibold text-secondary-foreground">Revision Analysis</h1>
                 <div className="flex items-center gap-2 flex-wrap">
                     {dateMode === 'monthly' ? (
                         <>
                             <Select value={String(year)} onValueChange={(v) => setYear(parseInt(v))}>
-                                <SelectTrigger className="w-[100px] h-[34px] border-[#e2e4ed]">
+                                <SelectTrigger className="w-[100px] h-[34px] border-border">
                                     <SelectValue placeholder="Year" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -489,7 +489,7 @@ export function RevisionReport() {
                                 </SelectContent>
                             </Select>
                             <Select value={String(month)} onValueChange={(v) => setMonth(parseInt(v))}>
-                                <SelectTrigger className="w-[130px] h-[34px] border-[#e2e4ed]">
+                                <SelectTrigger className="w-[130px] h-[34px] border-border">
                                     <SelectValue placeholder="Month" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -532,21 +532,21 @@ export function RevisionReport() {
             {/* ─── Summary Widgets ────────────────────────────────────────────── */}
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SCT Revisions</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sales_ct_revision_count}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">SCT Revisions</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.sales_ct_revision_count}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Shop Revisions</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.shop_revision_count}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Shop Revisions</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.shop_revision_count}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Active Fabs with SCT Revisions</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.active_fabs_with_sales_ct_revisions}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Active Fabs with SCT Revisions</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.active_fabs_with_sales_ct_revisions}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Active Fabs with Shop Revisions</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.active_fabs_with_shop_revisions}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Active Fabs with Shop Revisions</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.active_fabs_with_shop_revisions}</p>
                     </Card>
                 </div>
             )}
@@ -570,7 +570,7 @@ export function RevisionReport() {
                     setShopSearchQuery
                 )}
                 {filteredSalesRevisions.length === 0 && filteredShopRevisions.length === 0 && (
-                    <div className="text-center py-8 text-[#7c8689]">No revisions found for the selected period.</div>
+                    <div className="text-center py-8 text-text-foreground">No revisions found for the selected period.</div>
                 )}
             </div>
         </div>

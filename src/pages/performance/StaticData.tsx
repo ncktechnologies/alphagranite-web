@@ -117,7 +117,7 @@ export function PerformanceStaticDataPage() {
     return (
         <div className="p-5 space-y-6">
             <div className="flex justify-between items-center flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Static Data</h1>
+                <h1 className="text-2xl font-semibold text-secondary-foreground">Static Data</h1>
                 <div className="flex items-center gap-2">
                     <YearSelect value={year} onChange={setYear} />
                     <BackButton />

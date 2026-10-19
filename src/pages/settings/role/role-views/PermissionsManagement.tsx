@@ -111,8 +111,8 @@ export function PermissionsManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Permissions Management</h2>
-          <p className="text-sm text-gray-500">Manage system permissions and access controls</p>
+          <h2 className="text-xl font-semibold text-foreground">Permissions Management</h2>
+          <p className="text-sm text-muted-foreground">Manage system permissions and access controls</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -148,7 +148,7 @@ export function PermissionsManagement() {
                   placeholder="e.g., jobs, employees"
                 />
                 {errors.code && <p className="text-sm text-red-500">{errors.code}</p>}
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Must contain only lowercase letters, numbers, and underscores
                 </p>
               </div>
@@ -206,7 +206,7 @@ export function PermissionsManagement() {
                     <TableRow key={menu.id}>
                       <TableCell className="font-medium">{menu.name}</TableCell>
                       <TableCell>
-                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                        <span className="inline-flex items-center rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-foreground">
                           {menu.code}
                         </span>
                       </TableCell>
@@ -233,7 +233,7 @@ export function PermissionsManagement() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
                       No permissions found. Create your first permission to get started.
                     </TableCell>
                   </TableRow>

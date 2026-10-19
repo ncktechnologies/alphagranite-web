@@ -94,7 +94,7 @@ export function ResetPasswordPage() {
   return (
     <div className="w-full flex flex-col items-center justify-center">
       <FormHeader title="Reset your password" caption='Enter your username to receive a password reset code'/>
-      <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-[#DFDFDF]">
+      <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-input">
         <CardContent className="px-6 py-12">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">

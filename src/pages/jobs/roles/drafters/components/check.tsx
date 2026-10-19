@@ -147,10 +147,10 @@ export const SubmissionModal = ({
           </div>
 
           <div className="space-y-1 mt-2">
-            <p className="font-semibold text-black leading-4">
+            <p className="font-semibold text-foreground leading-4">
               {jobDetails.fabId}
             </p>
-            <p className="text-sm text-black">{jobDetails.area}</p>
+            <p className="text-sm text-foreground">{jobDetails.area}</p>
           </div>
         </DialogHeader>
 
@@ -254,12 +254,12 @@ export const SubmissionModal = ({
             {/* Uploaded Files */}
             {uploadedFiles.length > 0 && (
               <div className="p-4 bg-blue-50 rounded-lg">
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label className="text-sm font-medium text-secondary-foreground mb-2 block">
                   Uploaded Files ({uploadedFiles.length})
                 </Label>
                 <div className="space-y-1">
                   {uploadedFiles.map((file) => (
-                    <div key={file.id} className="text-sm text-gray-600">
+                    <div key={file.id} className="text-sm text-secondary-foreground">
                       • {file.name}
                     </div>
                   ))}

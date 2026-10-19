@@ -16,9 +16,9 @@ const DELTA_PERIOD_LABELS: Record<FinanceStatsData['delta_period'], string> = {
 
 const FinanceStats = ({ financeData }: IFinanceStatsProps) => {
   const rows: { icon: LucideIcon; label: string; value?: number; chip: string }[] = [
-    { icon: BadgeDollarSign, label: 'Revenue installed', value: financeData?.revenue_installed, chip: 'bg-[#9CC15E]/15 text-[#5E7504]' },
-    { icon: Ruler, label: 'Revenue templated', value: financeData?.revenue_templated, chip: 'bg-[#EA3DB1]/12 text-[#B0237F]' },
-    { icon: TrendingUp, label: 'Gross profit', value: financeData?.gross_profit, chip: 'bg-[#51BCF4]/15 text-[#1F7FB0]' },
+    { icon: BadgeDollarSign, label: 'Revenue installed', value: financeData?.revenue_installed, chip: 'bg-[#9CC15E]/15 text-[#5E7504] dark:text-[#B5D46E]' },
+    { icon: Ruler, label: 'Revenue templated', value: financeData?.revenue_templated, chip: 'bg-[#EA3DB1]/12 text-[#B0237F] dark:bg-[#EA3DB1]/18 dark:text-[#F38BD0]' },
+    { icon: TrendingUp, label: 'Gross profit', value: financeData?.gross_profit, chip: 'bg-[#51BCF4]/15 text-[#1F7FB0] dark:text-[#86D0F7]' },
   ];
   const delta = financeData?.gross_profit_delta ?? null;
   const deltaPeriod = financeData ? DELTA_PERIOD_LABELS[financeData.delta_period] ?? 'this month' : '';

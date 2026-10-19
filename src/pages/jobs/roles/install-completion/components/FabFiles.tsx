@@ -57,13 +57,13 @@ export function FabFilesGallery({ fab }: FabFilesGalleryProps) {
     <Card>
       <CardHeader>
         <CardHeading className="flex flex-col items-start py-4">
-          <CardTitle className="text-[#111827] leading-[32px] text-2xl font-bold">
+          <CardTitle className="text-foreground leading-[32px] text-2xl font-bold">
             FAB Files
             {totalFileCount > 0 && (
-              <span className="ml-2 text-base font-normal text-gray-400">({totalFileCount})</span>
+              <span className="ml-2 text-base font-normal text-placeholder">({totalFileCount})</span>
             )}
           </CardTitle>
-          <p className="text-sm text-[#4B5563]">
+          <p className="text-sm text-secondary-foreground">
             Drafting, SlabSmith, Sales CT, CNC, Operator, and Shop Revision files
           </p>
         </CardHeading>

@@ -172,7 +172,7 @@ export function InstallerScheduleCards() {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                 {[...Array(6)].map((_, i) => (
-                    <div key={i} className="bg-white rounded-xl border border-[#e6e8f0] shadow-sm p-5">
+                    <div key={i} className="bg-card rounded-xl border border-border shadow-sm p-5">
                         <div className="flex gap-4">
                             <Skeleton className="h-8 w-20" />
                             <Skeleton className="h-8 w-20" />
@@ -304,7 +304,7 @@ export function InstallerScheduleCards() {
             {/* Cards grid */}
             {jobs.length === 0 && (
                 <div className="text-center py-12 mt-6">
-                    <p className="text-gray-500">No jobs found for installation scheduling.</p>
+                    <p className="text-muted-foreground">No jobs found for installation scheduling.</p>
                 </div>
             )}
 
@@ -313,52 +313,52 @@ export function InstallerScheduleCards() {
                     <div
                         key={job.id}
                         onClick={() => handleCardClick(job.job_id, job.fab_id)}
-                        className="bg-white rounded-xl border border-[#e6e8f0] shadow-sm p-5 cursor-pointer transition-all hover:shadow-md hover:border-sidbar-muted/30"
+                        className="bg-card rounded-xl border border-border shadow-sm p-5 cursor-pointer transition-all hover:shadow-md hover:border-sidbar-muted/30"
                     >
                         <div className="flex gap-4 justify-between mb-2">
                             <div
                                 onClick={(e) => handleJobNumberClick(e, job.job_id, job.fab_id)}
                                 className="cursor-pointer hover:opacity-80"
                             >
-                                <p className="text-sm text-[#7c8689]">Job Number</p>
-                                <p className="text-2xl font-semibold text-[#1379f0]">{job.job_no}</p>
+                                <p className="text-sm text-text-foreground">Job Number</p>
+                                <p className="text-2xl font-semibold text-[#1379f0] dark:text-[#6AAEF8]">{job.job_no}</p>
                             </div>
                             
                             <div
                                 className="hover:opacity-80"
                             >
-                                <p className="text-sm text-[#7c8689]">Job Name</p>
-                                <p className="text-2xl font-semibold text-[#1379f0]">{job.job_name || '-'}</p>
+                                <p className="text-sm text-text-foreground">Job Name</p>
+                                <p className="text-2xl font-semibold text-[#1379f0] dark:text-[#6AAEF8]">{job.job_name || '-'}</p>
                             </div>
                             {/* Fab ID - click leads to fab details */}
                             <div
                                 onClick={(e) => handleFabIdClick(e, job.fab_id)}
                                 className="cursor-pointer hover:opacity-80"
                             >
-                                <p className="text-sm text-[#7c8689]">Fab ID</p>
-                                <p className="text-2xl font-semibold text-[#1379f0]">{job.fab_id}</p>
+                                <p className="text-sm text-text-foreground">Fab ID</p>
+                                <p className="text-2xl font-semibold text-[#1379f0] dark:text-[#6AAEF8]">{job.fab_id}</p>
                             </div>
                         </div>
 
-                        <div className="border-t border-[#dbdfe9] my-3" />
+                        <div className="border-t border-border my-3" />
 
                         <div className="space-y-3">
                             
                             <div className="flex justify-between items-center">
-                                <span className="text-sm text-[#7c8689]">Account Name</span>
-                                <span className="text-sm font-semibold text-[#4b545d]">{job.acct_name || '-'}</span>
+                                <span className="text-sm text-text-foreground">Account Name</span>
+                                <span className="text-sm font-semibold text-secondary-foreground">{job.acct_name || '-'}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-sm text-[#7c8689]">Area</span>
-                                <span className="text-sm font-semibold text-[#4b545d]">{job.input_area || '-'}</span>
+                                <span className="text-sm text-text-foreground">Area</span>
+                                <span className="text-sm font-semibold text-secondary-foreground">{job.input_area || '-'}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-sm text-[#7c8689]">Total SQ FT</span>
-                                <span className="text-sm font-semibold text-[#4b545d]">{formatNumber(job.total_sq_ft)}</span>
+                                <span className="text-sm text-text-foreground">Total SQ FT</span>
+                                <span className="text-sm font-semibold text-secondary-foreground">{formatNumber(job.total_sq_ft)}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-sm text-[#7c8689]">Installation Date</span>
-                                <span className="text-sm font-semibold text-[#4b545d]">{job.install_date || '-'}</span>
+                                <span className="text-sm text-text-foreground">Installation Date</span>
+                                <span className="text-sm font-semibold text-secondary-foreground">{job.install_date || '-'}</span>
                             </div>
                         </div>
                     </div>
@@ -367,8 +367,8 @@ export function InstallerScheduleCards() {
 
             {/* Pagination */}
             {totalRecords > 0 && (
-                <div className="flex justify-between items-center mt-8 pt-4 border-t border-[#e2e4ed]">
-                    <div className="text-sm text-gray-500">
+                <div className="flex justify-between items-center mt-8 pt-4 border-t border-border">
+                    <div className="text-sm text-muted-foreground">
                         Showing {pagination.pageIndex * pagination.pageSize + 1} to{' '}
                         {Math.min((pagination.pageIndex + 1) * pagination.pageSize, totalRecords)} of {totalRecords} results
                     </div>
@@ -376,14 +376,14 @@ export function InstallerScheduleCards() {
                         <button
                             onClick={() => handlePageChange(pagination.pageIndex - 1)}
                             disabled={pagination.pageIndex === 0}
-                            className="px-3 py-1 border border-[#e2e4ed] rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                            className="px-3 py-1 border border-border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
                         >
                             Previous
                         </button>
                         <button
                             onClick={() => handlePageChange(pagination.pageIndex + 1)}
                             disabled={(pagination.pageIndex + 1) * pagination.pageSize >= totalRecords}
-                            className="px-3 py-1 border border-[#e2e4ed] rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                            className="px-3 py-1 border border-border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
                         >
                             Next
                         </button>

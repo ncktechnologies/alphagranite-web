@@ -27,7 +27,7 @@ const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
 const getFabStatusInfo = (statusId: number | undefined) => {
     if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
     if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
-    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
+    return { className: 'bg-accent text-foreground', text: 'LOADING' };
 };
 
 export function InstallSchedulingDetailsPage() {
@@ -167,7 +167,7 @@ export function InstallSchedulingDetailsPage() {
     return (
         <Container className="border-t">
             {/* Sticky toolbar */}
-            <div className="sticky top-0 z-10 bg-white border-b shadow-sm -mx-4 px-4">
+            <div className="sticky top-0 z-10 bg-background border-b shadow-sm -mx-4 px-4">
                 <Toolbar className="py-2 sm:py-3">
                     <div className="flex items-center justify-between w-full gap-2 flex-wrap">
                         <ToolbarHeading
@@ -179,10 +179,10 @@ export function InstallSchedulingDetailsPage() {
                                     >
                                         {fab?.job_details?.name || `Job ${fab?.job_id}`}
                                     </a>
-                                    <span className="mx-1 text-gray-400">·</span>
+                                    <span className="mx-1 text-placeholder">·</span>
                                     <a
                                         href={jobNumberLink}
-                                        className="hover:underline text-gray-600"
+                                        className="hover:underline text-secondary-foreground"
                                         target="_blank"
                                         rel="noreferrer"
                                     >
@@ -225,7 +225,7 @@ export function InstallSchedulingDetailsPage() {
 
                     <Card className="mt-6">
                         <CardHeader>
-                            <CardTitle className="text-[#111827] text-xl font-bold">
+                            <CardTitle className="text-foreground text-xl font-bold">
                                 FAB Files
                             </CardTitle>
                          

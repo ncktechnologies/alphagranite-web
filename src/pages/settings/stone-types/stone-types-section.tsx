@@ -226,7 +226,7 @@ export function StoneTypesSection() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h3 className="text-lg font-semibold">Stone Types</h3>
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-sm text-muted-foreground">
                                         {stoneTypes.length} stone type(s) available
                                     </p>
                                 </div>
@@ -299,7 +299,7 @@ export function StoneTypesSection() {
                                                 <div className="flex-1">
                                                     <p className="font-semibold text-lg">{stoneType.name}</p>
                                                     {stoneType.description && (
-                                                        <p className="text-sm text-gray-500 mt-1">{stoneType.description}</p>
+                                                        <p className="text-sm text-muted-foreground mt-1">{stoneType.description}</p>
                                                     )}
                                                 </div>
                                                 <div className="flex gap-1">
@@ -327,7 +327,7 @@ export function StoneTypesSection() {
                             </div>
 
                             {stoneTypes.length === 0 && (
-                                <div className="flex items-center justify-center h-40 text-gray-500">
+                                <div className="flex items-center justify-center h-40 text-muted-foreground">
                                     No stone types added yet. Click "Add Stone Type" to get started.
                                 </div>
                             )}
@@ -340,7 +340,7 @@ export function StoneTypesSection() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h3 className="text-lg font-semibold">Stone Colors</h3>
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-sm text-muted-foreground">
                                         {selectedStoneTypeId && selectedStoneTypeId !== 'all'
                                             ? `${stoneColors.length} color(s) for ${stoneTypes.find((st: any) => st.id === Number(selectedStoneTypeId))?.name || 'selected type'}`
                                             : `${allStoneColors.length} total color(s) available`
@@ -464,7 +464,7 @@ export function StoneTypesSection() {
                                                         </div>
                                                     </div>
                                                     {color.stone_type_id && (
-                                                        <p className="text-xs text-gray-500 mt-2">
+                                                        <p className="text-xs text-muted-foreground mt-2">
                                                             Type: {stoneTypes.find((st: any) => st.id === color.stone_type_id)?.name || 'Unknown'}
                                                         </p>
                                                     )}
@@ -494,7 +494,7 @@ export function StoneTypesSection() {
                             </div>
 
                             {(selectedStoneTypeId && selectedStoneTypeId !== 'all' ? stoneColors : allStoneColors).length === 0 && (
-                                <div className="flex items-center justify-center h-40 text-gray-500">
+                                <div className="flex items-center justify-center h-40 text-muted-foreground">
                                     {selectedStoneTypeId && selectedStoneTypeId !== 'all'
                                         ? 'No colors for this stone type. Click "Add Color" to get started.'
                                         : 'No colors added yet. Click "Add Color" to get started.'

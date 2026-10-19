@@ -187,7 +187,7 @@ export function JobDetailsPage() {
   // ── Full-screen file viewer ────────────────────────────────────────────────
   if (activeFile) {
     return (
-      <div className="fixed inset-0 z-50 bg-white overflow-auto">
+      <div className="fixed inset-0 z-50 bg-background overflow-auto">
         <FileViewer file={activeFile} onClose={() => setActiveFile(null)} />
       </div>
     );
@@ -231,7 +231,7 @@ export function JobDetailsPage() {
           {/* Job Information */}
           <Card className="my-4">
             <CardHeader>
-              <CardTitle className="text-[#111827] leading-[32px] text-2xl font-bold">
+              <CardTitle className="text-foreground leading-[32px] text-2xl font-bold">
                 Job Information
               </CardTitle>
             </CardHeader>
@@ -254,17 +254,17 @@ export function JobDetailsPage() {
             <Card className="my-4">
               <CardHeader>
                 <CardHeading className="flex flex-col items-start py-4">
-                  <CardTitle className="text-[#111827] leading-[32px] text-2xl font-bold">
+                  <CardTitle className="text-foreground leading-[32px] text-2xl font-bold">
                     Accounting note
                   </CardTitle>
-                  <p className="text-sm text-[#4B5563]">Accounting notes for this job</p>
+                  <p className="text-sm text-secondary-foreground">Accounting notes for this job</p>
                 </CardHeading>
               </CardHeader>
               <CardContent>
                 {notesLoading ? (
                   <div className="space-y-4">
                     {[1, 2].map((i) => (
-                      <div key={i} className="p-4 border rounded-lg bg-gray-50 flex flex-col gap-2">
+                      <div key={i} className="p-4 border rounded-lg bg-muted flex flex-col gap-2">
                         <Skeleton className="h-4 w-32" />
                         <Skeleton className="h-4 w-full" />
                       </div>
@@ -275,21 +275,21 @@ export function JobDetailsPage() {
                     {jobNotes.data.notes.map((note: any) => (
                       <div
                         key={note.id}
-                        className="p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                        className="p-4 border rounded-lg bg-muted hover:bg-accent transition-colors"
                       >
                         <div className="flex justify-between items-start mb-2">
                           <span className="font-semibold text-sm text-blue-600">{note.creator_name}</span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             {new Date(note.created_at).toLocaleString()}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.note}</p>
+                        <p className="text-sm text-secondary-foreground whitespace-pre-wrap">{note.note}</p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed">
-                    <p className="text-gray-500 text-sm">No accounting notes available</p>
+                  <div className="text-center py-6 bg-muted rounded-lg border border-dashed">
+                    <p className="text-muted-foreground text-sm">No accounting notes available</p>
                   </div>
                 )}
               </CardContent>
@@ -300,7 +300,7 @@ export function JobDetailsPage() {
             <CardHeader>
               <CardHeading className="flex flex-col items-start py-4">
                 <CardTitle>FABs ({fabs?.length || 0})</CardTitle>
-                <p className="text-sm text-[#4B5563]">Fabrication items associated with this job</p>
+                <p className="text-sm text-secondary-foreground">Fabrication items associated with this job</p>
               </CardHeading>
             </CardHeader>
             <CardContent>
@@ -321,7 +321,7 @@ export function JobDetailsPage() {
                   {fabs.map((fab) => (
                     <div
                       key={fab.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted"
                     >
                       <div className="flex items-center space-x-4">
                         <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -329,7 +329,7 @@ export function JobDetailsPage() {
                         </div>
                         <div>
                           <h4 className="font-semibold">{fab.input_area}</h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-secondary-foreground">
                             {formatNumber(fab.total_sqft)} sq ft · {fab.stone_type_name || 'N/A'} · {fab.stone_color_name || 'N/A'} . {fab.fab_type || 'N/A'}
                           </p>
                           <div className="flex items-center space-x-2 mt-1">
@@ -359,7 +359,7 @@ export function JobDetailsPage() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">No FABs found for this job</p>
+                  <p className="text-muted-foreground">No FABs found for this job</p>
                 </div>
               )}
             </CardContent>
@@ -370,7 +370,7 @@ export function JobDetailsPage() {
             <CardHeader>
               <CardHeading className="flex flex-col items-start py-4">
                 <CardTitle>Media Files</CardTitle>
-                <p className="text-sm text-[#4B5563]">Photos and videos associated with this job</p>
+                <p className="text-sm text-secondary-foreground">Photos and videos associated with this job</p>
               </CardHeading>
 
               <CardToolbar>

@@ -100,7 +100,7 @@ const FilteredData = ({ data }: { data: Notification[] }) => {
               <div className="flex items-center gap-4 mt-5">
                 <Button
                   variant="link"
-                  className="p-0 text-[#7A9705] text-sm font-semibold"
+                  className="p-0 text-primary text-sm font-semibold"
                 >
                   View details
                 </Button>
@@ -228,11 +228,11 @@ const NotificationsSection = () => {
           </div>
 
           {/* RIGHT: Preferences */}
-          <Card className=" border-none shadow h-screen bg-[#FBFDF4] w-full max-w-[350px]">
+          <Card className=" border-none shadow h-screen bg-muted w-full max-w-[350px]">
 
             <CardHeader className='border-b p-3 flex-col justify-center'>
-              <CardTitle className='text-[#111827] leading-[28px] text-lg  font-bold'>Notification Preferences</CardTitle>
-              <p className="text-sm leading-[20px] text-[#4B5563]">
+              <CardTitle className='text-foreground leading-[28px] text-lg  font-bold'>Notification Preferences</CardTitle>
+              <p className="text-sm leading-[20px] text-secondary-foreground">
                 Customize which alerts you receive
               </p>
             </CardHeader>
@@ -240,9 +240,9 @@ const NotificationsSection = () => {
             <CardContent className="space-y-12 text-sm text-muted-foreground">
               <div className="flex items-center justify-between ">
                 <p className='flex flex-col max-w-[147px]'>
-                  <span className='text-[#111827] leading-[20px] text-base font-semibold'>Job Assignment Alerts</span>
+                  <span className='text-foreground leading-[20px] text-base font-semibold'>Job Assignment Alerts</span>
 
-                  <span className="text-sm leading-[20px] font-normal text-[#4B5563] pt-2">
+                  <span className="text-sm leading-[20px] font-normal text-secondary-foreground pt-2">
                     New jobs assigned to you
                   </span>
                 </p>
@@ -255,9 +255,9 @@ const NotificationsSection = () => {
               </div>
               <div className="flex items-center justify-between">
                 <p className='flex flex-col max-w-[147px]'>
-                  <span className='text-[#111827] leading-[20px] text-base font-semibold'>Revision Requests</span>
+                  <span className='text-foreground leading-[20px] text-base font-semibold'>Revision Requests</span>
 
-                  <span className="text-sm leading-[20px] pt-2 font-normal text-[#4B5563]">
+                  <span className="text-sm leading-[20px] pt-2 font-normal text-secondary-foreground">
                     Client revision requests
                   </span>
                 </p>
@@ -270,9 +270,9 @@ const NotificationsSection = () => {
               </div>
               <div className="flex items-center justify-between">
                 <p className='flex flex-col max-w-[147px] '>
-                  <span className='text-[#111827] leading-[20px] text-base font-semibold'>Approvals Alerts</span>
+                  <span className='text-foreground leading-[20px] text-base font-semibold'>Approvals Alerts</span>
 
-                  <span className="text-sm leading-[20px] pt-2 font-normal text-[#4B5563]">
+                  <span className="text-sm leading-[20px] pt-2 font-normal text-secondary-foreground">
                     Approval status and deadline warnings
                   </span>
                 </p>
@@ -285,9 +285,9 @@ const NotificationsSection = () => {
               </div>
               <div className="flex items-center justify-between">
                 <p className='flex flex-col max-w-[147px] '>
-                  <span className='text-[#111827] leading-[20px] text-base font-semibold'>Draft Submission Alerts</span>
+                  <span className='text-foreground leading-[20px] text-base font-semibold'>Draft Submission Alerts</span>
 
-                  <span className="text-sm leading-[20px] pt-2 font-normal text-[#4B5563]">
+                  <span className="text-sm leading-[20px] pt-2 font-normal text-secondary-foreground">
                     Draft deadlines and submissions
                   </span>
                 </p>

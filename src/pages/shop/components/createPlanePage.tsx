@@ -246,17 +246,17 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
   }, [entry.start_time, handleStartDateTimeChange]);
 
   return (
-    <Card className="border border-[#ecedf0] rounded-[12px] overflow-hidden">
+    <Card className="border border-border rounded-[12px] overflow-hidden">
       <CardHeader
-        className="pb-3 border-b border-[#ecedf0] cursor-pointer select-none"
+        className="pb-3 border-b border-border cursor-pointer select-none"
         onClick={onToggleExpand}
       >
         <div className="flex items-center gap-2 w-full">
           <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
             <ChevronDown
-              className={cn('h-4 w-4 text-[#7c8689] transition-transform shrink-0', !isExpanded && '-rotate-90')}
+              className={cn('h-4 w-4 text-text-foreground transition-transform shrink-0', !isExpanded && '-rotate-90')}
             />
-            <CardTitle className="text-[17px] text-[#4b545d] font-semibold truncate">
+            <CardTitle className="text-[17px] text-secondary-foreground font-semibold truncate">
               {entry.planning_section_id
                 ? (planningSections.find(ps => String(ps.id) === entry.planning_section_id)?.plan_name
                   || planningSections.find(ps => String(ps.id) === entry.planning_section_id)?.name
@@ -265,7 +265,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                 : `Plan Section ${idx + 1}`}
             </CardTitle>
             {!isExpanded && hasSlot && (
-              <span className="text-xs text-[#7c8689] shrink-0">
+              <span className="text-xs text-text-foreground shrink-0">
                 {format(entry.start_date!, 'MMM d')} {format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a')} – {format(entry.end_date!, 'MMM d')} {format(new Date(`1970-01-01T${entry.end_time}`), 'hh:mm a')}
               </span>
             )}
@@ -273,7 +273,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
 
           <div className="flex items-center gap-2 shrink-0 ml-auto pl-4" onClick={e => e.stopPropagation()}>
             <Select value={entry.sequence} onValueChange={value => onUpdate({ sequence: value })}>
-              <SelectTrigger className="h-7 w-auto text-[14px] border-[#e2e4ed] rounded-[4px] font-bold">
+              <SelectTrigger className="h-7 w-auto text-[14px] border-border rounded-[4px] font-bold">
                 <SelectValue placeholder="Seq" />
               </SelectTrigger>
               <SelectContent>
@@ -287,7 +287,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
               <button
                 type="button"
                 onClick={onRemove}
-                className="h-7 w-7 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-red-50 transition-colors"
+                className="h-7 w-7 rounded-[6px] border border-border flex items-center justify-center hover:bg-red-50 transition-colors"
               >
                 <X className="h-4 w-4 text-red-500" />
               </button>
@@ -300,13 +300,13 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
         <CardContent className="pt-5 space-y-5">
           {!effectivePrefillFabId && (
             <div>
-              <Label className="text-[14px] text-[#4b545d]">FAB ID *</Label>
+              <Label className="text-[14px] text-secondary-foreground">FAB ID *</Label>
               <Select
                 value={entry.fab_id}
                 onValueChange={value => onUpdate({ fab_id: value })}
                 disabled={isLoadingFabs}
               >
-                <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[14px]">
+                <SelectTrigger className="mt-2 h-[42px] border-border rounded-[6px] text-[14px]">
                   <SelectValue placeholder={isLoadingFabs ? 'Loading FABs…' : 'Select FAB ID'} />
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
@@ -320,13 +320,13 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label className="text-[14px] text-[#4b545d]">Shop Activity</Label>
+              <Label className="text-[14px] text-secondary-foreground">Shop Activity</Label>
               <Select
                 value={entry.planning_section_id ?? ''}
                 onValueChange={value => onUpdate({ planning_section_id: value, workstation_id: '', operator_id: '' })}
                 disabled={disableShopActivity}
               >
-                <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[14px]">
+                <SelectTrigger className="mt-2 h-[42px] border-border rounded-[6px] text-[14px]">
                   <SelectValue placeholder="Select section" />
                 </SelectTrigger>
                 <SelectContent>
@@ -340,7 +340,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
             </div>
 
             <div>
-              <Label className="text-[14px] text-[#4b545d]">Estimated Hours *</Label>
+              <Label className="text-[14px] text-secondary-foreground">Estimated Hours *</Label>
               <Input
                 type="number"
                 min="0.25"
@@ -348,19 +348,19 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                 value={entry.estimated_hours ?? ''}
                 onChange={e => handleEstimatedHoursChange(e.target.value)}
                 placeholder="e.g. 8"
-                className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[14px]"
+                className="mt-2 h-[42px] border-border rounded-[6px] text-[14px]"
               />
             </div>
 
             <div>
-              <Label className="text-[14px] text-[#4b545d]">Workstation *</Label>
+              <Label className="text-[14px] text-secondary-foreground">Workstation *</Label>
               <Select
                 key={workstationReady ? 'ready' : 'loading'}
                 value={workstationReady ? (entry.workstation_id || undefined) : undefined}
                 onValueChange={value => onUpdate({ workstation_id: value, operator_id: '' })}
                 disabled={!entry.planning_section_id || isLoadingWorkstations}
               >
-                <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[14px]">
+                <SelectTrigger className="mt-2 h-[42px] border-border rounded-[6px] text-[14px]">
                   <SelectValue
                     placeholder={
                       isLoadingWorkstations ? 'Loading workstations…' :
@@ -379,13 +379,13 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
             </div>
 
             <div>
-              <Label className="text-[14px] text-[#4b545d]">Operator *</Label>
+              <Label className="text-[14px] text-secondary-foreground">Operator *</Label>
               <Select
                 value={entry.operator_id || undefined}
                 onValueChange={value => onUpdate({ operator_id: value })}
                 disabled={!entry.workstation_id}
               >
-                <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[14px]">
+                <SelectTrigger className="mt-2 h-[42px] border-border rounded-[6px] text-[14px]">
                   <SelectValue
                     placeholder={
                       !entry.workstation_id ? 'Select a workstation first' :
@@ -413,17 +413,17 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-[14px] text-[#4b545d]">Start Date *</Label>
+              <Label className="text-[14px] text-secondary-foreground">Start Date *</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
                     className={cn(
-                      'mt-2 w-full h-[42px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[14px] flex items-center gap-2',
+                      'mt-2 w-full h-[42px] px-3 text-left border border-border rounded-[6px] text-[14px] flex items-center gap-2',
                       !entry.start_date && 'text-muted-foreground'
                     )}
                   >
-                    <Calendar className="h-4 w-4 text-[#7a9705]" />
+                    <Calendar className="h-4 w-4 text-primary" />
                     {entry.start_date ? format(entry.start_date, 'PPP') : <span>Pick start date</span>}
                   </button>
                 </PopoverTrigger>
@@ -439,18 +439,18 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
             </div>
 
             <div>
-              <Label className="text-[14px] text-[#4b545d]">End Date</Label>
+              <Label className="text-[14px] text-secondary-foreground">End Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
                     disabled
                     className={cn(
-                      'mt-2 w-full h-[42px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[14px] flex items-center gap-2 bg-gray-50 cursor-not-allowed',
+                      'mt-2 w-full h-[42px] px-3 text-left border border-border rounded-[6px] text-[14px] flex items-center gap-2 bg-muted cursor-not-allowed',
                       !entry.end_date && 'text-muted-foreground'
                     )}
                   >
-                    <Calendar className="h-4 w-4 text-[#7a9705]" />
+                    <Calendar className="h-4 w-4 text-primary" />
                     {entry.end_date ? format(entry.end_date, 'PPP') : <span>Auto‑calculated</span>}
                   </button>
                 </PopoverTrigger>
@@ -463,9 +463,9 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-[14px] text-[#4b545d]">Start Time</Label>
+              <Label className="text-[14px] text-secondary-foreground">Start Time</Label>
               <Select value={entry.start_time ?? ''} onValueChange={onStartTimeChange}>
-                <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[14px]">
+                <SelectTrigger className="mt-2 h-[42px] border-border rounded-[6px] text-[14px]">
                   <SelectValue placeholder="Select start" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[200px] overflow-y-auto">
@@ -477,9 +477,9 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
             </div>
 
             <div>
-              <Label className="text-[14px] text-[#4b545d]">End Time</Label>
+              <Label className="text-[14px] text-secondary-foreground">End Time</Label>
               <Select value={entry.end_time ?? ''} onValueChange={onEndTimeChange} disabled>
-                <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[14px]">
+                <SelectTrigger className="mt-2 h-[42px] border-border rounded-[6px] text-[14px]">
                   <SelectValue placeholder="Auto‑calculated" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[200px] overflow-y-auto">
@@ -492,12 +492,12 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
           </div>
 
           <div>
-            <Label className="text-[14px] text-[#4b545d]">Description / Notes</Label>
+            <Label className="text-[14px] text-secondary-foreground">Description / Notes</Label>
             <Textarea
               placeholder="Add any notes about this plan..."
               value={entry.notes}
               onChange={e => onUpdate({ notes: e.target.value })}
-              className="mt-2 min-h-24 border-[#e2e4ed] rounded-[6px] text-[14px]"
+              className="mt-2 min-h-24 border-border rounded-[6px] text-[14px]"
             />
           </div>
         </CardContent>
@@ -974,20 +974,20 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const submitDisabled = isLoading || isAutoScheduling || hasPendingShopRevision;
 
   return (
-    <div className="bg-white min-h-screen">
-      <div className="border-b border-[#dfdfdf]">
+    <div className="bg-background min-h-screen">
+      <div className="border-b border-input">
         <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
           <div className="flex items-center gap-4">
-            <p className="text-[29px] leading-[32px] text-black font-semibold">
+            <p className="text-[29px] leading-[32px] text-foreground font-semibold">
               {isEditing ? 'Edit Plan' : 'Create Plan'}
             </p>
             {entries[0]?.fab_id && (
               <Link
                 to={`/sales/${entries[0].fab_id}`}
-                className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2"
+                className="flex items-center gap-2 bg-primary-soft border border-[#9cc15e] rounded-[8px] px-4 py-2"
               >
-                <span className="text-[14px] text-[#4a4d59]">FAB ID</span>
-                <span className="text-[21px] text-[#7a9705] font-semibold">#{entries[0].fab_id}</span>
+                <span className="text-[14px] text-secondary-foreground">FAB ID</span>
+                <span className="text-[21px] text-primary font-semibold">#{entries[0].fab_id}</span>
               </Link>
             )}
           </div>
@@ -1007,7 +1007,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             {!hideBackButton && (
               <button
                 onClick={handleBack}
-                className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center justify-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
+                className="h-[34px] px-3 py-[7px] rounded-[6px] border border-border bg-background flex items-center justify-center gap-2 text-secondary-foreground hover:bg-muted transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span className="text-[15px] font-semibold">Back</span>
@@ -1021,7 +1021,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         {!isFormReady ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <LoaderCircle className="h-8 w-8 animate-spin text-[#9cc15e]" />
-            <p className="text-[15px] text-[#7c8689]">Loading plan data…</p>
+            <p className="text-[15px] text-text-foreground">Loading plan data…</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -1033,9 +1033,9 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             )}
 
             {selectedFab && (
-              <Card className="border border-[#ecedf0] rounded-[12px] mb-6">
-                <CardHeader className="pb-3 border-b border-[#ecedf0] flex flex-row items-center justify-between">
-                  <CardTitle className="text-[17px] text-[#4b545d] font-semibold">FAB Details</CardTitle>
+              <Card className="border border-border rounded-[12px] mb-6">
+                <CardHeader className="pb-3 border-b border-border flex flex-row items-center justify-between">
+                  <CardTitle className="text-[17px] text-secondary-foreground font-semibold">FAB Details</CardTitle>
                   {showCncWarning && (
                     <Badge variant="destructive" className="ml-2">
                       <Info className="h-3 w-3 mr-1" />
@@ -1060,8 +1060,8 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
                       { label: 'Saw Miter LinFt', val: selectedFab.saw_miter_lnft?.toFixed(2) || '0.00' },
                     ].map(({ label, val }) => (
                       <div key={label}>
-                        <Label className="text-xs text-[#7c8689]">{label}</Label>
-                        <p className="text-sm font-medium text-[#4b545d]">{val || '-'}</p>
+                        <Label className="text-xs text-text-foreground">{label}</Label>
+                        <p className="text-sm font-medium text-secondary-foreground">{val || '-'}</p>
                       </div>
                     ))}
                   </div>
@@ -1094,7 +1094,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               <button
                 type="button"
                 onClick={addEntry}
-                className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#9cc15e] hover:text-[#7a9705] hover:bg-[#f0f4e8] transition-all"
+                className="w-full h-[44px] border border-dashed border-border rounded-[8px] flex items-center justify-center gap-2 text-muted-foreground hover:border-[#9cc15e] hover:text-primary hover:bg-primary-soft transition-all"
               >
                 <Plus className="h-4 w-4" />
                 <span className="text-[15px] font-semibold">Add Another Stage</span>
@@ -1105,7 +1105,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               <button
                 type="button"
                 onClick={handleBack}
-                className="flex-1 h-[44px] border border-[#e2e4ed] rounded-[8px] text-[15px] text-[#4b545d] hover:bg-gray-50 transition-colors"
+                className="flex-1 h-[44px] border border-border rounded-[8px] text-[15px] text-secondary-foreground hover:bg-muted transition-colors"
                 disabled={isLoading || isAutoScheduling}
               >
                 Cancel

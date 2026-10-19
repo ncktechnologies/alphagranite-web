@@ -225,15 +225,15 @@ export function ShopProductionSummary() {
             header: ({ column }) => <DataGridColumnHeader title="PLANS" column={column} />,
             cell: ({ row }) => {
                 const plans = row.original.plans || [];
-                if (!plans.length) return <span className="text-sm text-gray-400">—</span>;
+                if (!plans.length) return <span className="text-sm text-placeholder">—</span>;
                 return (
                     <div className="text-xs flex flex-wrap gap-1">
                         {plans.slice(0, 3).map((p: any, idx: number) => (
-                            <span key={idx} className="bg-gray-100 px-1.5 py-0.5 rounded">
+                            <span key={idx} className="bg-accent px-1.5 py-0.5 rounded">
                                 {p.plan_name}: {p.work_percentage}%
                             </span>
                         ))}
-                        {plans.length > 3 && <span className="text-gray-400">+{plans.length - 3} more</span>}
+                        {plans.length > 3 && <span className="text-placeholder">+{plans.length - 3} more</span>}
                     </div>
                 );
             },
@@ -303,7 +303,7 @@ export function ShopProductionSummary() {
         },
     });
 
-    if (isLoading) return <div className="p-5 text-[#7c8689]">Loading shop production summary...</div>;
+    if (isLoading) return <div className="p-5 text-text-foreground">Loading shop production summary...</div>;
 
     const getTitle = () => {
         if (dateRange?.from) {
@@ -317,7 +317,7 @@ export function ShopProductionSummary() {
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Shop Production Summary</h1>
+                <h1 className="text-2xl font-semibold text-secondary-foreground">Shop Production Summary</h1>
                 <div className="flex items-center gap-2 flex-wrap">
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
@@ -346,29 +346,29 @@ export function ShopProductionSummary() {
             {/* Summary Widgets */}
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total Fabs</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_fabs}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Total Fabs</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.total_fabs}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total SQFT</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_sqft?.toFixed(2)}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Total SQFT</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.total_sqft?.toFixed(2)}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total No Of Pieces</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_pieces}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Total No Of Pieces</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.total_pieces}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Completed Fabs</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.completed_fabs}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Completed Fabs</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.completed_fabs}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">In Progress</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.in_progress_fabs}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">In Progress</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.in_progress_fabs}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Unplanned</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.unplanned_fabs}</p>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <p className="text-xs text-text-foreground font-medium uppercase tracking-wider">Unplanned</p>
+                        <p className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.unplanned_fabs}</p>
                     </Card>
                 </div>
             )}
@@ -376,22 +376,22 @@ export function ShopProductionSummary() {
             {/* Stage Summary Table */}
             {stageCounts.length > 0 && (
                 <DataGrid table={stageTable} recordCount={stageCounts.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
-                    <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
-                        <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
-                            <p className="text-base font-semibold text-[#4b545d]">Stage Summary</p>
+                    <Card className="border border-border rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                        <CardHeader className="py-3 px-5 border-b border-border flex flex-row items-center justify-between bg-background">
+                            <p className="text-base font-semibold text-secondary-foreground">Stage Summary</p>
                             <CardToolbar />
                         </CardHeader>
                         <CardTable>
                             <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-280px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                                 <div className="relative">
                                     <table className="w-full border-collapse table-fixed">
-                                        <thead className="sticky top-0 z-10 bg-white">
+                                        <thead className="sticky top-0 z-10 bg-background">
                                             {stageTable.getHeaderGroups().map(headerGroup => (
                                                 <tr key={headerGroup.id}>
                                                     {headerGroup.headers.map(header => (
                                                         <th
                                                             key={header.id}
-                                                            className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50"
+                                                            className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted"
                                                             style={{ width: header.getSize() }}
                                                         >
                                                             {flexRender(header.column.columnDef.header, header.getContext())}
@@ -400,7 +400,7 @@ export function ShopProductionSummary() {
                                                                     onDoubleClick={() => header.column.resetSize()}
                                                                     onMouseDown={header.getResizeHandler()}
                                                                     onTouchStart={header.getResizeHandler()}
-                                                                    className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                                    className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                                 />
                                                             )}
                                                         </th>
@@ -410,11 +410,11 @@ export function ShopProductionSummary() {
                                         </thead>
                                         <tbody>
                                             {stageTable.getRowModel().rows.map(row => (
-                                                <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50">
+                                                <tr key={row.id} className="border-b border-border hover:bg-muted/50">
                                                     {row.getVisibleCells().map(cell => (
                                                         <td
                                                             key={cell.id}
-                                                            className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                            className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0"
                                                             style={{ width: cell.column.getSize() }}
                                                         >
                                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -424,7 +424,7 @@ export function ShopProductionSummary() {
                                             ))}
                                             {stageCounts.length === 0 && (
                                                 <tr>
-                                                    <td colSpan={stageColumns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                                                    <td colSpan={stageColumns.length} className="px-4 py-8 text-center text-sm text-text-foreground">
                                                         No data available.
                                                     </td>
                                                 </tr>
@@ -432,10 +432,10 @@ export function ShopProductionSummary() {
                                         </tbody>
                                     </table>
                                 </div>
-                                <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                                <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                             </ScrollArea>
                         </CardTable>
-                        <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
+                        <CardFooter className="bg-background border-t border-border px-4 py-2">
                             <DataGridPagination />
                         </CardFooter>
                     </Card>
@@ -444,22 +444,22 @@ export function ShopProductionSummary() {
 
             {/* ─── FAB Details Table (uncommented and with meta.format) ────── */}
             <DataGrid table={fabTable} recordCount={fabs.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
-                <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
-                    <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
-                        <p className="text-base font-semibold text-[#4b545d]">FAB Details – {getTitle()}</p>
+                <Card className="border border-border rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                    <CardHeader className="py-3 px-5 border-b border-border flex flex-row items-center justify-between bg-background">
+                        <p className="text-base font-semibold text-secondary-foreground">FAB Details – {getTitle()}</p>
                         <CardToolbar />
                     </CardHeader>
                     <CardTable>
                         <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-280px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
-                                    <thead className="sticky top-0 z-10 bg-white">
+                                    <thead className="sticky top-0 z-10 bg-background">
                                         {fabTable.getHeaderGroups().map(headerGroup => (
                                             <tr key={headerGroup.id}>
                                                 {headerGroup.headers.map(header => (
                                                     <th
                                                         key={header.id}
-                                                        className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50"
+                                                        className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted"
                                                         style={{ width: header.getSize() }}
                                                     >
                                                         {flexRender(header.column.columnDef.header, header.getContext())}
@@ -468,7 +468,7 @@ export function ShopProductionSummary() {
                                                                 onDoubleClick={() => header.column.resetSize()}
                                                                 onMouseDown={header.getResizeHandler()}
                                                                 onTouchStart={header.getResizeHandler()}
-                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                             />
                                                         )}
                                                     </th>
@@ -480,11 +480,11 @@ export function ShopProductionSummary() {
                                         {fabTable.getRowModel().rows.map(row => {
                                             const rowAttrs = fabTable.options.meta?.getRowAttributes?.(row) || {};
                                             return (
-                                                <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50" {...rowAttrs}>
+                                                <tr key={row.id} className="border-b border-border hover:bg-muted/50" {...rowAttrs}>
                                                     {row.getVisibleCells().map(cell => (
                                                         <td
                                                             key={cell.id}
-                                                            className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                            className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0"
                                                             style={{ width: cell.column.getSize() }}
                                                         >
                                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -495,7 +495,7 @@ export function ShopProductionSummary() {
                                         })}
                                         {fabs.length === 0 && (
                                             <tr>
-                                                <td colSpan={fabColumns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                                                <td colSpan={fabColumns.length} className="px-4 py-8 text-center text-sm text-text-foreground">
                                                     No data available.
                                                 </td>
                                             </tr>
@@ -503,10 +503,10 @@ export function ShopProductionSummary() {
                                     </tbody>
                                 </table>
                             </div>
-                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                         </ScrollArea>
                     </CardTable>
-                    <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
+                    <CardFooter className="bg-background border-t border-border px-4 py-2">
                         <DataGridPagination />
                     </CardFooter>
                 </Card>

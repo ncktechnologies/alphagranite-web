@@ -218,14 +218,14 @@ const ProgressBar: React.FC<{ total: number; percent: number; unit: string }> = 
 
     return (
         <div className="flex flex-col gap-1 items-start min-w-[100px]">
-            <p className="text-sm text-[#4b545d]">{total.toFixed(2)} {unit}</p>
-            <div className="w-full bg-[#e2e4ed] rounded-full h-[6px] overflow-hidden">
+            <p className="text-sm text-secondary-foreground">{total.toFixed(2)} {unit}</p>
+            <div className="w-full bg-border rounded-full h-[6px] overflow-hidden">
                 <div
                     className="h-full rounded-full transition-all duration-300"
                     style={{ width: `${Math.min(displayPercent, 100)}%`, backgroundColor: barColor }}
                 />
             </div>
-            <p className="text-xs text-[#4b545d]">{displayPercent.toFixed(2)}%</p>
+            <p className="text-xs text-secondary-foreground">{displayPercent.toFixed(2)}%</p>
         </div>
     );
 };
@@ -599,7 +599,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             cell: ({ row }) => {
                 if (row.original.type === 'fab' && row.original.subRows.length > 0) {
                     return (
-                        <button onClick={(e) => { e.stopPropagation(); row.toggleExpanded(); }} className="p-1 hover:bg-gray-100 rounded">
+                        <button onClick={(e) => { e.stopPropagation(); row.toggleExpanded(); }} className="p-1 hover:bg-accent rounded">
                             {row.getIsExpanded() ? <ChevronDown className="h-4 w-4" /> : <ChevronRightIcon className="h-4 w-4" />}
                         </button>
                     );
@@ -622,10 +622,10 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'estimated_completion_date',
             accessorFn: (r) => r.type === 'fab' ? r.data.shop_est_completion_date : null,
-            header: ({ column }) => <DataGridColumnHeader title="EST. COMPLETION DATE" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="EST. COMPLETION DATE" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'plan') {
-                    return <span className="text-xs text-gray-500 pl-4 font-semibold">{row.original.plan.plan_name} · {row.original.plan.workstation_name} · {row.original.plan.operator_name}</span>;
+                    return <span className="text-xs text-muted-foreground pl-4 font-semibold">{row.original.plan.plan_name} · {row.original.plan.workstation_name} · {row.original.plan.operator_name}</span>;
                 }
                 return null;
             },
@@ -643,15 +643,15 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'cut_date_scheduled',
             accessorFn: (r) => r.type === 'fab' ? r.data.cut_date_scheduled : null,
-            header: ({ column }) => <DataGridColumnHeader title="CUT DATE SCHEDULED" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="CUT DATE SCHEDULED" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const date = row.original.data.shop_date_schedule;
-                    return <span className="text-sm text-[#4b545d]">{date ? format(parseISO(date), 'MM/dd/yyyy') : '-'}</span>;
+                    return <span className="text-sm text-secondary-foreground">{date ? format(parseISO(date), 'MM/dd/yyyy') : '-'}</span>;
                 }
                 if (row.original.type === 'plan') {
                     const date = row.original.plan.scheduled_start_date;
-                    return <span className="text-xs text-gray-500 pl-4">{date ? format(parseISO(date), 'MM/dd/yyyy') : '-'}</span>;
+                    return <span className="text-xs text-muted-foreground pl-4">{date ? format(parseISO(date), 'MM/dd/yyyy') : '-'}</span>;
                 }
                 return null;
             },
@@ -672,11 +672,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'install_date',
             accessorFn: (r) => r.type === 'fab' ? r.data.install_date : null,
-            header: ({ column }) => <DataGridColumnHeader title="INSTALL DATE" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="INSTALL DATE" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const date = row.original.data.install_date;
-                    return <span className="text-sm text-[#4b545d]">{date ? format(parseISO(date), 'MM/dd/yyyy') : '-'}</span>;
+                    return <span className="text-sm text-secondary-foreground">{date ? format(parseISO(date), 'MM/dd/yyyy') : '-'}</span>;
                 }
                 return null;
             },
@@ -694,11 +694,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'fab_id',
             accessorFn: (r) => r.type === 'fab' ? r.data.fab_id : null,
-            header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     return (
-                        <Link to={`/sales/${row.original.data.fab_id}`} className="text-sm text-[#4b545d] hover:underline cursor-pointer">
+                        <Link to={`/sales/${row.original.data.fab_id}`} className="text-sm text-secondary-foreground hover:underline cursor-pointer">
                             {row.original.data.fab_id}
                         </Link>
                     );
@@ -717,7 +717,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'job_no',
             accessorFn: (r) => r.type === 'fab' ? r.data.job_no : null,
-            header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     return row.original.data.job_id ? (
@@ -725,7 +725,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                             {row.original.data.job_no}
                         </Link>
                     ) : (
-                        <span className="text-sm text-[#4b545d]">{row.original.data.job_no}</span>
+                        <span className="text-sm text-secondary-foreground">{row.original.data.job_no}</span>
                     );
                 }
                 return null;
@@ -741,7 +741,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'fab_info',
-            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const f = row.original.data;
@@ -752,20 +752,20 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                         <div className="flex gap-4 text-xs max-w-[400px]">
                             {(jobInfo.length > 0 || stoneInfo.length > 0) && (
                                 <div className="flex-1 min-w-0">
-                                    {jobInfo.length > 0 && <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>{jobInfo.join(' - ')}</div>}
-                                    {stoneInfo.length > 0 && <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>{stoneInfo.join(' - ')}</div>}
+                                    {jobInfo.length > 0 && <div className="truncate text-secondary-foreground" title={jobInfo.join(' - ')}>{jobInfo.join(' - ')}</div>}
+                                    {stoneInfo.length > 0 && <div className="truncate text-secondary-foreground" title={stoneInfo.join(' - ')}>{stoneInfo.join(' - ')}</div>}
                                 </div>
                             )}
                             {materialInfo.length > 0 && (
                                 <div className="shrink-0 max-w-[45%] text-right">
-                                    {materialInfo.map((info, idx) => <div key={idx} className="truncate text-gray-600">{info}</div>)}
+                                    {materialInfo.map((info, idx) => <div key={idx} className="truncate text-secondary-foreground">{info}</div>)}
                                 </div>
                             )}
                         </div>
                     );
                 }
                 if (row.original.type === 'plan') {
-                    return <span className="text-xs text-gray-400 pl-4">Estimated hrs: {row.original.plan.estimated_hours}h</span>;
+                    return <span className="text-xs text-placeholder pl-4">Estimated hrs: {row.original.plan.estimated_hours}h</span>;
                 }
                 return null;
             },
@@ -794,9 +794,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'total_sq_ft',
             accessorFn: (r) => r.type === 'fab' ? r.data.total_sq_ft : null,
-            header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
-                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d]">{row.original.data.total_sq_ft.toFixed(2)}</span>;
+                if (row.original.type === 'fab') return <span className="text-sm text-secondary-foreground">{row.original.data.total_sq_ft.toFixed(2)}</span>;
                 return null;
             },
             enableSorting: true,
@@ -810,11 +810,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'cut',
-            header: ({ column }) => <DataGridColumnHeader title="CUT SAW" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="CUT SAW" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.cut_progress;
-                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(2)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(2)}%</span></div>;
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-secondary-foreground">{p.total.toFixed(2)} {p.unit}</span><span className="text-xs text-secondary-foreground">{p.percent.toFixed(2)}%</span></div>;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 7) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
@@ -837,11 +837,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'wj',
-            header: ({ column }) => <DataGridColumnHeader title="CUT WJ" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="CUT WJ" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.wj_progress;
-                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(2)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(2)}%</span></div>;
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-secondary-foreground">{p.total.toFixed(2)} {p.unit}</span><span className="text-xs text-secondary-foreground">{p.percent.toFixed(2)}%</span></div>;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 8) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
@@ -864,11 +864,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'edging',
-            header: ({ column }) => <DataGridColumnHeader title="EDGING" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="EDGING" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.edging_progress;
-                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span></div>;
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-secondary-foreground">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-secondary-foreground">{p.percent.toFixed(1)}%</span></div>;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 9) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
@@ -891,11 +891,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'miter',
-            header: ({ column }) => <DataGridColumnHeader title="MITER" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="MITER" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.miter_progress;
-                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span></div>;
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-secondary-foreground">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-secondary-foreground">{p.percent.toFixed(1)}%</span></div>;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 2) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
@@ -918,11 +918,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'cnc',
-            header: ({ column }) => <DataGridColumnHeader title="CNC" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="CNC" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.cnc_progress;
-                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span></div>;
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-secondary-foreground">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-secondary-foreground">{p.percent.toFixed(1)}%</span></div>;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 1) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
@@ -945,11 +945,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'handwork',
-            header: ({ column }) => <DataGridColumnHeader title="HANDWORK" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="HANDWORK" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.touchup_progress;
-                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span></div>;
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-secondary-foreground">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-secondary-foreground">{p.percent.toFixed(1)}%</span></div>;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 6) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
@@ -973,10 +973,10 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'percent_complete',
             accessorFn: (r) => r.type === 'fab' ? r.data.percent_complete : null,
-            header: ({ column }) => <DataGridColumnHeader title="% COMPLETE" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="% COMPLETE" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
-                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d]">{row.original.data.percent_complete.toFixed(2)}%</span>;
-                if (row.original.type === 'plan') return <span className="text-xs text-gray-500">{row.original.stage_percent.toFixed(1)}%</span>;
+                if (row.original.type === 'fab') return <span className="text-sm text-secondary-foreground">{row.original.data.percent_complete.toFixed(2)}%</span>;
+                if (row.original.type === 'plan') return <span className="text-xs text-muted-foreground">{row.original.stage_percent.toFixed(1)}%</span>;
                 return null;
             },
             enableSorting: true,
@@ -992,9 +992,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'fab_type',
             accessorFn: (r) => r.type === 'fab' ? r.data.fab_type : null,
-            header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
-                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d] whitespace-nowrap">{row.original.data.fab_type}</span>;
+                if (row.original.type === 'fab') return <span className="text-sm text-secondary-foreground whitespace-nowrap">{row.original.data.fab_type}</span>;
                 return null;
             },
             enableSorting: true,
@@ -1009,9 +1009,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         {
             id: 'pieces',
             accessorFn: (r) => r.type === 'fab' ? r.data.pieces : null,
-            header: ({ column }) => <DataGridColumnHeader title="NO. OF PIECES" column={column} className="text-[#7c8689] text-[16px] font-normal" />,
+            header: ({ column }) => <DataGridColumnHeader title="NO. OF PIECES" column={column} className="text-text-foreground text-[16px] font-normal" />,
             cell: ({ row }) => {
-                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d]">{row.original.data.pieces}</span>;
+                if (row.original.type === 'fab') return <span className="text-sm text-secondary-foreground">{row.original.data.pieces}</span>;
                 return null;
             },
             enableSorting: true,
@@ -1077,18 +1077,18 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     const renderTotalsRow = (
         label: string,
         totals: GroupTotals,
-        bgClass = 'bg-[#f9f9f9]',
+        bgClass = 'bg-muted',
         labelColId = 'estimated_completion_date',
     ) => (
-        <tr className={`${bgClass} font-medium border-b border-[#e2e4ed]`}>
+        <tr className={`${bgClass} font-medium border-b border-border`}>
             {table.getVisibleFlatColumns().map(col => {
                 const id = col.id;
                 const td = (content: React.ReactNode) => (
-                    <td key={id} className="px-4 py-2 text-sm font-semibold text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0">
+                    <td key={id} className="px-4 py-2 text-sm font-semibold text-secondary-foreground border-r border-border last:border-r-0">
                         {content}
                     </td>
                 );
-                if (id === 'expander' || id === 'actions') return <td key={id} className="px-4 py-2 border-r border-[#e2e4ed]" />;
+                if (id === 'expander' || id === 'actions') return <td key={id} className="px-4 py-2 border-r border-border" />;
                 if (id === labelColId) return td(label);
                 if (id === 'pieces') return td(totals.pieces);
                 if (id === 'total_sq_ft') return td(`${totals.sqft.toFixed(2)} SF`);
@@ -1096,7 +1096,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 if (id === 'edging') return td(`${totals.edging.toFixed(2)} LF`);
                 if (id === 'miter') return td(`${totals.miter.toFixed(2)} LF`);
                 if (id === 'cnc') return td(`${totals.cnc.toFixed(2)} LF`);
-                return <td key={id} className="px-4 py-2 border-r border-[#e2e4ed] last:border-r-0" />;
+                return <td key={id} className="px-4 py-2 border-r border-border last:border-r-0" />;
             })}
         </tr>
     );
@@ -1128,13 +1128,13 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 groupByDate={false}
                 tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}
             >
-                <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)]">
+                <Card className="border border-border rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)]">
 
                     {/* ---- Filters ---- */}
-                    <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3 border-b border-[#e2e4ed] px-5">
+                    <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3 border-b border-border px-5">
                         <div className="flex flex-wrap items-center gap-3">
                             <Select value={searchType} onValueChange={(value: 'fab_id' | 'job_number' | 'job_name' | 'account_name') => setSearchType(value)}>
-                                <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed] focus-visible:ring-0">
+                                <SelectTrigger className="w-[140px] h-[34px] border-border focus-visible:ring-0">
                                     <SelectValue placeholder="Search by" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1146,12 +1146,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                             </Select>
 
                             <div className="relative">
-                                <Search className="size-4 text-[#7c8689] absolute start-3 top-1/2 -translate-y-1/2" />
+                                <Search className="size-4 text-text-foreground absolute start-3 top-1/2 -translate-y-1/2" />
                                 <Input
                                     placeholder={`Search by ${searchType.replace('_', ' ')}`}
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
-                                    className="ps-9 w-[280px] h-[34px] border-[#e2e4ed] focus-visible:ring-0"
+                                    className="ps-9 w-[280px] h-[34px] border-border focus-visible:ring-0"
                                     disabled={isLoading}
                                 />
                                 {searchQuery && (
@@ -1163,8 +1163,8 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                             <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" className={cn('w-[210px] h-[34px] justify-start text-left font-normal border-[#e2e4ed]', !dateRange && 'text-muted-foreground')} disabled={isLoading}>
-                                        <CalendarDays className="mr-2 h-4 w-4 text-[#7c8689]" />
+                                    <Button variant="outline" className={cn('w-[210px] h-[34px] justify-start text-left font-normal border-border', !dateRange && 'text-muted-foreground')} disabled={isLoading}>
+                                        <CalendarDays className="mr-2 h-4 w-4 text-text-foreground" />
                                         {dateRange?.from ? (
                                             dateRange.to
                                                 ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}`
@@ -1174,7 +1174,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0" align="start">
                                     <Calendar initialFocus mode="range" defaultMonth={dateRange?.from || new Date()} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} />
-                                    <div className="flex items-center justify-end gap-1.5 border-t border-[#e2e4ed] p-3">
+                                    <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
                                         <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); }}>Reset</Button>
                                         <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
                                     </div>
@@ -1182,7 +1182,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                             </Popover>
 
                             <Select value={fabTypeFilter} onValueChange={setFabTypeFilter} disabled={isLoading}>
-                                <SelectTrigger className="w-auto h-[34px] border-[#e2e4ed]">
+                                <SelectTrigger className="w-auto h-[34px] border-border">
                                     <SelectValue placeholder="FAB type" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[300px] overflow-y-auto">
@@ -1193,7 +1193,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                         </div>
 
                         <CardToolbar className="flex gap-4">
-                            <Button variant="outline" onClick={() => exportTableToCSV(table, 'shop-status')} disabled={isLoading} className="h-[34px] border-[#e2e4ed] text-[#4b545d]">
+                            <Button variant="outline" onClick={() => exportTableToCSV(table, 'shop-status')} disabled={isLoading} className="h-[34px] border-border text-secondary-foreground">
                                 Export CSV
                             </Button>
                         </CardToolbar>
@@ -1204,17 +1204,17 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                         <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             {isLoading ? (
                                 <div className="flex items-center justify-center h-64">
-                                    <p className="text-[#7c8689]">Loading…</p>
+                                    <p className="text-text-foreground">Loading…</p>
                                 </div>
                             ) : (
                                 <table className="w-full border-collapse table-fixed">
-                                    <thead className="bg-gray-50 sticky top-0 z-10">
+                                    <thead className="bg-muted sticky top-0 z-10">
                                         {table.getHeaderGroups().map(hg => (
                                             <tr key={hg.id}>
                                                 {hg.headers.map(header => (
                                                     <th
                                                         key={header.id}
-                                                        className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50 border-b border-gray-200 whitespace-normal relative"
+                                                        className="px-4 py-2 text-left text-xs font-semibold text-secondary-foreground bg-muted border-b border-border whitespace-normal relative"
                                                         style={{
                                                             width: header.getSize(),
                                                             minWidth: header.getSize(),
@@ -1227,7 +1227,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                                 onDoubleClick={() => header.column.resetSize()}
                                                                 onMouseDown={header.getResizeHandler()}
                                                                 onTouchStart={header.getResizeHandler()}
-                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                             />
                                                         )}
                                                     </th>
@@ -1246,7 +1246,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                     {!monthCollapsed && renderTotalsRow(
                                                         `${monthGroup.monthDisplay} `,
                                                         monthGroup.totals,
-                                                        'bg-[#f0f7e0] text-[12px] font-medium',
+                                                        'bg-primary-soft text-[12px] font-medium',
                                                     )}
 
                                                     {!monthCollapsed && monthGroup.days.map(dayGroup => {
@@ -1258,7 +1258,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                                 {!dayCollapsed && renderTotalsRow(
                                                                     `${dayGroup.dayDisplay} `,
                                                                     dayGroup.totals,
-                                                                    'bg-[#f9f9f9] text-[11px]',
+                                                                    'bg-muted text-[11px]',
                                                                 )}
 
                                                                 {/* ── FAB rows for this day ── */}
@@ -1279,21 +1279,25 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                                                                                 return (
                                                                                     <>
-                                                                                        <tr className="border-b border-[#e2e4ed] transition-colors">
+                                                                                        <tr
+                                                                                            className="border-b border-border transition-colors"
+                                                                                            data-fab-tint
+                                                                                            style={{ '--fab-row': rowBgColor } as React.CSSProperties}
+                                                                                        >
                                                                                             {parentRow.getVisibleCells().map(cell => {
                                                                                                 const columnId = cell.column.id;
                                                                                                 let cellStyle = {};
 
                                                                                                 if (parentRow.original.type === 'fab') {
                                                                                                     if (stageColumnIds.has(columnId)) {
+                                                                                                        // Colors come from the row's [data-fab-tint] vars so dark mode can tone them down
                                                                                                         const percent = getStagePercent(parentRow.original.data, columnId);
-                                                                                                        const bgColor = getFabColor(parentRow.original.data.fab_type);
                                                                                                         cellStyle = {
-                                                                                                            background: `linear-gradient(to right, ${bgColor} 0%, ${bgColor} ${percent}%, white ${percent}%, white 100%)`,
+                                                                                                            background: `linear-gradient(to right, var(--fab-tint) 0%, var(--fab-tint) ${percent}%, var(--fab-track) ${percent}%, var(--fab-track) 100%)`,
                                                                                                         };
                                                                                                     } else {
                                                                                                         cellStyle = {
-                                                                                                            backgroundColor: rowBgColor,
+                                                                                                            backgroundColor: 'var(--fab-tint)',
                                                                                                         };
                                                                                                     }
                                                                                                 }
@@ -1301,7 +1305,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                                                                 return (
                                                                                                     <td
                                                                                                         key={cell.id}
-                                                                                                        className="px-4 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                                                                        className="px-4 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0"
                                                                                                         style={cellStyle}
                                                                                                     >
                                                                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -1312,9 +1316,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                                                                                         {/* Child plan rows */}
                                                                                         {parentRow.getIsExpanded() && parentRow.subRows.map(childRow => (
-                                                                                            <tr key={childRow.id} className="border-b border-[#e2e4ed] bg-gray-50/60">
+                                                                                            <tr key={childRow.id} className="border-b border-border bg-muted/60">
                                                                                                 {childRow.getVisibleCells().map(cell => (
-                                                                                                    <td key={cell.id} className="px-4 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0">
+                                                                                                    <td key={cell.id} className="px-4 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0">
                                                                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                                                                     </td>
                                                                                                 ))}
@@ -1335,7 +1339,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                                         {filteredData.length === 0 && (
                                             <tr>
-                                                <td colSpan={colCount} className="px-4 py-12 text-center text-sm text-[#7c8689]">
+                                                <td colSpan={colCount} className="px-4 py-12 text-center text-sm text-text-foreground">
                                                     No records found.
                                                 </td>
                                             </tr>
@@ -1343,16 +1347,16 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                     </tbody>
                                 </table>
                             )}
-                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                         </ScrollArea>
                     </CardTable>
 
                     {/* ---- Pagination Footer ---- */}
-                    <CardFooter className="flex items-center justify-between px-5 py-3 border-t border-[#e2e4ed]">
+                    <CardFooter className="flex items-center justify-between px-5 py-3 border-t border-border">
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-[#7c8689]">Show</span>
+                            <span className="text-sm text-text-foreground">Show</span>
                             <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
-                                <SelectTrigger className="h-8 w-[70px] border-[#dbdfe9] bg-[#f9f9f9] text-xs"><SelectValue /></SelectTrigger>
+                                <SelectTrigger className="h-8 w-[70px] border-border bg-muted text-xs"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="10">10</SelectItem>
                                     <SelectItem value="25">25</SelectItem>
@@ -1360,11 +1364,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                     <SelectItem value="100">100</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <span className="text-sm text-[#7c8689]">per page</span>
+                            <span className="text-sm text-text-foreground">per page</span>
                         </div>
 
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-[#7c8689]">{startItem}–{endItem} of {totalRecords}</span>
+                            <span className="text-sm text-text-foreground">{startItem}–{endItem} of {totalRecords}</span>
                             <div className="flex items-center gap-1">
                                 <Button variant="ghost" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(1)}>
                                     <ChevronLeft className="h-4 w-4" /><ChevronLeft className="h-4 w-4 -ml-3" />
@@ -1377,7 +1381,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                         key={page}
                                         variant={currentPage === page ? 'default' : 'ghost'}
                                         size="icon"
-                                        className={cn('h-8 w-8 text-sm', currentPage === page ? 'bg-[#e2e4ed] text-[#4b545d] hover:bg-[#e2e4ed]' : 'text-[#7c8689]')}
+                                        className={cn('h-8 w-8 text-sm', currentPage === page ? 'bg-border text-secondary-foreground hover:bg-border' : 'text-text-foreground')}
                                         onClick={() => setCurrentPage(page)}
                                     >
                                         {page}

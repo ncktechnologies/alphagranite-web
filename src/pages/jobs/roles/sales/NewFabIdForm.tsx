@@ -776,10 +776,10 @@ const NewFabIdForm = () => {
         <div className="py-6">
           <Card className="max-w-4xl mx-auto mb-4 py-6">
             <CardHeader className='flex flex-col justify-start items-start '>
-              <CardTitle className='text-2xl font-bold text-[#111827]'>
+              <CardTitle className='text-2xl font-bold text-foreground'>
                 New Fab ID Submission
               </CardTitle>
-              <CardDescription className='text-sm text-[#4B5563]'>Submit a new Standard Fabrication Form with project specifications for templating review.</CardDescription>
+              <CardDescription className='text-sm text-secondary-foreground'>Submit a new Standard Fabrication Form with project specifications for templating review.</CardDescription>
             </CardHeader>
           </Card>
 
@@ -789,7 +789,7 @@ const NewFabIdForm = () => {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle className='text-[#111827] flex items-center gap-2 font-semibold'>
+                      <CardTitle className='text-foreground flex items-center gap-2 font-semibold'>
                         <RiInformationFill className='text-primary' />
                         Fab Information
                       </CardTitle>
@@ -839,7 +839,7 @@ const NewFabIdForm = () => {
                                       {filteredFabTypes.map((type: string) => (
                                         <div
                                           key={type}
-                                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm uppercase"
+                                          className="px-3 py-2 hover:bg-accent cursor-pointer rounded text-sm uppercase"
                                           onClick={() => {
                                             field.onChange(type);
                                             setFabTypeSearch('');
@@ -850,7 +850,7 @@ const NewFabIdForm = () => {
                                         </div>
                                       ))}
                                       {filteredFabTypes.length === 0 && !isFabTypesError && (
-                                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                        <div className="px-3 py-2 text-sm text-muted-foreground text-center">
                                           {isLoadingFabTypes ? 'Loading FAB types...' : 'No FAB types found'}
                                         </div>
                                       )}
@@ -905,7 +905,7 @@ const NewFabIdForm = () => {
                                       {filteredAccounts.map((account: string) => (
                                         <div
                                           key={account}
-                                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                          className="px-3 py-2 hover:bg-accent cursor-pointer rounded text-sm"
                                           onClick={() => {
                                             field.onChange(account);
                                             setAccountSearch('');
@@ -916,7 +916,7 @@ const NewFabIdForm = () => {
                                         </div>
                                       ))}
                                       {filteredAccounts.length === 0 && !isAccountsError && (
-                                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                        <div className="px-3 py-2 text-sm text-muted-foreground text-center">
                                           {isLoadingAccounts ? 'Loading accounts...' : 'No accounts found'}
                                         </div>
                                       )}
@@ -978,8 +978,8 @@ const NewFabIdForm = () => {
                                         Failed to load jobs
                                       </div>
                                     ) : selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0 ? (
-                                      <div className="px-3 py-2 text-sm text-gray-500 text-center flex flex-col items-center gap-2">
-                                        <InfoIcon className="h-4 w-4 text-gray-400" />
+                                      <div className="px-3 py-2 text-sm text-muted-foreground text-center flex flex-col items-center gap-2">
+                                        <InfoIcon className="h-4 w-4 text-placeholder" />
                                         <span>No jobs found for this account</span>
                                         <Link to="/create-jobs">
                                           <Button variant="outline" size="sm" className="mt-2">
@@ -993,7 +993,7 @@ const NewFabIdForm = () => {
                                         {filteredJobs.map((job: any) => (
                                           <div
                                             key={job.id}
-                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                            className="px-3 py-2 hover:bg-accent cursor-pointer rounded text-sm"
                                             onClick={() => {
                                               field.onChange(job.name);
                                               form.setValue('jobNumber', job.job_number, { shouldValidate: false });
@@ -1005,7 +1005,7 @@ const NewFabIdForm = () => {
                                           </div>
                                         ))}
                                         {filteredJobs.length === 0 && !isEffectiveJobsError && (
-                                          <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                          <div className="px-3 py-2 text-sm text-muted-foreground text-center">
                                             {isEffectiveJobsLoading ? 'Loading jobs...' : 'No job names found'}
                                           </div>
                                         )}
@@ -1066,8 +1066,8 @@ const NewFabIdForm = () => {
                                         Failed to load jobs
                                       </div>
                                     ) : selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0 ? (
-                                      <div className="px-3 py-2 text-sm text-gray-500 text-center flex flex-col items-center gap-2">
-                                        <InfoIcon className="h-4 w-4 text-gray-400" />
+                                      <div className="px-3 py-2 text-sm text-muted-foreground text-center flex flex-col items-center gap-2">
+                                        <InfoIcon className="h-4 w-4 text-placeholder" />
                                         <span>No jobs found for this account</span>
                                         <Link to="/create-jobs">
                                           <Button variant="outline" size="sm" className="mt-2">
@@ -1081,7 +1081,7 @@ const NewFabIdForm = () => {
                                         {filteredJobsByNumber.map((job: any) => (
                                           <div
                                             key={job.id}
-                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                            className="px-3 py-2 hover:bg-accent cursor-pointer rounded text-sm"
                                             onClick={() => {
                                               field.onChange(job.job_number);
                                               form.setValue('jobName', job.name, { shouldValidate: false });
@@ -1093,7 +1093,7 @@ const NewFabIdForm = () => {
                                           </div>
                                         ))}
                                         {filteredJobsByNumber.length === 0 && !isEffectiveJobsError && (
-                                          <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                          <div className="px-3 py-2 text-sm text-muted-foreground text-center">
                                             {isEffectiveJobsLoading ? 'Loading jobs...' : 'No job numbers found'}
                                           </div>
                                         )}
@@ -1198,7 +1198,7 @@ const NewFabIdForm = () => {
                                         .map((type: string) => (
                                           <div
                                             key={type}
-                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                            className="px-3 py-2 hover:bg-accent cursor-pointer rounded text-sm"
                                             onClick={() => {
                                               field.onChange(type);
                                               setStoneTypeSearch('');
@@ -1209,7 +1209,7 @@ const NewFabIdForm = () => {
                                           </div>
                                         ))}
                                       {stoneTypes.filter((type: string) => type.toLowerCase().includes(stoneTypeSearch.toLowerCase())).length === 0 && !isStoneTypesError && (
-                                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                        <div className="px-3 py-2 text-sm text-muted-foreground text-center">
                                           {isLoadingStoneTypes ? 'Loading stone types...' : 'No stone types found'}
                                         </div>
                                       )}
@@ -1298,7 +1298,7 @@ const NewFabIdForm = () => {
                                         .map((color: string) => (
                                           <div
                                             key={color}
-                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                            className="px-3 py-2 hover:bg-accent cursor-pointer rounded text-sm"
                                             onClick={() => {
                                               field.onChange(color);
                                               setStoneColorSearch('');
@@ -1309,7 +1309,7 @@ const NewFabIdForm = () => {
                                           </div>
                                         ))}
                                       {stoneColors.filter((color: string) => color.toLowerCase().includes(stoneColorSearch.toLowerCase())).length === 0 && !isEffectiveStoneColorsError && (
-                                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                        <div className="px-3 py-2 text-sm text-muted-foreground text-center">
                                           {isEffectiveStoneColorsLoading ? 'Loading stone colors...' : 'No stone colors found'}
                                         </div>
                                       )}
@@ -1396,7 +1396,7 @@ const NewFabIdForm = () => {
                                       {filteredThicknessOptions.map((thickness: string) => (
                                         <div
                                           key={thickness}
-                                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                          className="px-3 py-2 hover:bg-accent cursor-pointer rounded text-sm"
                                           onClick={() => {
                                             field.onChange(thickness);
                                             setThicknessSearch('');
@@ -1407,7 +1407,7 @@ const NewFabIdForm = () => {
                                         </div>
                                       ))}
                                       {filteredThicknessOptions.length === 0 && !isStoneThicknessesError && (
-                                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                        <div className="px-3 py-2 text-sm text-muted-foreground text-center">
                                           {isLoadingStoneThicknesses ? 'Loading thicknesses...' : 'No thickness options found'}
                                         </div>
                                       )}
@@ -1494,7 +1494,7 @@ const NewFabIdForm = () => {
                                       {filteredEdges.map((edge) => (
                                         <div
                                           key={edge}
-                                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                          className="px-3 py-2 hover:bg-accent cursor-pointer rounded text-sm"
                                           onClick={() => {
                                             field.onChange(edge);
                                             setEdgeSearch('');
@@ -1505,7 +1505,7 @@ const NewFabIdForm = () => {
                                         </div>
                                       ))}
                                       {filteredEdges.length === 0 && !isEdgesError && (
-                                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                        <div className="px-3 py-2 text-sm text-muted-foreground text-center">
                                           {isLoadingEdges ? 'Loading edges...' : 'No edges found'}
                                         </div>
                                       )}
@@ -1594,7 +1594,7 @@ const NewFabIdForm = () => {
                                 </FormControl>
                                 <SelectContent className="max-h-[200px] overflow-y-auto">
                                   {isLoadingSalesPersons ? (
-                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                    <div className="px-3 py-2 text-sm text-muted-foreground text-center">
                                       Loading sales persons...
                                     </div>
                                   ) : isSalesPersonsError ? (
@@ -1602,7 +1602,7 @@ const NewFabIdForm = () => {
                                       Failed to load sales persons
                                     </div>
                                   ) : salesPersons.length === 0 ? (
-                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                    <div className="px-3 py-2 text-sm text-muted-foreground text-center">
                                       No sales persons found
                                     </div>
                                   ) : (

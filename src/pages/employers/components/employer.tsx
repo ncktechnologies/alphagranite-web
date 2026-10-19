@@ -45,7 +45,7 @@ import { Can } from '@/components/permission';
 const StatusBadge = ({ status }: { status: string }) => {
     const colors: Record<string, string> = {
         active: 'bg-green-100 text-green-700',
-        inactive: 'bg-gray-100 text-gray-600',
+        inactive: 'bg-accent text-secondary-foreground',
         deleted: 'bg-red-100 text-red-600',
     };
 
@@ -169,7 +169,7 @@ const Employees = () => {
                         <Avatar className="w-8 h-8 mr-3">
                             <AvatarImage src={toAbsoluteUrl(row.original.profile_image_url || '')} alt="" >
                             </AvatarImage>
-                            <AvatarFallback className="bg-gray-200 text-gray-600">
+                            <AvatarFallback className="bg-border text-secondary-foreground">
                                 {row.original.name && row.original.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                         </Avatar>
@@ -370,7 +370,7 @@ const Employees = () => {
                     <CardTable>
                         <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <DataGridTable />
-                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                         </ScrollArea>
                     </CardTable>
                     <CardFooter>

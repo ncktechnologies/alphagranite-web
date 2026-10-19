@@ -377,7 +377,7 @@ export function OperatorDashboard() {
                             )}
                             {event._height > 68 && event.work_percentage > 0 && (
                                 <div className="flex items-center gap-1 mt-0.5">
-                                    <div className="flex-1 bg-white/50 rounded-full h-1">
+                                    <div className="flex-1 bg-background/50 rounded-full h-1">
                                         <div className="h-1 rounded-full" style={{ width: `${event.work_percentage}%`, backgroundColor: text }} />
                                     </div>
                                     <span className="text-[10px] font-medium" style={{ color: text }}>{event.work_percentage}%</span>
@@ -386,7 +386,7 @@ export function OperatorDashboard() {
                         </div>
                     </div>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={6} className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700 pointer-events-none">
+                <TooltipContent side="right" sideOffset={6} className="bg-background border border-border shadow-lg rounded-md p-2 text-xs text-secondary-foreground pointer-events-none">
                     <div className="space-y-1">
                         <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
                         <p><span className="font-semibold">Workstation:</span> {event.workstation_name || 'N/A'}</p>
@@ -428,8 +428,8 @@ export function OperatorDashboard() {
     // ─── Show loading skeleton only on first load ───────────────────────────
     if (isTasksLoading && !tasksData) {
         return (
-            <div className="bg-white min-h-screen">
-                <div className="border-b border-[#dfdfdf]">
+            <div className="bg-background min-h-screen">
+                <div className="border-b border-input">
                     <div className="px-10 pt-5 pb-5">
                         <Skeleton className="h-[32px] w-[300px] mb-2" />
                         <Skeleton className="h-[24px] w-[400px]" />
@@ -437,7 +437,7 @@ export function OperatorDashboard() {
                 </div>
                 <div className="p-6">
                     <div className="flex items-center justify-center py-12">
-                        <p className="text-[#7c8689]">Loading calendar events...</p>
+                        <p className="text-text-foreground">Loading calendar events...</p>
                     </div>
                 </div>
             </div>
@@ -446,12 +446,12 @@ export function OperatorDashboard() {
 
     return (
         <TooltipProvider>
-            <div className="bg-white min-h-screen">
+            <div className="bg-background min-h-screen">
                 {/* Header */}
-                <div className="border-b border-[#dfdfdf]">
+                <div className="border-b border-input">
                     <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
                         <div className="flex flex-col gap-2">
-                            <p className="text-[29px] leading-[32px] text-black font-semibold">
+                            <p className="text-[29px] leading-[32px] text-foreground font-semibold">
                                 {t('OPERATOR.MY_SCHEDULE')}
                             </p>
                         </div>
@@ -478,14 +478,14 @@ export function OperatorDashboard() {
                     </div>
 
                     <div className="flex items-center justify-between px-10 h-[65px]">
-                        <div className="bg-[#f9f9f9] h-[45px] rounded-[6px] flex items-start pt-[4px] px-[4px] gap-2">
+                        <div className="bg-muted h-[45px] rounded-[6px] flex items-start pt-[4px] px-[4px] gap-2">
                             {(['day', 'week', 'month'] as const).map((mode) => (
                                 <button
                                     key={mode}
                                     onClick={() => setViewMode(mode)}
                                     className={`px-[15px] py-[8px] rounded-[4px] font-proxima text-[15px] leading-[21px] font-semibold capitalize transition-all ${viewMode === mode
-                                        ? 'bg-white text-black shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
-                                        : 'text-[#78829d]'
+                                        ? 'bg-background text-foreground shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
+                                        : 'text-muted-foreground'
                                         }`}
                                 >
                                     {t(`CALENDAR.${mode.toUpperCase()}`)}
@@ -501,16 +501,16 @@ export function OperatorDashboard() {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={handlePrevious}
-                            className="h-8 w-8 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-gray-50"
+                            className="h-8 w-8 rounded-[6px] border border-border flex items-center justify-center hover:bg-muted"
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </button>
 
                         <Popover>
                             <PopoverTrigger asChild>
-                                <button className="flex items-center gap-3 rounded-[6px] border border-[#e2e4ed] bg-white px-3 py-2 hover:bg-gray-50">
-                                    <CalendarIcon className="size-5 text-[#4b545d]" strokeWidth={2} />
-                                    <span className="text-[21px] leading-[24px] text-[#4a4d59] font-semibold whitespace-nowrap">
+                                <button className="flex items-center gap-3 rounded-[6px] border border-border bg-background px-3 py-2 hover:bg-muted">
+                                    <CalendarIcon className="size-5 text-secondary-foreground" strokeWidth={2} />
+                                    <span className="text-[21px] leading-[24px] text-secondary-foreground font-semibold whitespace-nowrap">
                                         {calLabel}
                                     </span>
                                 </button>
@@ -526,7 +526,7 @@ export function OperatorDashboard() {
 
                         <button
                             onClick={handleNext}
-                            className="h-8 w-8 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-gray-50"
+                            className="h-8 w-8 rounded-[6px] border border-border flex items-center justify-center hover:bg-muted"
                         >
                             <ChevronRight className="h-4 w-4" />
                         </button>
@@ -555,13 +555,13 @@ export function OperatorDashboard() {
                     </div>
 
                     {/* ─── Calendar Grid ───────────────────────────────────── */}
-                    <div className="relative bg-white border border-[#e2e4ed] rounded-[8px] max-h-[70vh] overflow-auto">
+                    <div className="relative bg-background border border-border rounded-[8px] max-h-[70vh] overflow-auto">
                         {/* ── Loading overlay (when fetching) ── */}
                         {isTasksFetching && (
-                            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-[8px]">
-                                <div className="bg-white border border-[#e2e4ed] rounded-[8px] px-4 py-2 shadow-sm flex items-center gap-2">
+                            <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-[8px]">
+                                <div className="bg-background border border-border rounded-[8px] px-4 py-2 shadow-sm flex items-center gap-2">
                                     <div className="animate-spin border-2 border-[#7a9705] border-t-transparent rounded-full h-4 w-4" />
-                                    <span className="text-[14px] font-medium text-[#4b545d]">Updating calendar...</span>
+                                    <span className="text-[14px] font-medium text-secondary-foreground">Updating calendar...</span>
                                 </div>
                             </div>
                         )}
@@ -569,20 +569,20 @@ export function OperatorDashboard() {
                         {(viewMode === 'day' || viewMode === 'week') && (
                             <div style={{ minWidth: GRID_WIDTH }}>
                                 {/* Time header row */}
-                                <div className="flex sticky top-0 z-10 bg-[#f9fafb] border-b border-[#e2e4ed]" style={{ minWidth: GRID_WIDTH }}>
-                                    <div className="flex-shrink-0 border-r border-[#e2e4ed]" style={{ width: DATE_LABEL_WIDTH, height: TIME_LABEL_HEIGHT }} />
+                                <div className="flex sticky top-0 z-10 bg-muted border-b border-border" style={{ minWidth: GRID_WIDTH }}>
+                                    <div className="flex-shrink-0 border-r border-border" style={{ width: DATE_LABEL_WIDTH, height: TIME_LABEL_HEIGHT }} />
                                     <div className="relative" style={{ height: TIME_LABEL_HEIGHT, flex: 1 }}>
                                         {hoursToRender.map((hour) => (
                                             <div
                                                 key={hour}
-                                                className="absolute text-[12px] text-[#7c8689] flex items-center justify-center font-medium"
+                                                className="absolute text-[12px] text-text-foreground flex items-center justify-center font-medium"
                                                 style={{ left: getTimePosition(hour), width: HOUR_WIDTH, height: TIME_LABEL_HEIGHT }}
                                             >
                                                 {format(setHoursLocal(new Date(), hour), 'h a')}
                                             </div>
                                         ))}
                                         <div
-                                            className="absolute text-[12px] text-[#7c8689] flex items-center justify-center font-medium"
+                                            className="absolute text-[12px] text-text-foreground flex items-center justify-center font-medium"
                                             style={{ left: getTimePosition(DAY_END_HOUR), width: HOUR_WIDTH, height: TIME_LABEL_HEIGHT }}
                                         >
                                             {format(setHoursLocal(new Date(), DAY_END_HOUR), 'h a')}
@@ -599,17 +599,17 @@ export function OperatorDashboard() {
                                     return (
                                         <div
                                             key={dayIdx}
-                                            className="flex border-b border-[#e2e4ed] last:border-b-0"
+                                            className="flex border-b border-border last:border-b-0"
                                             style={{ height: Math.max(ROW_LANE_HEIGHT, rowHeight) }}
                                         >
                                             <div
-                                                className={`flex-shrink-0 flex flex-col items-center justify-center border-r border-[#e2e4ed] px-2 ${isToday ? 'bg-[#f0f4e8]' : 'bg-[#f9fafb]'}`}
+                                                className={`flex-shrink-0 flex flex-col items-center justify-center border-r border-border px-2 ${isToday ? 'bg-primary-soft' : 'bg-muted'}`}
                                                 style={{ width: DATE_LABEL_WIDTH }}
                                             >
-                                                <span className={`text-[12px] font-semibold ${isToday ? 'text-[#7a9705]' : 'text-[#4b545d]'}`}>
+                                                <span className={`text-[12px] font-semibold ${isToday ? 'text-primary' : 'text-secondary-foreground'}`}>
                                                     {format(day, 'EEE')}
                                                 </span>
-                                                <span className={`text-[19px] font-bold leading-tight ${isToday ? 'text-[#7a9705]' : 'text-[#111827]'}`}>
+                                                <span className={`text-[19px] font-bold leading-tight ${isToday ? 'text-primary' : 'text-foreground'}`}>
                                                     {format(day, 'd')}
                                                 </span>
                                             </div>
@@ -624,10 +624,10 @@ export function OperatorDashboard() {
                                                 {hoursToRender.map((hour, idx) => {
                                                     const left = getTimePosition(hour);
                                                     return (
-                                                        <div key={idx} className="absolute top-0 bottom-0 border-r border-[#e2e4ed]" style={{ left }} />
+                                                        <div key={idx} className="absolute top-0 bottom-0 border-r border-border" style={{ left }} />
                                                     );
                                                 })}
-                                                <div className="absolute top-0 bottom-0 border-r border-[#e2e4ed]" style={{ left: getTimePosition(DAY_END_HOUR) }} />
+                                                <div className="absolute top-0 bottom-0 border-r border-border" style={{ left: getTimePosition(DAY_END_HOUR) }} />
                                                 {positioned.map((event: any) => renderEventCard(event))}
                                             </div>
                                         </div>
@@ -637,9 +637,9 @@ export function OperatorDashboard() {
                         )}
 
                         {viewMode === 'month' && (
-                            <div className="grid grid-cols-7 gap-px bg-[#e2e4ed]">
+                            <div className="grid grid-cols-7 gap-px bg-border">
                                 {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => (
-                                    <div key={day} className="bg-[#f9fafb] py-2 text-center text-[14px] font-semibold text-[#4b545d]">
+                                    <div key={day} className="bg-muted py-2 text-center text-[14px] font-semibold text-secondary-foreground">
                                         {t(`CALENDAR.DAYS.${day}`)}
                                     </div>
                                 ))}
@@ -660,10 +660,10 @@ export function OperatorDashboard() {
                                             return (
                                                 <div
                                                     key={dayIdx}
-                                                    className={`min-h-[120px] bg-white p-2 cursor-pointer hover:bg-gray-50 transition-colors ${!isCurrentMonth ? 'bg-[#f9fafb]' : ''}`}
+                                                    className={`min-h-[120px] bg-background p-2 cursor-pointer hover:bg-muted transition-colors ${!isCurrentMonth ? 'bg-muted' : ''}`}
                                                     onClick={goToDay}
                                                 >
-                                                    <div className={`text-[14px] mb-2 ${isToday ? 'text-[#7a9705] font-bold' : isCurrentMonth ? 'text-[#4b545d]' : 'text-[#9ca3af]'}`}>
+                                                    <div className={`text-[14px] mb-2 ${isToday ? 'text-primary font-bold' : isCurrentMonth ? 'text-secondary-foreground' : 'text-placeholder'}`}>
                                                         {format(day, 'd')}
                                                     </div>
                                                     <div className="space-y-1">
@@ -691,7 +691,7 @@ export function OperatorDashboard() {
                                                                             {event.plan_name && <div className="text-[10px] opacity-70 truncate">{event.plan_name}</div>}
                                                                             {event.work_percentage > 0 && (
                                                                                 <div className="flex items-center gap-1 mt-0.5">
-                                                                                    <div className="flex-1 bg-white/50 rounded-full h-1">
+                                                                                    <div className="flex-1 bg-background/50 rounded-full h-1">
                                                                                         <div className="h-1 rounded-full" style={{ width: `${event.work_percentage}%`, backgroundColor: text }} />
                                                                                     </div>
                                                                                     <span className="text-[9px] font-medium">{event.work_percentage}%</span>
@@ -699,7 +699,7 @@ export function OperatorDashboard() {
                                                                             )}
                                                                         </div>
                                                                     </TooltipTrigger>
-                                                                    <TooltipContent side="right" sideOffset={6} className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700 pointer-events-none">
+                                                                    <TooltipContent side="right" sideOffset={6} className="bg-background border border-border shadow-lg rounded-md p-2 text-xs text-secondary-foreground pointer-events-none">
                                                                         <div className="space-y-1">
                                                                             <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
                                                                             <p><span className="font-semibold">Workstation:</span> {event.workstation_name || 'N/A'}</p>
@@ -720,7 +720,7 @@ export function OperatorDashboard() {
                                                             <button
                                                                 type="button"
                                                                 onClick={goToDay}
-                                                                className="text-[11px] text-[#7a9705] font-semibold pl-2 hover:underline"
+                                                                className="text-[11px] text-primary font-semibold pl-2 hover:underline"
                                                             >
                                                                 +{events.length - 3} more
                                                             </button>
@@ -737,22 +737,22 @@ export function OperatorDashboard() {
 
                     {/* Quick stats */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
-                        <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
-                            <div className="h-10 w-10 rounded-[6px] bg-[#d5e7ff] flex items-center justify-center">
+                        <div className="flex items-center gap-3 p-4 rounded-[8px] border border-border bg-background">
+                            <div className="h-10 w-10 rounded-[6px] bg-[#d5e7ff] dark:bg-blue-500/20 flex items-center justify-center">
                                 <FileText className="w-5 h-5 text-[#2563eb]" />
                             </div>
                             <div>
-                                <p className="text-[14px] text-[#4b545d]">{t('OPERATOR.TOTAL_TASKS')}</p>
-                                <p className="text-2xl font-semibold text-black">{totalTasksCount}</p>
+                                <p className="text-[14px] text-secondary-foreground">{t('OPERATOR.TOTAL_TASKS')}</p>
+                                <p className="text-2xl font-semibold text-foreground">{totalTasksCount}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
-                            <div className="h-10 w-10 rounded-[6px] bg-[#f3e8ff] flex items-center justify-center">
-                                <MapPin className="w-5 h-5 text-[#7c3aed]" />
+                        <div className="flex items-center gap-3 p-4 rounded-[8px] border border-border bg-background">
+                            <div className="h-10 w-10 rounded-[6px] bg-[#f3e8ff] dark:bg-violet-500/15 flex items-center justify-center">
+                                <MapPin className="w-5 h-5 text-[#7c3aed] dark:text-violet-300" />
                             </div>
                             <div>
-                                <p className="text-[14px] text-[#4b545d]">{t('OPERATOR.WORKSTATIONS')}</p>
-                                <p className="text-2xl font-semibold text-black">{workstationCount}</p>
+                                <p className="text-[14px] text-secondary-foreground">{t('OPERATOR.WORKSTATIONS')}</p>
+                                <p className="text-2xl font-semibold text-foreground">{workstationCount}</p>
                             </div>
                         </div>
                     </div>

@@ -124,7 +124,7 @@ export function WorkPercentageModal({
                             name="notes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Notes <span className="text-gray-400 font-normal">(optional)</span></FormLabel>
+                                    <FormLabel>Notes <span className="text-placeholder font-normal">(optional)</span></FormLabel>
                                     <FormControl>
                                         <Textarea
                                             placeholder="Add notes about your progress..."

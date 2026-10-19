@@ -254,7 +254,7 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
   const openInNewTab = () => file.url && window.open(file.url, '_blank', 'noopener,noreferrer');
 
   const toolbarBtn =
-    'inline-flex size-9 items-center justify-center rounded-full text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60';
+    'inline-flex size-9 items-center justify-center rounded-full text-white/85 transition-colors hover:bg-background/15 hover:text-white disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60';
 
   // ── Render ────────────────────────────────────────────────────────────────
   const viewer = (
@@ -281,7 +281,7 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
             variant="ghost"
             size="md"
             onClick={openInNewTab}
-            className="hidden sm:inline-flex text-white/80 hover:bg-white/10 hover:text-white"
+            className="hidden sm:inline-flex text-white/80 hover:bg-background/10 hover:text-white"
             disabled={!file.url}
           >
             <ExternalLink className="size-4" />
@@ -363,7 +363,7 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
                 </button>
                 <button
                   type="button"
-                  className="h-9 min-w-14 rounded-full px-2 text-sm font-semibold tabular-nums text-white/90 hover:bg-white/15"
+                  className="h-9 min-w-14 rounded-full px-2 text-sm font-semibold tabular-nums text-white/90 hover:bg-background/15"
                   onClick={() => setZoom(100)}
                   title="Fit to screen (0)"
                 >
@@ -372,7 +372,7 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
                 <button type="button" className={toolbarBtn} onClick={handleZoomIn} disabled={zoom >= MAX_ZOOM} aria-label="Zoom in (+)" title="Zoom in (+)">
                   <ZoomIn className="size-4" />
                 </button>
-                <span className="mx-1 h-5 w-px bg-white/15" aria-hidden />
+                <span className="mx-1 h-5 w-px bg-background/15" aria-hidden />
                 <button type="button" className={toolbarBtn} onClick={handleRotate} aria-label="Rotate (R)" title="Rotate (R)">
                   <RotateCw className="size-4" />
                 </button>
@@ -385,7 +385,7 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
 
         ) : isPdf ? (
           <div className="absolute inset-0 p-3 sm:p-5">
-            <div className="h-full w-full overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="h-full w-full overflow-hidden rounded-xl bg-background shadow-2xl">
               <iframe
                 src={`${file.url}#toolbar=1&navpanes=0&view=FitH`}
                 title={file.name}
@@ -397,11 +397,11 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
 
         ) : isModel ? (
           <div className="absolute inset-0 p-3 sm:p-5">
-            <div className="relative h-full w-full overflow-hidden rounded-xl bg-white">
+            <div className="relative h-full w-full overflow-hidden rounded-xl bg-background">
               <div ref={viewerContainerRef} className="h-full w-full" />
 
               {modelError && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/95 text-foreground">
+                <div className="absolute inset-0 flex items-center justify-center bg-background/95 text-foreground">
                   <div className="max-w-md p-8 text-center">
                     <p className="text-lg font-semibold">Preview not available</p>
                     <p className="mt-2 text-sm text-muted-foreground">
@@ -419,8 +419,8 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
 
         ) : (
           <div className="absolute inset-0 flex items-center justify-center p-6">
-            <div className="flex max-w-sm flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-8 py-10 text-center">
-              <span className="flex size-12 items-center justify-center rounded-full bg-white/10">
+            <div className="flex max-w-sm flex-col items-center gap-3 rounded-2xl border border-white/10 bg-background/5 px-8 py-10 text-center">
+              <span className="flex size-12 items-center justify-center rounded-full bg-background/10">
                 {imageError ? <ImageOff className="size-6 text-white/80" /> : <FileQuestion className="size-6 text-white/80" />}
               </span>
               <p className="text-base font-semibold text-white">
@@ -432,7 +432,7 @@ export const FileViewer = ({ onClose, file }: FileViewerProps) => {
                   : `${file.name}${file.type ? ` · ${file.type}` : ''}`}
               </p>
               <div className="mt-2 flex flex-wrap justify-center gap-2">
-                <Button variant="outline" onClick={openInNewTab} disabled={!file.url} className="border-white/20 bg-transparent text-white hover:bg-white/10 hover:border-white/30">
+                <Button variant="outline" onClick={openInNewTab} disabled={!file.url} className="border-white/20 bg-transparent text-white hover:bg-background/10 hover:border-white/30">
                   <ExternalLink className="size-4" />
                   Open original
                 </Button>

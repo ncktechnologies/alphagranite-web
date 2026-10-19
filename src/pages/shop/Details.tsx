@@ -136,7 +136,7 @@ const ShopDetailsPage = () => {
                     ) : (
                         <>
                             <div className='pt-6'>
-                                <div className='text-black py-5'>
+                                <div className='text-foreground py-5'>
                                     <p className="font-bold text-base">FAB-2024-001</p>
                                     <p className='text-sm'>Conference Table - Quartz</p>
                                 </div>

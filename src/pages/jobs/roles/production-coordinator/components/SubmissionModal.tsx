@@ -167,7 +167,7 @@ export function SubmissionModal({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Submit Final Programming</DialogTitle>
-          <span className="ml-3 text-sm font-normal text-gray-500">FAB ID: {fabId}</span>
+          <span className="ml-3 text-sm font-normal text-muted-foreground">FAB ID: {fabId}</span>
         </DialogHeader>
 
         <Form {...form}>

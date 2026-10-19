@@ -72,7 +72,7 @@ export function PlanningSectionManager({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800">Shop Activities</h3>
+        <h3 className="text-lg font-semibold text-foreground">Shop Activities</h3>
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogTrigger asChild>
             <Button className="bg-[#8BAD2B] hover:bg-[#7a9b25] text-white">
@@ -120,7 +120,7 @@ export function PlanningSectionManager({
       {/* Activity Cards List */}
       <div className="grid gap-3">
         {planningSections.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             No shop activities yet. Click "Add Activity" to create one.
           </div>
         ) : (

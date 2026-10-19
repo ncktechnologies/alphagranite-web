@@ -5,6 +5,7 @@ import {
   History,
   Keyboard,
   LogOut,
+  MousePointer2,
   PanelLeft,
   Plus,
   Rows3,
@@ -187,6 +188,21 @@ export function CommandPalette() {
               <PanelLeft className="text-muted-foreground" />
               {settings.layouts.demo1.sidebarCollapse ? 'Keep sidebar expanded' : 'Collapse sidebar'}
               <CommandShortcut>{MOD_KEY} B</CommandShortcut>
+            </CommandItem>
+          )}
+          {!isMobile && (
+            <CommandItem
+              value="sidebar expand on hover hover-expand rail"
+              onSelect={() =>
+                run(() =>
+                  storeOption('layouts.demo1.sidebarHoverExpand', !settings.layouts.demo1.sidebarHoverExpand),
+                )
+              }
+            >
+              <MousePointer2 className="text-muted-foreground" />
+              {settings.layouts.demo1.sidebarHoverExpand
+                ? 'Stop collapsed sidebar expanding on hover'
+                : 'Expand collapsed sidebar on hover'}
             </CommandItem>
           )}
           <CommandItem

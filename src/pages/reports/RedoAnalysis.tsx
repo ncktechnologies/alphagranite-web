@@ -549,14 +549,14 @@ export function RedoAnalysisReport() {
         columnResizeMode: 'onEnd',
     });
 
-    if (isLoading) return <div className="p-5 text-[#7c8689]">Loading redo analysis...</div>;
+    if (isLoading) return <div className="p-5 text-text-foreground">Loading redo analysis...</div>;
 
     // Helper to render a table inside a card
     const renderTable = (table: any, title: string, exportName: string) => (
         <DataGrid table={table} recordCount={table.getCoreRowModel().rows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
-            <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
-                <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
-                    <p className="text-base font-semibold text-[#4b545d]">{title}</p>
+            <Card className="border border-border rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                <CardHeader className="py-3 px-5 border-b border-border flex flex-row items-center justify-between bg-background">
+                    <p className="text-base font-semibold text-secondary-foreground">{title}</p>
                     <CardToolbar>
                         <Button variant="outline" size="sm" className="h-[34px]" onClick={() => exportTableToCSV(table, exportName)}>Export CSV</Button>
                     </CardToolbar>
@@ -565,13 +565,13 @@ export function RedoAnalysisReport() {
                     <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                         <div className="relative">
                             <table className="w-full border-collapse table-fixed">
-                                <thead className="sticky top-0 z-10 bg-white">
+                                <thead className="sticky top-0 z-10 bg-background">
                                     {table.getHeaderGroups().map(headerGroup => (
                                         <tr key={headerGroup.id}>
                                             {headerGroup.headers.map(header => (
                                                 <th
                                                     key={header.id}
-                                                    className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50"
+                                                    className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted"
                                                     style={{ width: header.getSize() }}
                                                 >
                                                     {flexRender(header.column.columnDef.header, header.getContext())}
@@ -580,7 +580,7 @@ export function RedoAnalysisReport() {
                                                             onDoubleClick={() => header.column.resetSize()}
                                                             onMouseDown={header.getResizeHandler()}
                                                             onTouchStart={header.getResizeHandler()}
-                                                            className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                            className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-input before:-translate-x-px hover:before:bg-blue-500"
                                                         />
                                                     )}
                                                 </th>
@@ -590,11 +590,11 @@ export function RedoAnalysisReport() {
                                 </thead>
                                 <tbody>
                                     {table.getRowModel().rows.map(row => (
-                                        <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50">
+                                        <tr key={row.id} className="border-b border-border hover:bg-muted/50">
                                             {row.getVisibleCells().map(cell => (
                                                 <td
                                                     key={cell.id}
-                                                    className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                    className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0"
                                                     style={{ width: cell.column.getSize() }}
                                                 >
                                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -605,10 +605,10 @@ export function RedoAnalysisReport() {
                                 </tbody>
                             </table>
                         </div>
-                        <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                        <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                     </ScrollArea>
                 </CardTable>
-                <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
+                <CardFooter className="bg-background border-t border-border px-4 py-2">
                     <DataGridPagination />
                 </CardFooter>
             </Card>
@@ -627,7 +627,7 @@ export function RedoAnalysisReport() {
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Redo Analysis</h1>
+                <h1 className="text-2xl font-semibold text-secondary-foreground">Redo Analysis</h1>
                 <div className="flex items-center gap-2 flex-wrap">
                     {/* Date Range Picker */}
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
@@ -653,21 +653,21 @@ export function RedoAnalysisReport() {
             {/* Summary Widgets */}
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <div className="text-sm text-[#7c8689] uppercase tracking-wider">Total Fabs</div>
-                        <div className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_fabs}</div>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <div className="text-sm text-text-foreground uppercase tracking-wider">Total Fabs</div>
+                        <div className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.total_fabs}</div>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <div className="text-sm text-[#7c8689] uppercase tracking-wider">AG Redo Fabs</div>
-                        <div className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.ag_redo_fabs_period}</div>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <div className="text-sm text-text-foreground uppercase tracking-wider">AG Redo Fabs</div>
+                        <div className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.ag_redo_fabs_period}</div>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <div className="text-sm text-[#7c8689] uppercase tracking-wider">Redo Rate</div>
-                        <div className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.redo_rate_percent}%</div>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <div className="text-sm text-text-foreground uppercase tracking-wider">Redo Rate</div>
+                        <div className="text-2xl font-semibold mt-2 text-secondary-foreground">{summary.redo_rate_percent}%</div>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <div className="text-sm text-[#7c8689] uppercase tracking-wider">Total Redo Cost</div>
-                        <div className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.redo_total_cost?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}</div>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-border rounded-[12px] bg-background">
+                        <div className="text-sm text-text-foreground uppercase tracking-wider">Total Redo Cost</div>
+                        <div className="text-2xl font-semibold mt-2 text-secondary-foreground">${summary.redo_total_cost?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}</div>
                     </Card>
                 </div>
             )}

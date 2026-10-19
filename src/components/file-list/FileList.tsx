@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Eye, Download, Trash2, File, Image as ImageIcon } from 'lucide-react';
+import { Eye, Download, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { FileThumbnail } from './FileThumbnail';
 
 export interface UploadedFileMeta {
   id: string | number;
@@ -44,13 +45,6 @@ export const FileList: React.FC<FileListProps> = ({
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const getFileIcon = (type?: string) => {
-    if (type?.startsWith('image/')) {
-      return <ImageIcon className="w-5 h-5 text-blue-500" />;
-    }
-    return <File className="w-5 h-5 text-gray-500" />;
   };
 
   const handleView = (file: UploadedFileMeta) => {
@@ -109,7 +103,7 @@ export const FileList: React.FC<FileListProps> = ({
 
   return (
     <div className={cn('space-y-2', className)}>
-      <h4 className="text-sm font-semibold text-gray-700">
+      <h4 className="text-sm font-semibold text-secondary-foreground">
         Uploaded Files ({files.length})
       </h4>
       <div className="space-y-1 max-h-60 overflow-y-auto">
@@ -117,19 +111,22 @@ export const FileList: React.FC<FileListProps> = ({
           <div
             key={file.id}
             className={cn(
-              'flex items-center justify-between bg-gray-50 p-2 rounded-md border',
+              'flex items-center justify-between bg-muted p-2 rounded-md border',
               deletingIds.has(file.id) && 'opacity-50'
             )}
           >
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="flex items-center justify-center w-8 h-8 bg-white rounded border">
-                {getFileIcon(file.type)}
-              </div>
+              <FileThumbnail
+                fileName={file.name}
+                mimeType={file.type}
+                src={file.url}
+                className="size-12 shrink-0 aspect-square rounded-md border border-border"
+              />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {file.name}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   {formatFileSize(file.size)}
                   {file.uploaded_by_name && (
                     <span className="ml-2">• by {file.uploaded_by_name}</span>
