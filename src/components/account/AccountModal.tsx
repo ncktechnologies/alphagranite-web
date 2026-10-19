@@ -94,7 +94,7 @@ export const AccountModal = ({ open, onClose, account }: AccountModalProps) => {
     } catch (err) {
       console.error(err);
       const data = (err as { data?: { message?: string; detail?: string } })?.data;
-      toast.error(data?.message || data?.detail || 'Failed to save account');
+      // toast.error(data?.message || data?.detail || 'Failed to save account');
     }
   };
 

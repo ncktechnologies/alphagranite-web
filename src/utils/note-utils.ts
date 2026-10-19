@@ -14,4 +14,5 @@ export const stageConfig: Record<string, { label: string; color: string }> = {
     shop_status: { label: 'Shop Status', color: 'text-blue-700' },
     shop: { label: 'Shop', color: 'text-indigo-700' },
     general: { label: 'General', color: 'text-secondary-foreground' },
+    resurface_scheduling: { label: 'Resurfacing', color: 'text-pink-700' },
 };

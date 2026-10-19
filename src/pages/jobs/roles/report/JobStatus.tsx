@@ -35,6 +35,8 @@ import { cn } from '@/lib/utils';
 import { useGetFabsQuery } from '@/store/api/job';
 import { _includes } from 'zod/v4/core';
 import { useFabTypeNames } from '@/hooks/use-fab-type-names';
+import { useGetEmployeeSalesPersonsQuery } from '@/store/api/employee';
+import { FabInfoCell } from '@/components/common/fabInfo';
 
 // ─────────────────────────────────────────────────────────
 // Types (unchanged from original)
@@ -44,6 +46,7 @@ export interface JobStatusRow {
     fab_type: string;
     job_no: string;
     acct_name: string;
+    sales_person_name: string;
     job_name: string;
     input_area: string;
     stone_type_name: string;
@@ -117,18 +120,29 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
     const [searchQuery, setSearchQuery] = useState('');
     const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name' | 'account_name'>('fab_id');
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
+    const [salesPersonFilter, setSalesPersonFilter] = useState<string>('all');
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>();
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
-    // ── API (kept exactly as original) ───────────────────
+    const { data: salesPersonsData } = useGetEmployeeSalesPersonsQuery();
+    const salesPersons = useMemo(() => {
+        if (!Array.isArray(salesPersonsData)) return [];
+        return salesPersonsData.map((person: any) => ({
+            id: String(person.id ?? person.user_id ?? ''),
+            name: person.name || `${person.first_name} ${person.last_name}`,
+        })).filter(person => person.id && person.name.trim());
+    }, [salesPersonsData]);
+
+    // ── API ───────────────────────────────────────────────
     const queryParams = useMemo(() => ({
         skip: pagination.pageIndex * pagination.pageSize,
         limit: pagination.pageSize,
         ...(searchQuery && { search: searchQuery }),
         ...(fabTypeFilter !== 'all' && { fab_type: fabTypeFilter }),
+        ...(salesPersonFilter !== 'all' && { sales_person_id: Number(salesPersonFilter) }),
         ...(searchType && { type: searchType }),
-    }), [searchQuery, fabTypeFilter, searchType, pagination.pageIndex, pagination.pageSize]);
+    }), [searchQuery, fabTypeFilter, salesPersonFilter, searchType, pagination.pageIndex, pagination.pageSize]);
 
     const { data: fabsData, isLoading: isApiLoading } = useGetFabsQuery(queryParams);
 
@@ -146,6 +160,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             fab_type: fab.fab_type || 'N/A',
             job_no: fab.job_details?.job_number || 'N/A',
             acct_name: fab.account_name || '',
+            sales_person_name: fab.sales_person_name || '',
             job_name: fab.job_details?.name || '',
             input_area: fab.input_area || '',
             stone_type_name: fab.stone_type_name || '',
@@ -212,6 +227,11 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
         return result;
     }, [tableData, searchQuery, searchType, fabTypeFilter, dateRange]);
 
+    const totalRevenue = useMemo(
+        () => filteredData.reduce((sum, row) => sum + Number(row.revenue || 0), 0),
+        [filteredData]
+    );
+
     // ── Fab types for filter dropdown ─────────────────────
     const fabTypes = useFabTypeNames();
 
@@ -248,18 +268,23 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             id: 'fab_info',
             header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
             cell: ({ row }) => {
-                const r = row.original;
-                const line1 = [r.acct_name, r.job_name, r.input_area].filter(Boolean).join(' - ');
-                const line2 = [r.stone_type_name, r.stone_color_name, r.stone_thickness_value, r.edge_name].filter(Boolean).join(' - ');
+               
                 return (
-                    <div className="flex flex-col gap-0.5 text-xs max-w-[280px]">
-                        {line1 && <span className="truncate font-medium" title={line1}>{line1}</span>}
-                        {line2 && <span className="truncate text-muted-foreground" title={line2}>{line2}</span>}
-                    </div>
+                    
+                    <FabInfoCell data={row.original}/>
                 );
             },
             size: 280,
             meta: { format: (_value: any, row: JobStatusRow) => { const r = row; const line1 = [r.acct_name, r.job_name, r.input_area].filter(Boolean).join(' - '); const line2 = [r.stone_type_name, r.stone_color_name, r.stone_thickness_value, r.edge_name].filter(Boolean).join(' - '); return [line1, line2].filter(Boolean).join(' | '); } },
+        },
+        {
+            id: 'sales_person_name',
+            accessorKey: 'sales_person_name',
+            header: ({ column }) => <DataGridColumnHeader title="SALES PERSON" column={column} />,
+            cell: ({ row }) => <span className="text-xs">{row.original.sales_person_name || '—'}</span>,
+            enableSorting: true,
+            size: 140,
+            meta: { format: (value: string) => value || '—' },
         },
         {
             id: 'pieces',
@@ -289,7 +314,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
                 return <span className="text-xs font-medium">${amount.toFixed(2)}</span>;
             },
             enableSorting: true,
-            size: 100,
+            size: 145,
             meta: { format: (value: number) => '$' + value?.toFixed(2) },
         },
         // NEW COLUMN: COST OF STONE
@@ -466,6 +491,10 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             recordCount={totalRecords}
             isLoading={isLoading}
             groupByDate={false}
+            summaryRow={{
+                fab_type: 'Total',
+                revenue: `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            }}
             tableLayout={{
                 columnsPinnable: true,
                 columnsMovable: true,
@@ -540,6 +569,28 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
                                     <SelectItem value="all">All Fab Types</SelectItem>
                                     {fabTypes.map(type => (
                                         <SelectItem key={type} value={type} className="uppercase">{type}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            {/* Salesperson filter */}
+                            <Select
+                                value={salesPersonFilter}
+                                onValueChange={v => {
+                                    setSalesPersonFilter(v);
+                                    setPagination(p => ({ ...p, pageIndex: 0 }));
+                                }}
+                                disabled={isLoading}
+                            >
+                                <SelectTrigger className="w-[180px] h-[34px]">
+                                    <SelectValue placeholder="Sales Person" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
+                                    <SelectItem value="all">All Sales Persons</SelectItem>
+                                    {salesPersons.map(person => (
+                                        <SelectItem key={person.id} value={person.id}>
+                                            {person.name}
+                                        </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>

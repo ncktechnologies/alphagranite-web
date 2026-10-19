@@ -62,6 +62,7 @@ export interface DataGridProps<TData extends object> {
   groupByDate?: boolean; 
   dateKey?: keyof TData; 
   dateGrouping?: 'date' | 'month' | 'none'; // New: grouping mode
+  summaryRow?: Partial<Record<string, ReactNode>>;
   tableLayout?: {
     dense?: boolean;
     cellBorder?: boolean;

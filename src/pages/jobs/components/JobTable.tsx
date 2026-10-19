@@ -1223,7 +1223,7 @@ export const JobTable = ({
     {
         id: 'resurfacing_notes',
         header: ({ column }) => <DataGridColumnHeader title="Notes" column={column} />,
-        cell: ({ row }) => renderNotes(row, 'install_scheduling'),
+        cell: ({ row }) => renderNotes(row, 'resurface_scheduling'),
         enableSorting: false,
         size: 180,
         meta: {

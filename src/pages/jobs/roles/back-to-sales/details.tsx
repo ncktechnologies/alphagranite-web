@@ -425,7 +425,7 @@ export const DraftReviewDetailsPage = () => {
                     { value: 'block_drawing', label: 'Block Drawing' },
                     { value: 'layout', label: 'Layout' },
                     { value: 'ss_layout', label: 'SS Layout' },
-                    // { value: 'shop_drawing', label: 'Shop Drawing' },
+                    { value: 'customer_docs', label: 'Customer Docs' },
                     { value: 'photo_media', label: 'Photo/Media' },
                 ]}
                 additionalParams={{

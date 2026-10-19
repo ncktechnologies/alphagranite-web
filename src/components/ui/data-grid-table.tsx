@@ -527,6 +527,26 @@ function DataGridTable<TData extends object>() {
 
   const renderTableHead = () => (
     <DataGridTableHead>
+      {props.summaryRow && (
+        <tr className="border-b bg-muted/50 font-semibold">
+          {table.getVisibleLeafColumns().map((column) => (
+            <th
+              key={column.id}
+              style={{
+                width: column.getSize(),
+                ...(props.tableLayout?.columnsPinnable && column.getCanPin() ? getPinningStyles(column) : {}),
+              }}
+              className={cn(
+                'px-2 py-2 text-left text-xs font-semibold',
+                props.tableLayout?.cellBorder && 'border-e',
+                column.columnDef.meta?.headerClassName,
+              )}
+            >
+              {props.summaryRow?.[column.id] ?? null}
+            </th>
+          ))}
+        </tr>
+      )}
       {table.getHeaderGroups().map((headerGroup: HeaderGroup<TData>) => (
         <DataGridTableHeadRow headerGroup={headerGroup} key={headerGroup.id}>
           {headerGroup.headers.map((header) => {
