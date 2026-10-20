@@ -990,7 +990,6 @@ const FabDetailsPage = () => {
         };
         addDate('Shop Suggested', fab.estimated_completion_date);
         addDate('Shop Date Scheduled', fab.shop_date_schedule);
-        addDate('Installation Date', fab.installation_date);
         // Plans
         (fab.plans || []).forEach((plan: any) => {
             if (plan.scheduled_start_date) {
@@ -1009,7 +1008,11 @@ const FabDetailsPage = () => {
         return date > estCompletionDate;
     });
 
-    const showDateWarning = estCompletionDate && lateDates.length > 0;
+    // Installation must happen after the shop finishes, so only flag it when it's earlier
+    const installDate = parseDateForDisplay(fab?.installation_date);
+    const installBeforeCompletion = !!(estCompletionDate && installDate && installDate < estCompletionDate);
+
+    const showDateWarning = estCompletionDate && (lateDates.length > 0 || installBeforeCompletion);
 
     // ─── Render ──────────────────────────────────────────────────────────────
 
@@ -1078,17 +1081,27 @@ const FabDetailsPage = () => {
                             Schedule Conflict Detected
                         </AlertTitle>
                         <AlertDescription className="text-red-700">
-                            <p className="font-medium">
-                                The following scheduled dates are <strong>after</strong> the estimated completion date (
-                                <span className="font-bold">{safeFormatDate(fab.shop_est_completion_date, 'MMM dd, yyyy')}</span>):
-                            </p>
-                            <ul className="list-disc list-inside mt-1 space-y-0.5">
-                                {lateDates.map(({ label, date }) => (
-                                    <li key={label}>
-                                        <span className="font-semibold">{label}:</span> {format(date, 'MMM dd, yyyy')}
-                                    </li>
-                                ))}
-                            </ul>
+                            {lateDates.length > 0 && (
+                                <>
+                                    <p className="font-medium">
+                                        The following scheduled dates are <strong>after</strong> the estimated completion date (
+                                        <span className="font-bold">{safeFormatDate(fab.shop_est_completion_date, 'MMM dd, yyyy')}</span>):
+                                    </p>
+                                    <ul className="list-disc list-inside mt-1 space-y-0.5">
+                                        {lateDates.map(({ label, date }) => (
+                                            <li key={label}>
+                                                <span className="font-semibold">{label}:</span> {format(date!, 'MMM dd, yyyy')}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
+                            {installBeforeCompletion && (
+                                <p className={`font-medium ${lateDates.length > 0 ? 'mt-2' : ''}`}>
+                                    The <span className="font-semibold">Installation Date</span> ({format(installDate!, 'MMM dd, yyyy')}) is <strong>before</strong> the estimated completion date (
+                                    <span className="font-bold">{safeFormatDate(fab.shop_est_completion_date, 'MMM dd, yyyy')}</span>).
+                                </p>
+                            )}
                             <p className="mt-2 text-sm font-medium">
                                 Please adjust the schedule or update the estimated completion date to avoid conflicts.
                             </p>

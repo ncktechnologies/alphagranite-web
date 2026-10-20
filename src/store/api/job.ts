@@ -241,6 +241,9 @@ export interface AccountUpdate {
     status_id?: number;
 }
 
+// status.value_id used by stone types and stone colors
+export const STONE_STATUS = { ACTIVE: 1, INACTIVE: 2 } as const;
+
 export interface StoneType {
     id: number;
     name: string;
@@ -265,6 +268,7 @@ export interface StoneTypeUpdate {
 
 export interface StoneColor {
     id: number;
+    stone_type_id?: number | null;
     name: string;
     color_code?: string;
     description?: string;
@@ -449,6 +453,21 @@ export interface StoneColorListParams {
     limit?: number;
     status_id?: number;
     search?: string;
+}
+
+export interface StoneColorPageParams {
+    skip?: number;
+    limit?: number;
+    stone_type_id?: number;
+    status_id?: number;
+    search?: string;
+}
+
+export interface StoneColorPage {
+    total: number;
+    page: number;
+    per_page: number;
+    data: StoneColor[];
 }
 
 export interface StoneColorByStoneTypeParams {
@@ -1496,6 +1515,23 @@ export const jobApi = createApi({
                     }
                     return response;
                 },
+                providesTags: ["StoneColor"],
+            }),
+
+            // Stone Colors, one page with the total count
+            getStoneColorsPage: build.query<StoneColorPage, StoneColorPageParams>({
+                query: ({ skip = 0, limit = 50, stone_type_id, status_id, search }) => ({
+                    url: "/stone-colors/paginated",
+                    method: "get",
+                    params: {
+                        skip,
+                        limit,
+                        ...(stone_type_id !== undefined && { stone_type_id }),
+                        ...(status_id !== undefined && { status_id }),
+                        ...(search?.trim() && { search: search.trim() }),
+                    }
+                }),
+                transformResponse: (response: { data: StoneColorPage }) => response.data,
                 providesTags: ["StoneColor"],
             }),
 
@@ -2654,6 +2690,7 @@ export const {
     useGetAccountByIdQuery,
     useGetStoneTypesQuery,
     useGetStoneColorsQuery,
+    useGetStoneColorsPageQuery,
     useGetStoneThicknessesQuery,
     useGetEdgesQuery,
     useScheduleTemplatingMutation,

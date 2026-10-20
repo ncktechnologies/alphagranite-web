@@ -41,7 +41,8 @@ import {
   useCreateStoneColorMutation,
   useCreateEdgeMutation,
   useGetJobsQuery,
-  useGetJobsByAccountQuery
+  useGetJobsByAccountQuery,
+  STONE_STATUS,
 } from '@/store/api/job';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetDepartmentsQuery } from '@/store/api/department';
@@ -216,14 +217,14 @@ const NewFabIdForm = () => {
     isLoading: isLoadingStoneTypes,
     isError: isStoneTypesError,
     error: stoneTypesError
-  } = useGetStoneTypesQuery({ limit: 1000 });
+  } = useGetStoneTypesQuery({ limit: 1000, status_id: STONE_STATUS.ACTIVE });
 
   const {
     data: stoneColorsData,
     isLoading: isLoadingStoneColors,
     isError: isStoneColorsError,
     error: stoneColorsError
-  } = useGetStoneColorsQuery({ limit: 1000 });
+  } = useGetStoneColorsQuery({ limit: 1000, status_id: STONE_STATUS.ACTIVE });
 
   const {
     data: stoneThicknessesData,
@@ -339,7 +340,7 @@ const NewFabIdForm = () => {
     isError: isFilteredStoneColorsError,
     error: filteredStoneColorsError
   } = useGetStoneColorsByStoneTypeQuery(
-    { stone_type_id: selectedStoneTypeId!, limit: 1000 },
+    { stone_type_id: selectedStoneTypeId!, limit: 1000, status_id: STONE_STATUS.ACTIVE },
     { skip: !selectedStoneTypeId }
   );
 
