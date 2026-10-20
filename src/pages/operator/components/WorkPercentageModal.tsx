@@ -47,9 +47,13 @@ export function WorkPercentageModal({
 }: WorkPercentageModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // This modal is only shown when pausing, which shouldn't mark work as complete
+    const MAX_PAUSE_PERCENTAGE = 90;
+    const initialPercentage = Math.min(currentPercentage, MAX_PAUSE_PERCENTAGE);
+
     const form = useForm({
         defaultValues: {
-            work_percentage: currentPercentage,
+            work_percentage: initialPercentage,
             notes: '',
         },
     });
@@ -61,11 +65,11 @@ export function WorkPercentageModal({
     useEffect(() => {
         if (open) {
             form.reset({
-                work_percentage: currentPercentage,
+                work_percentage: initialPercentage,
                 notes: '',
             });
         }
-    }, [open, currentPercentage, form]);
+    }, [open, initialPercentage, form]);
 
     const handleSave = async () => {
         setIsSubmitting(true);
@@ -106,7 +110,7 @@ export function WorkPercentageModal({
                                                     <SelectValue placeholder="Select work percentage" />
                                                 </SelectTrigger>
                                                 <SelectContent className="max-h-[200px]">
-                                                    {Array.from({ length: 11 }, (_, i) => i * 10).map((val) => (
+                                                    {Array.from({ length: MAX_PAUSE_PERCENTAGE / 10 + 1 }, (_, i) => i * 10).map((val) => (
                                                         <SelectItem key={val} value={val.toString()}>
                                                             {val}%
                                                         </SelectItem>
