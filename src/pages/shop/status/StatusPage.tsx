@@ -20,6 +20,7 @@ const ShopStatusPage = () => {
                 <ShopStatusTable
                     canAddNote={isSuperAdmin || permissions.can_create}
                     canExport={isSuperAdmin || permissions.can_read}
+                    canControlTimers={isSuperAdmin || permissions.can_update}
                 />
             </Container>
         </div>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { flexRender } from '@tanstack/react-table';
 import {
     ColumnDef,
@@ -50,6 +50,11 @@ import {
     DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { useManageShopPlanTimerMutation } from '@/store/api/shopCutPlanning';
+import { WorkPercentageModal } from '@/pages/operator/components/WorkPercentageModal';
+import { SubmitWorkModal, type SubmitWorkData } from '@/pages/operator/components/SubmitWorkModal';
+import { PlanTimerControl } from './PlanTimerControl';
+import { getStageTimerStatus, STAGE_TIMER_OUTLINE, type PlanTimer, type PlanTimerAction } from './planTimer';
 
 // ------------------ Types ------------------
 export interface ShopStatusPlan {
@@ -62,6 +67,9 @@ export interface ShopStatusPlan {
     scheduled_start_date: string;
     work_percentage: number;
     notes: string | null;
+    operator_id?: number;
+    workstation_id?: number;
+    timer?: PlanTimer | null;
 }
 
 export interface StageProgress {
@@ -100,6 +108,7 @@ export interface ShopStatusFab {
     install_date?: string;
     percent_complete: number;
     notes?: string | null;
+    has_pending_shop_revision?: boolean;
     plans: ShopStatusPlan[];
     date_group: string;
     month_group: string;
@@ -148,7 +157,13 @@ interface ShopStatusTableProps {
     isLoading?: boolean;
     canAddNote?: boolean;
     canExport?: boolean;
+    canControlTimers?: boolean;
 }
+
+// Stage column → planning_section_id, for the running/paused timer outline
+const STAGE_SECTION_BY_COLUMN: Record<string, number> = { cut: 7, wj: 8, edging: 9, miter: 2, cnc: 1, handwork: 6 };
+
+type TimerDialog = { action: 'pause' | 'stop'; fabId: string; plan: ShopStatusPlan };
 
 // ─── UTC‑safe date parsing ──────────────────────────────────────────────────
 const parseDateForDisplay = (s: string | undefined): Date | undefined => {
@@ -312,7 +327,7 @@ const ActionsCell: React.FC<ActionsCellProps> = ({ fabId, onAddNote, canAddNote 
 };
 
 // ------------------ Main Component ------------------
-const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLoading, canAddNote = false, canExport = false, }) => {
+const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLoading, canAddNote = false, canExport = false, canControlTimers = false }) => {
     const tableState = useTableState({
         tableId: 'shop-status-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
@@ -357,7 +372,77 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         ...(searchType && { type: searchType }),
     }), [searchQuery, fabTypeFilter, currentPage, itemsPerPage]);
 
-    const { data: fabsData, isLoading: isApiLoading } = useGetFabsQuery(queryParams);
+    // Poll so timers started or paused by operators show up without a reload.
+    const { data: fabsData, isLoading: isApiLoading, refetch: refetchFabs } = useGetFabsQuery(queryParams, { pollingInterval: 60_000 });
+
+    // ─── Shop cut plan timers ─────────────────────────────────────────────────
+    const [manageTimer] = useManageShopPlanTimerMutation();
+    const [timerDialog, setTimerDialog] = useState<TimerDialog | null>(null);
+    const [busyPlanId, setBusyPlanId] = useState<number | null>(null);
+
+    const sendTimerAction = useCallback(async (
+        plan: ShopStatusPlan,
+        action: PlanTimerAction,
+        extra: { work_percentage?: number; note?: string } = {},
+    ) => {
+        setBusyPlanId(plan.plan_id);
+        try {
+            await manageTimer({
+                plan_id: plan.plan_id,
+                data: { action, timestamp: new Date().toISOString(), ...extra },
+            }).unwrap();
+            await refetchFabs();
+        } finally {
+            setBusyPlanId(null);
+        }
+    }, [manageTimer, refetchFabs]);
+
+    const timerErrorMessage = (error: unknown, fallback: string) => {
+        const data = (error as { data?: { detail?: string; message?: string } } | undefined)?.data;
+        return data?.detail || data?.message || fallback;
+    };
+
+    const handleTimerAction = useCallback(async (fabId: string, plan: ShopStatusPlan, action: PlanTimerAction) => {
+        if (action === 'pause' || action === 'stop') {
+            setTimerDialog({ action, fabId, plan });
+            return;
+        }
+        try {
+            await sendTimerAction(plan, action, {
+                note: action === 'start' ? 'Timer started from Shop Status' : 'Timer resumed from Shop Status',
+            });
+            toast.success(action === 'start' ? 'Timer started' : 'Timer resumed');
+        } catch (error) {
+            toast.error(timerErrorMessage(error, `Failed to ${action} timer`));
+        }
+    }, [sendTimerAction]);
+
+    const handlePauseSaved = async (percentage: number, notes?: string) => {
+        if (!timerDialog) return;
+        try {
+            await sendTimerAction(timerDialog.plan, 'pause', {
+                work_percentage: percentage,
+                note: notes || 'Timer paused from Shop Status',
+            });
+            setTimerDialog(null);
+            toast.success('Timer paused');
+        } catch (error) {
+            toast.error(timerErrorMessage(error, 'Failed to pause timer'));
+        }
+    };
+
+    // SubmitWorkModal shows the success/error toast and closes itself.
+    const handleStopSubmitted = async (data: SubmitWorkData) => {
+        if (!timerDialog) return;
+        try {
+            await sendTimerAction(timerDialog.plan, 'stop', {
+                work_percentage: data.work_percentage,
+                note: data.notes || `Work submitted from Shop Status - ${data.work_percentage}% complete`,
+            });
+        } catch (error) {
+            throw { data: { message: timerErrorMessage(error, 'Failed to stop timer') } };
+        }
+    };
     const { data: fabTypesData } = useGetFabTypesQuery();
 
     const fabTypes = useMemo(() => {
@@ -455,6 +540,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 install_date: fab.install_details?.scheduled_install_date || null,
                 percent_complete: fab.percentage_completion || 0,
                 notes: fab.notes ? (Array.isArray(fab.notes) ? fab.notes.join(', ') : fab.notes) : null,
+                has_pending_shop_revision: !!fab.has_pending_shop_revision,
                 plans: fab.plans || [],
                 date_group: dayKey,
                 month_group: monthKey,
@@ -476,6 +562,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                         scheduled_start_date: plan.scheduled_start_date,
                         work_percentage: plan.work_percentage || 0,
                         notes: plan.notes,
+                        operator_id: plan.operator_id,
+                        workstation_id: plan.workstation_id,
+                        timer: plan.timer,
                     },
                     stage_total: getTotalForStage(fab, plan.planning_section_id),
                     stage_unit: stageInfo?.unit || 'SF',
@@ -765,7 +854,21 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     );
                 }
                 if (row.original.type === 'plan') {
-                    return <span className="text-xs text-placeholder pl-4">Estimated hrs: {row.original.plan.estimated_hours}h</span>;
+                    const { plan, fab_id } = row.original;
+                    const parentFab = row.getParentRow()?.original;
+                    const pendingRevision = parentFab?.type === 'fab' && parentFab.data.has_pending_shop_revision;
+                    return (
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pl-4">
+                            <span className="text-xs text-placeholder whitespace-nowrap">Estimated hrs: {plan.estimated_hours}h</span>
+                            <PlanTimerControl
+                                timer={plan.timer ?? undefined}
+                                canControl={canControlTimers}
+                                busy={busyPlanId === plan.plan_id}
+                                disabledReason={pendingRevision ? 'This FAB has a pending shop revision' : undefined}
+                                onAction={(action) => handleTimerAction(fab_id, plan, action)}
+                            />
+                        </div>
+                    );
                 }
                 return null;
             },
@@ -1023,7 +1126,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 },
             },
         },
-    ], [canAddNote]);
+    ], [canAddNote, canControlTimers, busyPlanId, handleTimerAction]);
 
     // ------------------ Table Instance ------------------
     const table = useReactTable({
@@ -1289,6 +1392,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                                                                 let cellStyle = {};
 
                                                                                                 if (parentRow.original.type === 'fab') {
+                                                                                                    const timerStatus = STAGE_SECTION_BY_COLUMN[columnId] !== undefined
+                                                                                                        ? getStageTimerStatus(parentRow.original.data.plans, STAGE_SECTION_BY_COLUMN[columnId])
+                                                                                                        : null;
                                                                                                     if (stageColumnIds.has(columnId)) {
                                                                                                         // Colors come from the row's [data-fab-tint] vars so dark mode can tone them down
                                                                                                         const percent = getStagePercent(parentRow.original.data, columnId);
@@ -1299,6 +1405,10 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                                                                         cellStyle = {
                                                                                                             backgroundColor: 'var(--fab-tint)',
                                                                                                         };
+                                                                                                    }
+                                                                                                    if (timerStatus) {
+                                                                                                        // Green while a plan in this stage is running, orange while paused
+                                                                                                        cellStyle = { ...cellStyle, boxShadow: STAGE_TIMER_OUTLINE[timerStatus] };
                                                                                                     }
                                                                                                 }
 
@@ -1398,6 +1508,27 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     </CardFooter>
                 </Card>
             </DataGrid>
+
+            {/* Same modals the operator sees when pausing or completing a plan */}
+            <WorkPercentageModal
+                open={timerDialog?.action === 'pause'}
+                currentPercentage={timerDialog?.plan.work_percentage ?? 0}
+                onSave={handlePauseSaved}
+                onClose={() => setTimerDialog(null)}
+                operatorId={timerDialog?.plan.operator_id ?? 0}
+                workstationId={timerDialog?.plan.workstation_id ?? 0}
+                taskId={timerDialog?.plan.plan_id ?? 0}
+            />
+            {/* No operator/task ids: the modal then skips the operator-only task PATCH and only stops the timer. */}
+            <SubmitWorkModal
+                open={timerDialog?.action === 'stop'}
+                onOpenChange={(open) => { if (!open) setTimerDialog(null); }}
+                onSubmit={handleStopSubmitted}
+                currentWorkPercentage={timerDialog?.plan.work_percentage ?? 0}
+                estimatedHours={timerDialog?.plan.estimated_hours || undefined}
+                actualHours={(timerDialog?.plan.timer?.elapsed_seconds ?? 0) / 3600}
+                fabId={timerDialog ? Number(timerDialog.fabId) : undefined}
+            />
 
             {noteDialogFabId && (
                 <AddNoteDialog open={!!noteDialogFabId} fabId={noteDialogFabId} onClose={() => setNoteDialogFabId(null)} />
