@@ -31,7 +31,10 @@ const CreatePlanSheet: React.FC<CreatePlanSheetProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-4xl p-0 overflow-y-auto">
+      <SheetContent
+        className="w-full sm:max-w-4xl p-0 overflow-y-auto"
+        overlayClassName="[backdrop-filter:none]"
+      >
         <CreatePlanPage
           onBack={handleBack}
           selectedDate={selectedDate}
