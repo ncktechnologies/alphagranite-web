@@ -879,12 +879,12 @@ export function InstallationTemplateReport() {
     return (
         <div className="flex flex-col gap-5 p-5">
             {/* ── Header ── */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-semibold text-secondary-foreground">Installation And Template</h1>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn('w-[170px] h-[34px] justify-start text-left', !dateRange && 'text-muted-foreground')}>
+                            <Button variant="outline" className={cn('w-auto shrink-0 h-[34px] justify-start text-left', !dateRange && 'text-muted-foreground')}>
                                 <CalendarDays className="mr-2 h-4 w-4" />
                                 {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}` : format(dateRange.from, 'MMM dd, yyyy')) : 'Filter by Date'}
                             </Button>
