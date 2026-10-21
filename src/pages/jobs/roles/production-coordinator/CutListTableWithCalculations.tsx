@@ -320,7 +320,7 @@ export const CutListTableWithCalculations = ({
         const stoneInfo: string[] = [];
         if (list.acct_name) jobInfo.push(list.acct_name);
         if (list.job_name) jobInfo.push(list.job_name);
-        if (list.input_area) jobInfo.push(`${list.input_area}`);
+        if (list.input_area) materialInfo.push(`${list.input_area}`);
         if (list.stone_type_name) stoneInfo.push(list.stone_type_name);
         if (list.stone_color_name) stoneInfo.push(list.stone_color_name);
         if (list.stone_thickness_value) stoneInfo.push(list.stone_thickness_value);
@@ -396,7 +396,9 @@ export const CutListTableWithCalculations = ({
                             )}
                             {materialInfo.length > 0 && (
                                 <div className="shrink-0 max-w-[45%] text-right">
-                                    <div className=" text-gray-600" title={materialInfo.join(' - ')}>{materialInfo.join(' - ')}</div>
+                                    {materialInfo.map((info, idx) => (
+                                        <div key={idx} className=" text-gray-600" title={info}>{info}</div>
+                                    ))}
                                 </div>
                             )}
                         </div>
