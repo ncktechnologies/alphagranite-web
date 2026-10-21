@@ -173,7 +173,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
     if (!jobsData) return [];
     return jobsData.data.map((job: any) => ({
       ...job,
-      project_value: job.project_value || 'N/A',
+      project_value: job.project_value ?? 'N/A',
       sq_ft: job.sq_ft || 'N/A',
       updated_at: job.updated_at || 'N/A',
       status: job.status_id === 1 ? 'Active' : job.status_id === 2 ? 'Inactive' : job.status_id === 3 ? 'Completed' : 'N/A',

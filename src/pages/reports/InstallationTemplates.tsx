@@ -31,6 +31,7 @@ import { useSelector } from 'react-redux';
 import { usePermission } from '@/hooks/use-permission';
 import { useGetEmployeeSalesPersonsQuery } from '@/store/api';
 import { useFabTypeNames } from '@/hooks/use-fab-type-names';
+import { totalActivityRecords } from './installation-template-totals';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface TimerSession {
@@ -214,7 +215,7 @@ export function InstallationTemplateReport() {
         const buildActivityData = (activityType: 'Template' | 'Installation') => {
             const result: any[] = [];
             reportData.groups.forEach((group) => {
-                const rows = group.rows.filter(r => r.activity_type === activityType);
+                const rows = totalActivityRecords(group.rows, activityType);
                 if (rows.length === 0) return;
 
                 const totalHours = rows.reduce((s, r) => s + r.installer_hours, 0);
@@ -249,7 +250,7 @@ export function InstallationTemplateReport() {
                             session_end: ts.stopped_at,
                             work_duration: ts.total_work_seconds,
                             pause_duration: ts.total_pause_seconds,
-                            sqft: ts.sqft_templated ?? ts.sqft_installed ?? 0,
+                            sqft: activityType === 'Template' ? ts.sqft_templated ?? 0 : ts.sqft_installed ?? 0,
                             status: ts.status,
                         })),
                     })),
