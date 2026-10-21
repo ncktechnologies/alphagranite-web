@@ -32,6 +32,7 @@ export interface JobUpdate {
     job_number?: string;
     project_value?: string;
     account_id?: number;
+    status_id?: number;
 }
 
 // Add this interface before the Fab interface

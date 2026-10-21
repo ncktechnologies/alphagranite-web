@@ -51,6 +51,9 @@ import { useGetJobsQuery, useDeleteJobMutation, Job, useGetAccountsQuery, Toggle
 import { toast } from 'sonner';
 import { Can } from '@/components/permission';
 import JobFormSheet from './components/JobFormSheet';
+import { JobStatusSelect } from './components/JobStatusSelect';
+import { JOB_STATUS_OPTIONS, jobStatusLabel } from './components/jobStatus';
+import { usePermission } from '@/hooks/use-permission';
 import { Link } from 'react-router';
 import { useToggleNeedToInvoiceMutation, useMarkJobInvoicedMutation, useAddJobNotesMutation } from '@/store/api/job';
 import { exportTableToCSV } from '@/lib/exportToCsv';
@@ -104,6 +107,9 @@ interface JobsSectionProps {
 type SearchType = 'job_name' | 'job_number' | 'account_name';
 
 export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
+  // Same gate as Edit (create), plus update.
+  const jobPermissions = usePermission('Manage Jobs');
+  const canChangeStatus = jobPermissions.can_create || jobPermissions.can_update;
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 25,
@@ -176,7 +182,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
       project_value: job.project_value ?? 'N/A',
       sq_ft: job.sq_ft || 'N/A',
       updated_at: job.updated_at || 'N/A',
-      status: job.status_id === 1 ? 'Active' : job.status_id === 2 ? 'Inactive' : job.status_id === 3 ? 'Completed' : 'N/A',
+      status: jobStatusLabel(job.status_id),
       need_to_invoice: job.need_to_invoice,
       invoiced_at: job.invoiced_at || '',
       account_name: job.account_id ? accountNameMap.get(job.account_id) || 'N/A' : 'N/A',
@@ -390,9 +396,11 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           id: 'status',
           accessorFn: (row) => row.status,
           header: ({ column }) => <DataGridColumnHeader title="STATUS" column={column} />,
-          cell: ({ row }) => <span className="text-sm text-text">{row.original.status || 'N/A'}</span>,
+          cell: ({ row }) => (
+            <JobStatusSelect jobId={row.original.id} statusId={row.original.status_id} canChange={canChangeStatus} />
+          ),
           enableSorting: true,
-          size: 120,
+          size: 150,
           meta: { format: (value: string) => value || 'N/A' },
         },
         {
@@ -465,7 +473,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
       ];
       return baseColumns;
     },
-    [canToggleInvoice, handleView, handleEdit, handleOpenNoteDialog, handleOpenConfirm]
+    [canToggleInvoice, canChangeStatus, handleView, handleEdit, handleOpenNoteDialog, handleOpenConfirm]
   );
 
   const table = useReactTable({
@@ -614,9 +622,9 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
                     </SelectTrigger>
                     <SelectContent className="w-32">
                       <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="1">Active</SelectItem>
-                      <SelectItem value="2">Inactive</SelectItem>
-                      <SelectItem value="3">Completed</SelectItem>
+                      {JOB_STATUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={String(option.value)}>{option.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
