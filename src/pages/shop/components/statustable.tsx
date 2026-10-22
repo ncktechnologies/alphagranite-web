@@ -55,6 +55,7 @@ import { WorkPercentageModal } from '@/pages/operator/components/WorkPercentageM
 import { SubmitWorkModal, type SubmitWorkData } from '@/pages/operator/components/SubmitWorkModal';
 import { PlanTimerControl } from './PlanTimerControl';
 import { EstDateNeeded } from './EstDateNeeded';
+import { firstCutPlan } from './firstCutPlan';
 import { getStageTimerStatus, STAGE_TIMER_OUTLINE, type PlanTimer, type PlanTimerAction } from './planTimer';
 
 // ------------------ Types ------------------
@@ -538,7 +539,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 cnc_progress: buildProgress(1),
                 touchup_progress: buildProgress(6),
                 shop_est_completion_date: fab.shop_est_completion_date,
-                cut_date_scheduled: (fab.plans || []).find((p: any) => p.planning_section_id === 7)?.scheduled_start_date,
+                cut_date_scheduled: firstCutPlan(fab.plans || [])?.scheduled_start_date ?? undefined,
                 install_date: fab.install_details?.scheduled_install_date || null,
                 percent_complete: fab.percentage_completion || 0,
                 notes: fab.notes ? (Array.isArray(fab.notes) ? fab.notes.join(', ') : fab.notes) : null,

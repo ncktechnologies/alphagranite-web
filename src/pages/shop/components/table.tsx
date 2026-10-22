@@ -43,6 +43,7 @@ import { NotesModal } from '@/components/common/NotesModal';
 import { toast } from 'sonner';
 import { safeFormatDate } from './statusDetails';
 import { EstDateNeeded } from './EstDateNeeded';
+import { firstCutPlan } from './firstCutPlan';
 
 export interface ShopPlanRow {
     fab_id: string;
@@ -232,7 +233,9 @@ const ShopTable: React.FC<ShopTableProps> = ({
         const rows: ShopPlanRow[] = [];
         fabs.forEach((fab: any) => {
             const plans = fab.plans || [];
-            const cutPlans = plans.filter((plan: any) => plan.planning_section_id === 7);
+            // First CUT - SAW / CUT - WJ plan in sequence drives the row (shop cut date, workstation, operator).
+            const cutPlan = firstCutPlan(plans);
+            const cutPlans = cutPlan ? [cutPlan] : [];
 
             const baseRow = {
                 fab_id: String(fab.id),
