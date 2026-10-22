@@ -1,4 +1,5 @@
 import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { stageTimerFields } from '@/pages/jobs/components/stageTimerStatus';
 import { useLocation, Link, useNavigate } from 'react-router';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
@@ -48,6 +49,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         revenue: fab.job_details?.project_value || "-",
         gp: "-",
         draft_completed: fab.draft_completed ? 'Yes' : 'No',
+        ...stageTimerFields(fab.slabsmith_session),
         slabsmith_completed: (fab as any).slab_smith_data?.is_completed ? 'Yes' : 'No',
         slabsmith_clock_complete: (fab as any).slab_smith_data?.end_date ? 'Yes' : 'No',
         slabsmith_operator: (fab as any).slabsmith_data?.drafter_name || '-',
@@ -251,7 +253,8 @@ const SlabSmithPage = () => {
                         showAssignSlabSmithButton
                         onAssignSlabSmithClick={handleAssignSlabSmithClick}
                         onReassignSlabSmithClick={handleReassignSlabSmithClick}
-                        visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'slabsmith_completed', 'slabsmith_notes', 'slabsmith_operator', 'slabsmith_clock_complete']}
+                        visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'slabsmith_completed', 'slabsmith_notes', 'slabsmith_operator', 'timer_status', 'slabsmith_clock_complete']}
+                        timerStatusTitle="SLABSMITH Status"
                         // 👇 Pass permission props
                         canAddNote={canAddNote}
                         canToggleOnHold={canToggleOnHold}

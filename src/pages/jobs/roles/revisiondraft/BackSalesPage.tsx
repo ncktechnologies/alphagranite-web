@@ -1,4 +1,5 @@
 import { Container } from '@/components/common/container';
+import { stageTimerFields } from '@/pages/jobs/components/stageTimerStatus';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
@@ -37,6 +38,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         revision_type: fabData.sales_ct_data?.revision_type || '-',
         sct_completed: '',
         draft_completed: '',
+        ...stageTimerFields(fab.drafting_session),
         review_completed: '',
         file: (fabData.files && fabData.files.length > 0) ? fabData.files[0]?.name || 'File' : 'No File',
         notes: fabData.notes?.length > 0 ? fabData.notes[0] || 'Notes' : 'No Notes',
@@ -245,7 +247,8 @@ export function DraftRevisionPage() {
                 onAssignDrafterClick={handleAssignDrafterClick}
                 onReassignDrafterClick={handleReassignDrafterClick}
                 onReassignRevisorClick={handleReassignRevisorClick}
-                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'revision_reason', 'total_sq_ft', 'draft_notes', 'sales_person_name', 'revisor', 'revision_type', 'revision_notes', 'revision_completed', 'revision_note']}
+                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'revision_reason', 'total_sq_ft', 'draft_notes', 'sales_person_name', 'revisor', 'revision_type', 'revision_notes', 'revision_completed', 'revision_note', 'timer_status']}
+                timerStatusTitle="REVISION Status"
                 canAddNote={canAddNote}
                 canToggleOnHold={canToggleOnHold}
                 canAssignDrafter={canAssignDrafter}

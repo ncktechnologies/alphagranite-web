@@ -21,6 +21,8 @@ export interface IJob {
   revision_type?: string;
   sct_completed?: string;
   draft_completed?: string;
+  timer_status?: 'running' | 'paused' | 'not_started'; // stage timer status column
+  timer_user?: string;
   drafter?: string; // Add drafter field
   cnc_operator?: string; // Add CNC operator field
   slabsmith_operator?: string; // Add SlabSmith operator field

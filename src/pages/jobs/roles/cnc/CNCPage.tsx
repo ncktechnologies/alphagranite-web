@@ -1,4 +1,5 @@
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { stageTimerFields } from '@/pages/jobs/components/stageTimerStatus';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router';
 import { JobTable } from '../../components/JobTable';
@@ -29,6 +30,7 @@ export const transformFabToJob = (fab: Fab): IJob => {
         revenue: fab.revenue || '-',
         gp: fab.gp || '-',
         draft_completed: fab.drafting_session?.status || 'Not started',
+        ...stageTimerFields(fab.cnc_session),
         cnc_operator: fab.cnc_data?.drafter_name || '-',
         template_received: '',
         revised: '',
@@ -201,8 +203,10 @@ const CNCPage = () => {
                     'fab_info',
                     'cnc_notes',
                     'cnc_operator',
+                    'timer_status',
                     'cnc_ln_ft'
                 ]}
+                timerStatusTitle="CNC Status"
                 
                 canAddNote={canAddNote}
                 canToggleOnHold={canToggleOnHold}

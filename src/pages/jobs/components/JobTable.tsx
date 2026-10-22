@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { IJob } from './job';
+import { STAGE_TIMER_STATUS_LABELS, type StageTimerStatus } from './stageTimerStatus';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { useToggleFabOnHoldMutation } from '@/store/api/job';
 import { Switch } from '@/components/ui/switch';
@@ -80,6 +81,7 @@ interface JobTableProps {
     totalRecords?: number;
     tableState?: ReturnType<typeof useTableState>;
     visibleColumns?: string[];
+    timerStatusTitle?: string;        // Title of the 'timer_status' column, e.g. "CNC Status"
     enableMultiSelect?: boolean;
     selectedRows?: string[];
     setSelectedRows?: (rows: string[]) => void;
@@ -146,6 +148,7 @@ export const JobTable = ({
     totalRecords = 0,
     tableState,
     visibleColumns,
+    timerStatusTitle = 'TIMER Status',
     enableMultiSelect = false,
     selectedRows = [],
     setSelectedRows = () => { },
@@ -979,6 +982,34 @@ export const JobTable = ({
             },
         },
     },
+    // ─── Stage timer status (SlabSmith, Revisions, Final Programming, CNC) ──
+    {
+        id: "timer_status",
+        accessorKey: "timer_status",
+        header: ({ column }) => <DataGridColumnHeader title={timerStatusTitle} column={column} />,
+        cell: ({ row }) => {
+            const { timer_status: status, timer_user: user } = row.original;
+            if (status === 'running' || status === 'paused') {
+                return (
+                    <div className="flex flex-col leading-tight">
+                        <span className={`text-sm font-medium ${status === 'running' ? 'text-green-600' : 'text-red-600'}`}>
+                            {STAGE_TIMER_STATUS_LABELS[status]}
+                        </span>
+                        {user && <span className="text-xs text-muted-foreground truncate" title={user}>by {user}</span>}
+                    </div>
+                );
+            }
+            return <span className="text-sm text-muted-foreground">Not Started</span>;
+        },
+        size: 140,
+        enableSorting: true,
+        meta: {
+            format: (value: string, row: IJob) => {
+                const label = STAGE_TIMER_STATUS_LABELS[(value as StageTimerStatus) || 'not_started'] ?? 'Not Started';
+                return row?.timer_user && value !== 'not_started' ? `${label} (${row.timer_user})` : label;
+            },
+        },
+    },
     // ─── Review Completed (date) ────────────────────────────────────────────
     {
         id: "review_completed",
@@ -1564,7 +1595,7 @@ export const JobTable = ({
         filteredData, loadingStates, optimisticUpdates, onRescheduleClick,
         onReassignDrafterClick, drafterColumnVisible,
         canReschedule, canAssignTemplater, canReassignDrafter, canReassignCNC,
-        canReassignSlabSmith, canReassignRevisor, canAddNote
+        canReassignSlabSmith, canReassignRevisor, canAddNote, timerStatusTitle
     ]);
 
     const columns = useMemo(() => {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { stageTimerFields } from '@/pages/jobs/components/stageTimerStatus';
 import { format } from 'date-fns';
 import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
@@ -33,6 +34,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         revenue: fab.job_details?.project_value || "-",
         gp: "-",
         draft_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
+        ...stageTimerFields(fab.final_programming_session),
         template_received: '',
         revised: '',
         sct_completed: '',
@@ -230,7 +232,8 @@ const FinalProgrammingPage = () => {
                     isLoading={isLoading && !data}
                     showSalesPersonFilter={true}
                     salesPersons={salesPersons}
-                    visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'wj_time_minutes', 'final_programming_notes', 'final_programming_completed', 'drafter']}
+                    visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'wj_time_minutes', 'final_programming_notes', 'final_programming_completed', 'drafter', 'timer_status']}
+                    timerStatusTitle="PROGRAMMING Status"
                     enableMultiSelect
                     selectedRows={selectedRows}
                     setSelectedRows={setSelectedRows}
