@@ -54,6 +54,7 @@ import { useManageShopPlanTimerMutation } from '@/store/api/shopCutPlanning';
 import { WorkPercentageModal } from '@/pages/operator/components/WorkPercentageModal';
 import { SubmitWorkModal, type SubmitWorkData } from '@/pages/operator/components/SubmitWorkModal';
 import { PlanTimerControl } from './PlanTimerControl';
+import { EstDateNeeded } from './EstDateNeeded';
 import { getStageTimerStatus, STAGE_TIMER_OUTLINE, type PlanTimer, type PlanTimerAction } from './planTimer';
 
 // ------------------ Types ------------------
@@ -109,6 +110,7 @@ export interface ShopStatusFab {
     percent_complete: number;
     notes?: string | null;
     has_pending_shop_revision?: boolean;
+    needs_shop_est_date?: boolean;
     plans: ShopStatusPlan[];
     date_group: string;
     month_group: string;
@@ -541,6 +543,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 percent_complete: fab.percentage_completion || 0,
                 notes: fab.notes ? (Array.isArray(fab.notes) ? fab.notes.join(', ') : fab.notes) : null,
                 has_pending_shop_revision: !!fab.has_pending_shop_revision,
+                needs_shop_est_date: !!fab.needs_shop_est_date,
                 plans: fab.plans || [],
                 date_group: dayKey,
                 month_group: monthKey,
@@ -716,6 +719,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 if (row.original.type === 'plan') {
                     return <span className="text-xs text-muted-foreground pl-4 font-semibold">{row.original.plan.plan_name} · {row.original.plan.workstation_name} · {row.original.plan.operator_name}</span>;
                 }
+                if (row.original.data.needs_shop_est_date && !row.original.data.shop_est_completion_date) {
+                    return <EstDateNeeded />;
+                }
                 return null;
             },
             enableSorting: true,
@@ -725,6 +731,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     if (row.type === 'plan') {
                         return `${row.plan.plan_name} · ${row.plan.workstation_name} · ${row.plan.operator_name}`;
                     }
+                    if (row.data.needs_shop_est_date && !row.data.shop_est_completion_date) return 'Date needed';
                     return '';
                 },
             },

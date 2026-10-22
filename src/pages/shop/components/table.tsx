@@ -42,6 +42,7 @@ import { useTableState } from '@/hooks/use-table-state';
 import { NotesModal } from '@/components/common/NotesModal';
 import { toast } from 'sonner';
 import { safeFormatDate } from './statusDetails';
+import { EstDateNeeded } from './EstDateNeeded';
 
 export interface ShopPlanRow {
     fab_id: string;
@@ -74,6 +75,7 @@ export interface ShopPlanRow {
     scheduled_start_date: string;
     shop_est_completion_date?: string;
     estimated_completion_date?: string;
+    needs_shop_est_date?: boolean;
     plan_notes: string | null;
     fab_notes?: any[];
     date_group: string;
@@ -256,6 +258,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
                 saw_miter_lnft: fab.saw_miter_lnft || 0,
                 total_cut_ln_ft: fab.total_cut_lnft || 0,
                 percent_complete: fab.percentage_completion || 0,
+                needs_shop_est_date: !!fab.needs_shop_est_date,
                 fab_notes: Array.isArray(fab.fab_notes)
                     ? fab.fab_notes
                     : Array.isArray(fab.notes)
@@ -338,15 +341,20 @@ const ShopTable: React.FC<ShopTableProps> = ({
             id: 'shop_est_completion_date',
             accessorFn: r => r.shop_est_completion_date,
             header: ({ column }) => <DataGridColumnHeader title="Shop EST Completion Date" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm text-text font-semibold">
-                    {row.original.shop_est_completion_date ? safeFormatDate(row.original.shop_est_completion_date, 'MM/dd/yyyy') : '-'}
-                </span>
-            ),
+            cell: ({ row }) => {
+                if (!row.original.shop_est_completion_date && row.original.needs_shop_est_date) return <EstDateNeeded />;
+                return (
+                    <span className="text-sm text-text font-semibold">
+                        {row.original.shop_est_completion_date ? safeFormatDate(row.original.shop_est_completion_date, 'MM/dd/yyyy') : '-'}
+                    </span>
+                );
+            },
             enableSorting: true,
             size: 150,
             meta: {
-                format: (value, row) => row.shop_est_completion_date ? safeFormatDate(row.shop_est_completion_date, 'MM/dd/yyyy') : '-',
+                format: (value, row) => row.shop_est_completion_date
+                    ? safeFormatDate(row.shop_est_completion_date, 'MM/dd/yyyy')
+                    : row.needs_shop_est_date ? 'Date needed' : '-',
             },
         },
         {
