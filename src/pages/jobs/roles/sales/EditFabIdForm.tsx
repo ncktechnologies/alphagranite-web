@@ -48,6 +48,7 @@ import { useGetEmployeeSalesPersonsQuery } from '@/store/api/employee';
 import { getCheckboxRuleError, isCurrentStateImpossible } from './NewFabIdForm';
 import DialogContent, { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
+import { inputToNumber, numberToInput } from '@/lib/form-number';
 
 // Custom Currency Input Component
 interface CurrencyInputProps {
@@ -465,9 +466,9 @@ const EditFabIdForm = () => {
                             stoneColor: fabData.stone_color_name || '',
                             stoneThickness: fabData.stone_thickness_value || '',
                             edge: fabData.edge_name || '',
-                            totalSqFt: String(fabData.total_sqft || ''),
-                            revenue: fabData.revenue ? String(fabData.revenue) : '',
-                            cost_of_stone: fabData.cost_of_stone ? String(fabData.cost_of_stone) : '',
+                            totalSqFt: numberToInput(fabData.total_sqft),
+                            revenue: numberToInput(fabData.revenue),
+                            cost_of_stone: numberToInput(fabData.cost_of_stone),
                             selectedSalesPerson: fabData.sales_person_name || '',
                             notes: '',
                             templateNotNeeded: !fabData.template_needed,
@@ -476,7 +477,7 @@ const EditFabIdForm = () => {
                             sctNotNeeded: !fabData.sct_needed,
                             slabSmithAGNotNeeded: !fabData.slab_smith_ag_needed,
                             finalProgrammingNotNeeded: !fabData.final_programming_needed,
-                            cost_per_sqft: fabData.cost_per_sqft ? String(fabData.cost_per_sqft) : '',
+                            cost_per_sqft: numberToInput(fabData.cost_per_sqft),
                             redo_department: fabData.redo_department ? String(fabData.redo_department) : '',
                             redo_requested_by: fabData.redo_requested_by ? String(fabData.redo_requested_by) : '',
                         };
@@ -487,7 +488,7 @@ const EditFabIdForm = () => {
                         }
                         form.reset(formData);
                         // Populate AG redo modal if values exist
-                        if (fabData.cost_per_sqft) setCostPerSqft(String(fabData.cost_per_sqft));
+                        if (fabData.cost_per_sqft != null) setCostPerSqft(String(fabData.cost_per_sqft));
                         if (fabData.redo_department) setRedoDepartment(String(fabData.redo_department));
                         if (fabData.redo_requested_by) setRedoRequestedBy(String(fabData.redo_requested_by));
                         if (formData.jobName && formData.jobNumber) {
@@ -716,9 +717,10 @@ const EditFabIdForm = () => {
                 stone_thickness_id: selectedStoneThickness.id,
                 edge_id: selectedEdge.id,
                 input_area: values.area,
-                total_sqft: parseFloat(values.totalSqFt) || null,
-                revenue: values.revenue && values.revenue.trim() !== '' ? parseFloat(values.revenue) : null,
-                cost_of_stone: values.cost_of_stone && values.cost_of_stone.trim() !== '' ? parseFloat(values.cost_of_stone) : null,
+                total_sqft: inputToNumber(values.totalSqFt),
+                revenue: inputToNumber(values.revenue),
+                // A stored 0 is a real cost: keep it, or the FAB drops back into the Cost of Stone queue.
+                cost_of_stone: inputToNumber(values.cost_of_stone),
                 notes: values.notes?.trim() || undefined,
                 template_needed: !values.templateNotNeeded,
                 drafting_needed: !values.draftNotNeeded,
@@ -726,7 +728,7 @@ const EditFabIdForm = () => {
                 slab_smith_ag_needed: !values.slabSmithAGNotNeeded,
                 sct_needed: !values.sctNotNeeded,
                 final_programming_needed: !values.finalProgrammingNotNeeded,
-                redo_total_sqft: parseFloat(values.totalSqFt) || null,
+                redo_total_sqft: inputToNumber(values.totalSqFt),
                 cost_per_sqft: values.cost_per_sqft ? parseFloat(values.cost_per_sqft) : undefined,
                 redo_department: values.redo_department ? parseInt(values.redo_department) : undefined,
                 redo_requested_by: values.redo_requested_by ? parseInt(values.redo_requested_by) : undefined,
