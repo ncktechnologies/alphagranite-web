@@ -417,7 +417,8 @@ const ShopCalendarPage: React.FC = () => {
 
   // ── Data fetching ──
   const { data: fabTypesData } = useGetFabTypesQuery();
-  const { data: workstationsData } = useGetWorkstationsQuery();
+  // Load every workstation and keep the active ones below: the Active switch sets is_active, not status_id.
+  const { data: workstationsData } = useGetWorkstationsQuery({ status_id: null, limit: 1000 });
 
   // ─── Fetch Roles to get "operator" role ID ──────────────────────────────
   const { data: rolesData, isLoading: rolesLoading } = useGetRolesQuery();
@@ -445,7 +446,10 @@ const ShopCalendarPage: React.FC = () => {
 
   const workstations = useMemo(() => {
     const arr = workstationsData?.data || (Array.isArray(workstationsData) ? workstationsData : []);
-    return arr.map((w: any) => ({ id: String(w.id), name: w.name || `WS ${w.id}` }));
+    return arr
+      .filter((w: { is_active?: boolean | number }) => w.is_active === true || w.is_active === 1)
+      .map((w: any) => ({ id: String(w.id), name: w.name || `WS ${w.id}` }))
+      .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, undefined, { numeric: true }));
   }, [workstationsData]);
 
   const operators = useMemo(() => {
