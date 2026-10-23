@@ -126,6 +126,8 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
       if (values.duration) updateData.duration = values.duration;
       if (values.square_ft) updateData.total_sqft = values.square_ft;
       if (values.is_completed !== null) updateData.is_completed = values.is_completed;
+      // Unchecking "Completed" leaves the field null; still tell the backend to undo the completion.
+      else if (templatingData?.data?.is_completed) updateData.is_completed = false;
 
       if (values.is_completed === true) {
         await updateTemplating(updateData).unwrap();
