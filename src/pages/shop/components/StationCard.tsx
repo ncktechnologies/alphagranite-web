@@ -1,91 +1,78 @@
-// components/RoleCard.tsx
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+// Compact workstation row for the Shop Settings list.
+import { forwardRef } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 import { Station } from '@/config/types';
 
 interface StationCardProps {
-  role: Station;
-  isSelected: boolean;
-  onClick: (role: Station) => void;
-  
+    role: Station;
+    isSelected: boolean;
+    onClick: (role: Station) => void;
 }
 
-export const StationCard = ({ role, isSelected, onClick }: StationCardProps) => {
- 
+const MAX_AVATARS = 3;
 
-  // Get initials from operator names
-  const getInitials = (name: string) => {
-    const parts = name.split(' ').filter(p => p.trim().length > 0);
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
+const getInitials = (name: string) => {
+    const parts = name.split(' ').filter((p) => p.trim().length > 0);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     return name.substring(0, 2).toUpperCase();
-  };
-
-  // Get color for avatar based on name
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      'bg-blue-500',
-      'bg-green-500',
-      'bg-purple-500',
-      'bg-pink-500',
-      'bg-yellow-500',
-      'bg-indigo-500',
-      'bg-red-500',
-      'bg-teal-500',
-    ];
-    const index = name.length % colors.length;
-    return colors[index];
-  };
-
-  return (
-    <Card 
-      className={`cursor-pointer transition-all hover:shadow-md ${
-        isSelected ? ' border-3 border-[#8BAD2B] bg-primary-soft' : ''
-      }`}
-      onClick={() => onClick(role)}
-    >
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className={` ${isSelected  ? 'text-lg font-normal ' : 'font-bold text-[17px]'} text-foreground   `}>{role.workstationName}</h3>
-            <div className="flex items-center gap-2">
-              <Badge 
-              //   variant={role.status === 'Active' ? 'default' : 'secondary'}
-                className={`${role.status === 'Active'  ? 'bg-[#0BC33F33] text-[#0BC33F]' : 'bg-[#ED143B33] text-[#ED143B]'} px-2 py-1 rounded-[50px] text-sm `}
-              >
-                {role.status}
-              </Badge>
-              
-            </div>
-          </div>
-          
-          <p className="text-sm text-text">{role.description}</p>
-          
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-text">Assignees</span>
-            <div className="flex -space-x-2">
-              {role.operators && role.operators.length > 0 ? (
-                role.operators.map((operator: string, index: number) => (
-                  <Avatar key={index} className="w-6 h-6 border-2 border-background">
-                    <AvatarFallback className={`text-xs font-medium text-white ${getAvatarColor(operator)}`}>
-                      {getInitials(operator)}
-                    </AvatarFallback>
-                  </Avatar>
-                ))
-              ) : (
-                <span className="text-xs text-muted-foreground">No assignees</span>
-              )}
-            </div>
-            {role.members !== undefined && (
-              <span className="text-xs text-muted-foreground">({role.members})</span>
-            )}
-          </div>
-        </div>
-      </CardContent>
-      
-    </Card>
-  );
 };
+
+export const StationCard = forwardRef<HTMLButtonElement, StationCardProps>(({ role, isSelected, onClick }, ref) => {
+    const active = role.status === 'Active';
+    const operators = role.operators ?? [];
+
+    return (
+        <button
+            ref={ref}
+            type="button"
+            onClick={() => onClick(role)}
+            aria-current={isSelected ? 'true' : undefined}
+            className={cn(
+                'group w-full rounded-lg border px-3 py-2.5 text-left transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                isSelected
+                    ? 'border-primary/50 bg-primary-soft'
+                    : 'border-transparent hover:border-border hover:bg-muted/60',
+            )}
+        >
+            <div className="flex items-center justify-between gap-2">
+                <span className={cn('truncate text-sm font-semibold', active ? 'text-foreground' : 'text-muted-foreground')}>
+                    {role.workstationName}
+                </span>
+                <span
+                    className={cn(
+                        'inline-flex shrink-0 items-center gap-1.5 text-xs font-medium',
+                        active ? 'text-green-700' : 'text-muted-foreground',
+                    )}
+                >
+                    <span className={cn('size-2 rounded-full', active ? 'bg-green-500' : 'bg-[#9AA1AD]')} />
+                    {active ? 'Active' : 'Inactive'}
+                </span>
+            </div>
+            <div className="mt-1 flex items-center justify-between gap-2">
+                <span className="truncate text-xs text-muted-foreground" title={role.description}>
+                    {role.description}
+                </span>
+                {operators.length > 0 ? (
+                    <div className="flex shrink-0 items-center -space-x-1.5" title={operators.join(', ')}>
+                        {operators.slice(0, MAX_AVATARS).map((name) => (
+                            <Avatar key={name} className="size-5 border border-background">
+                                <AvatarFallback className="bg-primary/15 text-[9px] font-semibold text-primary">
+                                    {getInitials(name)}
+                                </AvatarFallback>
+                            </Avatar>
+                        ))}
+                        {operators.length > MAX_AVATARS && (
+                            <span className="pl-2.5 text-[11px] text-muted-foreground">+{operators.length - MAX_AVATARS}</span>
+                        )}
+                    </div>
+                ) : (
+                    <span className="shrink-0 text-[11px] text-muted-foreground">No operators</span>
+                )}
+            </div>
+        </button>
+    );
+});
+
+StationCard.displayName = 'StationCard';

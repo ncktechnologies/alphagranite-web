@@ -4,7 +4,7 @@ import React, { Fragment, useMemo, useState, useEffect } from 'react'
 import { WorkStationForm } from '../components/Form';
 import { StationDetailsView } from '../components/Details';
 import { Container } from '@/components/common/container';
-import { StationList } from '../components/StationList';
+import { StationList, type StationStatusFilter } from '../components/StationList';
 import { Toolbar, ToolbarBreadcrumbs, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { useGetWorkstationsQuery } from '@/store/api';
 import {
@@ -35,7 +35,6 @@ import {
 } from '@/store/api/job';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function SettingsPage() {
     const [viewMode, setViewMode] = useState<ViewMode>('details');
@@ -45,7 +44,8 @@ function SettingsPage() {
     const [editingName, setEditingName] = useState('');
     const [editingDescription, setEditingDescription] = useState('');
     const [editingIsActive, setEditingIsActive] = useState<boolean>(true);
-    const [workstationStatusFilter, setWorkstationStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+    const [workstationStatusFilter, setWorkstationStatusFilter] = useState<StationStatusFilter>('all');
+    const [workstationSearch, setWorkstationSearch] = useState('');
 
     // Stone types state
     const [selectedStoneTypeId, setSelectedStoneTypeId] = useState<number | null>(null);
@@ -59,9 +59,11 @@ function SettingsPage() {
     const [editingStoneColorId, setEditingStoneColorId] = useState<number | null>(null);
     const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
 
-    // Fetch workstations from API
+    // Fetch every workstation once; status and search filter on the client by is_active, the same flag
+    // the Active/Inactive switch sets (status_id isn't updated by the switch, so filtering on it didn't work).
     const { data: workstationsData, isLoading, isError, refetch } = useGetWorkstationsQuery({
-        status_id: workstationStatusFilter === 'all' ? null : workstationStatusFilter === 'active' ? 1 : 2,
+        status_id: null,
+        limit: 1000,
     });
 
     // Fetch all planning sections (including inactive)
@@ -117,18 +119,36 @@ function SettingsPage() {
         });
     }, [workstationsData]);
 
+    const workstationCounts = useMemo(() => {
+        const active = workstations.filter((ws) => ws.status === 'Active').length;
+        return { all: workstations.length, active, inactive: workstations.length - active };
+    }, [workstations]);
+
+    const visibleWorkstations = useMemo(() => {
+        const term = workstationSearch.trim().toLowerCase();
+        return workstations.filter((ws) => {
+            if (workstationStatusFilter === 'active' && ws.status !== 'Active') return false;
+            if (workstationStatusFilter === 'inactive' && ws.status === 'Active') return false;
+            if (!term) return true;
+            return [ws.workstationName, ws.description, ...(ws.operators ?? [])]
+                .some((value) => value?.toLowerCase().includes(term));
+        });
+    }, [workstations, workstationStatusFilter, workstationSearch]);
+
     const selectedRole = useMemo(() => {
         if (!selectedRoleId) return null;
         return workstations.find(ws => ws.id === selectedRoleId) || null;
     }, [workstations, selectedRoleId]);
 
-    // Auto-select first workstation when in workstations tab
+    // Keep a visible workstation selected: pick the first match when nothing (or a filtered-out one) is selected.
     useEffect(() => {
-        if (activeTab === 'workstations' && workstations.length > 0 && !selectedRole && viewMode !== 'new' && viewMode !== 'edit') {
-            setSelectedRoleId(workstations[0].id);
+        if (activeTab !== 'workstations' || viewMode === 'new' || viewMode === 'edit') return;
+        const selectionVisible = !!selectedRole && visibleWorkstations.some((ws) => ws.id === selectedRole.id);
+        if (!selectionVisible && visibleWorkstations.length > 0) {
+            setSelectedRoleId(visibleWorkstations[0].id);
             setViewMode('details');
         }
-    }, [activeTab, workstations, selectedRole, viewMode]);
+    }, [activeTab, visibleWorkstations, selectedRole, viewMode]);
 
     // Auto-select first activity when in activities tab
     useEffect(() => {
@@ -150,14 +170,6 @@ function SettingsPage() {
     const handleEditRole = (role: Station) => {
         setSelectedRoleId(role.id);
         setViewMode('edit');
-    };
-
-    // Toggle workstation status using update mutation with is_active
-    const handleToggleWorkstationStatus = async (role: Station) => {
-        const newIsActive = role.is_active !== true; // true = activate, false = deactivate
-        const action = newIsActive ? 'activate' : 'deactivate';
-        
-
     };
 
     const handleCloseForm = () => {
@@ -423,37 +435,27 @@ function SettingsPage() {
                             <TabsTrigger value="workstations">Workstations</TabsTrigger>
                             <TabsTrigger value="activities">Shop Activities</TabsTrigger>
                         </TabsList>
-                        {activeTab === 'workstations' && (
-                            <Select
-                                value={workstationStatusFilter}
-                                onValueChange={(value) => setWorkstationStatusFilter(value as typeof workstationStatusFilter)}
-                            >
-                                <SelectTrigger className="w-[140px] h-[34px]">
-                                    <SelectValue placeholder="Workstation status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Statuses</SelectItem>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="inactive">Inactive</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        )}
                     </CardHeader>
 
-                    <TabsContent value="workstations" className="mt-0">
-                        <div className="flex h-full gap-6">
-                            <div className="w-80 pr-6 border-r overflow-y-auto">
+                    <TabsContent value="workstations" className="mt-4">
+                        {/* List and details scroll independently, so the selected workstation stays in view. */}
+                        <div className="grid grid-cols-1 overflow-hidden rounded-xl border border-border bg-background lg:h-[calc(100vh-260px)] lg:min-h-[520px] lg:grid-cols-[340px_minmax(0,1fr)]">
+                            <div className="flex max-h-[60vh] min-h-0 flex-col border-b border-border lg:max-h-none lg:border-b-0 lg:border-r">
                                 <StationList
-                                    roles={workstations}
+                                    roles={visibleWorkstations}
                                     selectedRole={selectedRole}
                                     onRoleSelect={handleRoleSelect}
                                     onNewRole={handleNewRole}
-                                    onToggleStatus={handleToggleWorkstationStatus}
+                                    search={workstationSearch}
+                                    onSearchChange={setWorkstationSearch}
+                                    statusFilter={workstationStatusFilter}
+                                    onStatusFilterChange={setWorkstationStatusFilter}
+                                    counts={workstationCounts}
+                                    isLoading={isLoading}
                                 />
                             </div>
 
-                            {/* Right Content Area */}
-                            <div className="flex-1 pl-6 overflow-y-auto">
+                            <div className={`min-h-0 overflow-y-auto px-6 pb-6 ${viewMode === 'details' && selectedRole ? 'pt-0' : 'pt-6'}`}>
                                 {renderRightContent()}
                             </div>
                         </div>

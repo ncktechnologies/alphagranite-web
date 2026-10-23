@@ -40,7 +40,8 @@ import {
     useGetJobsQuery,
     useGetFabByIdQuery,
     useUpdateFabMutation,
-    useGetJobsByAccountQuery
+    useGetJobsByAccountQuery,
+    STONE_STATUS,
 } from '@/store/api/job';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetDepartmentsQuery } from '@/store/api/department';
@@ -225,8 +226,9 @@ const EditFabIdForm = () => {
     // API hooks for dropdown data
     const { data: fabTypesData = [], isLoading: isLoadingFabTypes } = useGetFabTypesQuery();
     const { data: accountsData = [], isLoading: isLoadingAccounts } = useGetAccountsQuery();
-    const { data: stoneTypesData = [], isLoading: isLoadingStoneTypes } = useGetStoneTypesQuery({ limit: 1000 });
-    const { data: stoneColorsData = [], isLoading: isLoadingStoneColors, isError: isStoneColorsError } = useGetStoneColorsQuery({ limit: 1000 });
+    // Only active stone types/colors can be picked; a FAB whose current one went inactive must switch.
+    const { data: stoneTypesData = [], isLoading: isLoadingStoneTypes } = useGetStoneTypesQuery({ limit: 1000, status_id: STONE_STATUS.ACTIVE });
+    const { data: stoneColorsData = [], isLoading: isLoadingStoneColors, isError: isStoneColorsError } = useGetStoneColorsQuery({ limit: 1000, status_id: STONE_STATUS.ACTIVE });
     const { data: stoneThicknessesData = [], isLoading: isLoadingStoneThicknesses } = useGetStoneThicknessesQuery({ limit: 1000 });
     const { data: edgesData = [], isLoading: isLoadingEdges } = useGetEdgesQuery({ limit: 1000 });
     const { data: jobsData = [], isLoading: isLoadingJobs } = useGetJobsQuery({ limit: 1000 });
@@ -315,7 +317,7 @@ const EditFabIdForm = () => {
         isError: isFilteredStoneColorsError,
         error: filteredStoneColorsError
     } = useGetStoneColorsByStoneTypeQuery(
-        { stone_type_id: selectedStoneTypeId!, limit: 1000 },
+        { stone_type_id: selectedStoneTypeId!, limit: 1000, status_id: STONE_STATUS.ACTIVE },
         { skip: !selectedStoneTypeId }
     );
 
@@ -695,6 +697,13 @@ const EditFabIdForm = () => {
             }
             if (!selectedJob && existingFab) {
                 selectedJob = { id: existingFab.job_id };
+            }
+            // The lists only hold active options, so a filled-in value that isn't found is an inactive one.
+            if (values.stoneType && !selectedStoneType) {
+                throw new Error(`Stone type "${values.stoneType}" is inactive. Choose an active stone type.`);
+            }
+            if (values.stoneColor && !selectedStoneColor) {
+                throw new Error(`Stone color "${values.stoneColor}" is inactive or doesn't belong to the selected stone type. Choose an active stone color.`);
             }
             if (!selectedFabType || !selectedAccount || !selectedStoneType || !selectedStoneColor || !selectedStoneThickness || !selectedEdge || !selectedSalesPerson || !selectedJob) {
                 const missingFields = [];

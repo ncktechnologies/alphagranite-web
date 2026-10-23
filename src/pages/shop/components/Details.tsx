@@ -79,28 +79,45 @@ export const StationDetailsView = ({ role, onEdit, onDelete, onStatusChange }: R
     );
   }
 
+  const fields = [
+    { label: 'Workstation name', value: role.workstationName },
+    { label: 'Shop activity', value: planningSectionName },
+    { label: 'Attendance required', value: role.attendance_required ? 'Yes' : 'No' },
+    { label: 'Status', value: role.status ?? '-' },
+  ];
+
   return (
     <div className="space-y-6">
-      <StationHeader role={role} onEdit={onEdit} onStatusChange={onStatusChange} />
-      {/* <UsersSection /> */}
-      <div className="grid grid-cols-2 gap-[14px] rounded-[8px] bg-muted p-8 space-y-10">
-        <div>
-          <h4 className="text-secondary font-semibold text-sm pb-2.5">Workstation Name</h4>
-          <h2 className="text-foreground leading-6 font-semibold ">{role.workstationName}</h2>
-        </div>
+      {/* Stays at the top of the details pane while its content scrolls */}
+      <div className="sticky top-0 z-10 -mx-6 border-b border-border bg-background/95 px-6 pb-4 pt-5 backdrop-blur">
+        <StationHeader role={role} onEdit={onEdit} onStatusChange={onStatusChange} />
+      </div>
 
-        <div>
-          <h4 className="text-secondary font-semibold text-sm pb-2.5">Shop Activity</h4>
-          <h2 className="text-foreground leading-6 font-semibold ">{planningSectionName}</h2>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {fields.map(({ label, value }) => (
+          <div key={label} className="rounded-lg border border-border bg-muted/40 p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+            <p className="mt-1.5 font-semibold text-foreground">{value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-lg border border-border p-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Assigned operators</p>
+          <span className="text-xs text-muted-foreground">{Array.isArray(operatorNames) ? operatorNames.length : 0}</span>
         </div>
-        <div>
-          <h4 className="text-secondary font-semibold text-sm pb-2.5">Assigned Operators</h4>
-          <h2 className="text-foreground leading-6 font-semibold ">{Array.isArray(operatorNames) ? operatorNames.join(', ') : operatorNames || '-'}</h2>
-        </div>
-        <div>
-          <h4 className="text-secondary font-semibold text-sm pb-2.5">Attendance Required</h4>
-          <h2 className="text-foreground leading-6 font-semibold ">{role.attendance_required ? 'Yes' : 'No'}</h2>
-        </div>
+        {Array.isArray(operatorNames) && operatorNames.length > 0 ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {operatorNames.map((name: string) => (
+              <span key={name} className="rounded-full bg-primary-soft px-3 py-1 text-sm font-medium text-foreground">
+                {name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-muted-foreground">No operators assigned. Use Edit to assign operators.</p>
+        )}
       </div>
 
       {/* FAB Files Card */}

@@ -187,6 +187,7 @@ export function StoneTypesSection() {
     const [selectedStoneTypeId, setSelectedStoneTypeId] = useState<string>('all');
     const [showAddStoneColorDialog, setShowAddStoneColorDialog] = useState(false);
     const [colorFormStoneTypeId, setColorFormStoneTypeId] = useState<string>('');
+    const [editingColorOriginalTypeId, setEditingColorOriginalTypeId] = useState<number | null>(null);
     const [newStoneColorName, setNewStoneColorName] = useState('');
     const [newStoneColorCode, setNewStoneColorCode] = useState('');
     const [editingStoneColorId, setEditingStoneColorId] = useState<number | null>(null);
@@ -221,6 +222,11 @@ export function StoneTypesSection() {
         return list.filter((st) => st.name.toLowerCase().includes(term) || st.description?.toLowerCase().includes(term));
     }, [stoneTypesData, stoneTypeSearch]);
     const stoneTypeNames = useMemo(() => new Map(allStoneTypes.map((st) => [st.id, st.name])), [allStoneTypes]);
+    // New colors go on active stone types; an edited color keeps showing its current type even if inactive.
+    const colorFormStoneTypes = useMemo(
+        () => allStoneTypes.filter((st) => isActive(st) || st.id === editingColorOriginalTypeId),
+        [allStoneTypes, editingColorOriginalTypeId],
+    );
 
     // Fetch one page of stone colors for the current filters
     const isTypeFiltered = Boolean(selectedStoneTypeId) && selectedStoneTypeId !== 'all';
@@ -337,10 +343,12 @@ export function StoneTypesSection() {
         setNewStoneColorName('');
         setNewStoneColorCode('');
         setColorFormStoneTypeId('');
+        setEditingColorOriginalTypeId(null);
     };
 
     const openAddStoneColorDialog = () => {
-        setColorFormStoneTypeId(isTypeFiltered ? selectedStoneTypeId : '');
+        const filteredType = isTypeFiltered ? allStoneTypes.find((st) => st.id === Number(selectedStoneTypeId)) : undefined;
+        setColorFormStoneTypeId(filteredType && isActive(filteredType) ? selectedStoneTypeId : '');
         setShowAddStoneColorDialog(true);
     };
 
@@ -374,6 +382,7 @@ export function StoneTypesSection() {
         setNewStoneColorName(color.name);
         setNewStoneColorCode(color.color_code || '');
         setColorFormStoneTypeId(color.stone_type_id ? String(color.stone_type_id) : '');
+        setEditingColorOriginalTypeId(color.stone_type_id ?? null);
         setShowAddStoneColorDialog(true);
     };
 
@@ -656,9 +665,9 @@ export function StoneTypesSection() {
                                         <SelectValue placeholder="Select stone type" />
                                     </SelectTrigger>
                                     <SelectContent className="max-h-[300px] overflow-y-auto">
-                                        {allStoneTypes.map((stoneType) => (
+                                        {colorFormStoneTypes.map((stoneType) => (
                                             <SelectItem key={stoneType.id} value={String(stoneType.id)}>
-                                                {stoneType.name}
+                                                {stoneType.name}{isActive(stoneType) ? '' : ' (inactive)'}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

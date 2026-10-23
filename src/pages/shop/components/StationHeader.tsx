@@ -1,11 +1,9 @@
 // components/RoleHeader.tsx
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { PenLine } from 'lucide-react';
 import { toast } from 'sonner';
 import { Station } from '@/config/types';
-import { Toolbar, ToolbarHeading } from './toolbar';
 import { useToggleWorkstationStatusMutation } from '@/store/api/workstation';
 
 interface StationHeaderProps {
@@ -37,34 +35,24 @@ export const StationHeader = ({ role, onEdit, onStatusChange }: StationHeaderPro
     }
   };
 
-  const statusText = role.status === 'Active' ? 'Active' : 'Inactive';
-  const statusColor = role.status === 'Active'
-    ? 'bg-[#0BC33F33] text-[#0BC33F]'
-    : 'bg-[#ED143B33] text-[#ED143B]';
+  const active = role.status === 'Active';
 
   return (
-    <Toolbar>
-      <div className="flex items-center justify-between w-full">
-        <ToolbarHeading title={role.workstationName} description={role.description} />
-
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex gap-2 items-center">
-            <Switch
-              checked={role.status === 'Active'}
-              onCheckedChange={handleSwitchToggle}
-              aria-label="Toggle status"
-            />
-            <Button variant="outline" size="sm" onClick={() => onEdit(role)} className='text-secondary'>
-              <PenLine className="w-4 h-4 mr-1" />
-              Edit
-            </Button>
-            
-            <Badge className={`${statusColor} px-3 py-1 rounded-[50px]`}>
-              {statusText}
-            </Badge>
-          </div>
-        </div>
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="min-w-0">
+        <h2 className="truncate text-xl font-semibold text-foreground">{role.workstationName}</h2>
+        <p className="mt-0.5 text-sm text-muted-foreground">{role.description}</p>
       </div>
-    </Toolbar>
+      <div className="flex items-center gap-3">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <Switch checked={active} onCheckedChange={handleSwitchToggle} aria-label="Toggle workstation active" />
+          <span className={active ? 'text-green-700' : 'text-muted-foreground'}>{active ? 'Active' : 'Inactive'}</span>
+        </label>
+        <Button variant="outline" size="sm" onClick={() => onEdit(role)}>
+          <PenLine className="size-4" />
+          Edit
+        </Button>
+      </div>
+    </div>
   );
 };
