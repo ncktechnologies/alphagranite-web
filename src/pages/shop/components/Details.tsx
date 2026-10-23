@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Station } from "@/config/types";
 import { StationHeader } from "./StationHeader";
+import { DetailField, DetailStickyHeader } from '@/components/common/master-detail';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
 import { FileViewer } from '@/pages/jobs/roles/drafters/components';
@@ -88,17 +89,13 @@ export const StationDetailsView = ({ role, onEdit, onDelete, onStatusChange }: R
 
   return (
     <div className="space-y-6">
-      {/* Stays at the top of the details pane while its content scrolls */}
-      <div className="sticky top-0 z-10 -mx-6 border-b border-border bg-background/95 px-6 pb-4 pt-5 backdrop-blur">
+      <DetailStickyHeader>
         <StationHeader role={role} onEdit={onEdit} onStatusChange={onStatusChange} />
-      </div>
+      </DetailStickyHeader>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {fields.map(({ label, value }) => (
-          <div key={label} className="rounded-lg border border-border bg-muted/40 p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-            <p className="mt-1.5 font-semibold text-foreground">{value}</p>
-          </div>
+          <DetailField key={label} label={label} value={value} />
         ))}
       </div>
 

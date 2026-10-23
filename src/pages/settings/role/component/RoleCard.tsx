@@ -1,7 +1,6 @@
-// components/RoleCard.tsx
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+// Compact role row for the Roles list.
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { MasterListItem } from '@/components/common/master-detail';
 import { Role } from '@/store/api';
 
 interface RoleCardProps {
@@ -10,47 +9,37 @@ interface RoleCardProps {
   onClick: (role: Role) => void;
 }
 
+const MAX_AVATARS = 3;
+
 export const RoleCard = ({ role, isSelected, onClick }: RoleCardProps) => {
-  // console.log(role, "jnaooperl")
+  const members = role.top_members ?? [];
+  const memberCount = role.member_count ?? members.length;
+
   return (
-    <>
-    <Card 
-      className={`cursor-pointer transition-all hover:shadow-md ${
-        isSelected ? ' border border-[#8BAD2B] bg-primary-soft' : ''
-      }`}
+    <MasterListItem
+      title={role.name}
+      active={role.status === 1}
+      isSelected={isSelected}
       onClick={() => onClick(role)}
-    >
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className={` ${isSelected  ? 'text-lg font-normal ' : 'font-bold text-[17px]'} text-foreground   `}>{role.name}</h3>
-            <Badge 
-            //   variant={role.status === 'Active' ? 'default' : 'secondary'}
-              className={`${role.status === 1  ? 'bg-[#0BC33F33] text-[#0BC33F]' : 'bg-[#ED143B33] text-[#ED143B]'} px-2 py-1 rounded-[50px] text-sm `}
-            >
-              {role.status === 1 ? 'Active' : 'Inactive'}
-            </Badge>
-          </div>
-          
-          <p className="text-sm text-text">{role.description}</p>
-          
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-text">MEMBERS ({role.member_count})</span>
-            <div className="flex -space-x-2">
-              {role.top_members?.map((user) => (
-                <Avatar key={user.id} className="w-6 h-6 border-2 border-background">
-                  <Avatar></Avatar>
-                  <AvatarFallback className="text-xs bg-border text-secondary-foreground">
-                    {user.first_name.charAt(0) + user.last_name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-              ))}
-            </div>
-          </div>
+      subtitle={role.description || 'No description'}
+      aside={memberCount > 0 ? (
+        <div className="flex shrink-0 items-center -space-x-1.5" title={`${memberCount} member${memberCount === 1 ? '' : 's'}`}>
+          {members.slice(0, MAX_AVATARS).map((user) => (
+            <Avatar key={user.id} className="size-5 border border-background">
+              <AvatarFallback className="bg-primary/15 text-[9px] font-semibold text-primary">
+                {(user.first_name?.charAt(0) ?? '') + (user.last_name?.charAt(0) ?? '')}
+              </AvatarFallback>
+            </Avatar>
+          ))}
+          {memberCount > Math.min(members.length, MAX_AVATARS) && (
+            <span className="pl-2.5 text-[11px] text-muted-foreground">
+              +{memberCount - Math.min(members.length, MAX_AVATARS)}
+            </span>
+          )}
         </div>
-      </CardContent>
-      
-    </Card>
-    </>
+      ) : (
+        <span className="shrink-0 text-[11px] text-muted-foreground">No members</span>
+      )}
+    />
   );
 };

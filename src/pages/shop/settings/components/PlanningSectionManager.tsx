@@ -1,29 +1,28 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ActivityCard } from './ActivityCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Plus, X, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useCreatePlanningSectionMutation,
 } from '@/store/api/workstation';
+import { MasterListPane, type StatusFilter } from '@/components/common/master-detail';
 
-interface PlanningSection {
+export interface PlanningSection {
   id: number;
   plan_name: string;
   plan_description?: string;
   status_id?: number;
-  is_active?: boolean;
+  is_active?: boolean | number;
 }
 
 interface PlanningSectionManagerProps {
@@ -31,13 +30,25 @@ interface PlanningSectionManagerProps {
   onRefresh: () => void;
   selectedActivityId?: number | null;
   onSelectActivity?: (id: number) => void;
+  search: string;
+  onSearchChange: (value: string) => void;
+  statusFilter: StatusFilter;
+  onStatusFilterChange: (value: StatusFilter) => void;
+  counts: Record<StatusFilter, number>;
+  workstationCounts: Record<number, number>;
 }
 
-export function PlanningSectionManager({ 
-  planningSections, 
+export function PlanningSectionManager({
+  planningSections,
   onRefresh,
   selectedActivityId,
-  onSelectActivity
+  onSelectActivity,
+  search,
+  onSearchChange,
+  statusFilter,
+  onStatusFilterChange,
+  counts,
+  workstationCounts,
 }: PlanningSectionManagerProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newSectionName, setNewSectionName] = useState('');
@@ -57,7 +68,7 @@ export function PlanningSectionManager({
         plan_description: newSectionDescription.trim() || undefined,
         status_id: 1,
       }).unwrap();
-      
+
       toast.success('Shop activity created successfully');
       setNewSectionName('');
       setNewSectionDescription('');
@@ -70,76 +81,69 @@ export function PlanningSectionManager({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground">Shop Activities</h3>
-        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-[#8BAD2B] hover:bg-[#7a9b25] text-white">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Activity
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Add New Shop Activity</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="plan_name">Activity Name *</Label>
-                <Input
-                  id="plan_name"
-                  value={newSectionName}
-                  onChange={(e) => setNewSectionName(e.target.value)}
-                  placeholder="e.g., Cutting, Polishing, etc."
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="plan_description">Description (Optional)</Label>
-                <Textarea
-                  id="plan_description"
-                  value={newSectionDescription}
-                  onChange={(e) => setNewSectionDescription(e.target.value)}
-                  placeholder="Brief description of this activity..."
-                  rows={3}
-                />
-              </div>
+    <>
+      <MasterListPane
+        title="Shop Activities"
+        noun="shop activities"
+        onNew={() => setIsCreateModalOpen(true)}
+        search={search}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search name, description"
+        statusFilter={statusFilter}
+        onStatusFilterChange={onStatusFilterChange}
+        counts={counts}
+        isEmpty={planningSections.length === 0}
+      >
+        {planningSections.map((section) => (
+          <ActivityCard
+            key={section.id}
+            id={section.id}
+            plan_name={section.plan_name}
+            plan_description={section.plan_description}
+            is_active={section.is_active === true || section.is_active === 1}
+            workstationCount={workstationCounts[section.id] ?? 0}
+            isSelected={selectedActivityId === section.id}
+            onClick={(id) => onSelectActivity && onSelectActivity(id)}
+          />
+        ))}
+      </MasterListPane>
+
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add New Shop Activity</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="plan_name">Activity Name *</Label>
+              <Input
+                id="plan_name"
+                value={newSectionName}
+                onChange={(e) => setNewSectionName(e.target.value)}
+                placeholder="e.g., Cutting, Polishing, etc."
+              />
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreate} className="bg-[#8BAD2B] hover:bg-[#7a9b25]">
-                Create Activity
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Activity Cards List */}
-      <div className="grid gap-3">
-        {planningSections.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No shop activities yet. Click "Add Activity" to create one.
+            <div className="grid gap-2">
+              <Label htmlFor="plan_description">Description (Optional)</Label>
+              <Textarea
+                id="plan_description"
+                value={newSectionDescription}
+                onChange={(e) => setNewSectionDescription(e.target.value)}
+                placeholder="Brief description of this activity..."
+                rows={3}
+              />
+            </div>
           </div>
-        ) : (
-          planningSections.map((section) => (
-            <ActivityCard
-              key={section.id}
-              id={section.id}
-              plan_name={section.plan_name}
-              plan_description={section.plan_description}
-              status_id={section.status_id}
-              is_active={section.is_active}
-              isSelected={selectedActivityId === section.id}
-              onClick={(id) => onSelectActivity && onSelectActivity(id)}
-            />
-          ))
-        )}
-      </div>
-
-      {/* Selected Activity Details View - Removed, handled by parent */}
-    </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleCreate}>
+              Create Activity
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

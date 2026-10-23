@@ -9,11 +9,13 @@ import { Toolbar, ToolbarBreadcrumbs, ToolbarHeading } from '@/layouts/demo1/com
 import { useGetWorkstationsQuery } from '@/store/api';
 import {
     useGetAllPlanningSectionsQuery,
-    useDeletePlanningSectionMutation,
     useUpdatePlanningSectionMutation,
     useUpdateWorkstationMutation
 } from '@/store/api/workstation';
 import { PlanningSectionManager } from './components/PlanningSectionManager';
+import { MasterDetailLayout } from '@/components/common/master-detail';
+import { matchesStatusFilter, type StatusFilter } from '@/components/common/master-detail-utils';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivityDetailsView } from './components/ActivityDetailsView';
@@ -21,8 +23,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { X, Check, Plus, Trash2, Edit2 } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { X, Check, Plus, Trash2, Edit2, Cpu, ListChecks } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     useGetStoneTypesQuery,
     useGetStoneColorsByStoneTypeQuery,
@@ -46,6 +48,8 @@ function SettingsPage() {
     const [editingIsActive, setEditingIsActive] = useState<boolean>(true);
     const [workstationStatusFilter, setWorkstationStatusFilter] = useState<StationStatusFilter>('all');
     const [workstationSearch, setWorkstationSearch] = useState('');
+    const [activityStatusFilter, setActivityStatusFilter] = useState<StatusFilter>('all');
+    const [activitySearch, setActivitySearch] = useState('');
 
     // Stone types state
     const [selectedStoneTypeId, setSelectedStoneTypeId] = useState<number | null>(null);
@@ -93,7 +97,6 @@ function SettingsPage() {
 
     // Update mutations
     const [updateWorkstation] = useUpdateWorkstationMutation();
-    const [deletePlanningSection] = useDeletePlanningSectionMutation();
     const [updatePlanningSection] = useUpdatePlanningSectionMutation();
 
     // Convert API data to Station format – use is_active for status
@@ -150,12 +153,49 @@ function SettingsPage() {
         }
     }, [activeTab, visibleWorkstations, selectedRole, viewMode]);
 
-    // Auto-select first activity when in activities tab
+    const isSectionActive = (section: any) => section.is_active === true || section.is_active === 1;
+
+    const activityCounts = useMemo(() => {
+        const active = planningSections.filter(isSectionActive).length;
+        return { all: planningSections.length, active, inactive: planningSections.length - active };
+    }, [planningSections]);
+
+    const visibleActivities = useMemo(() => {
+        const term = activitySearch.trim().toLowerCase();
+        return planningSections.filter((section) => {
+            if (!matchesStatusFilter(isSectionActive(section), activityStatusFilter)) return false;
+            if (!term) return true;
+            return [section.plan_name, section.plan_description]
+                .some((value) => value?.toLowerCase().includes(term));
+        });
+    }, [planningSections, activityStatusFilter, activitySearch]);
+
+    // Workstations grouped by shop activity, for the activity list counts and details.
+    const workstationsByActivity = useMemo(() => {
+        const groups: Record<number, Station[]> = {};
+        workstations.forEach((ws) => {
+            const sectionId = (ws as any).planning_section_id;
+            if (sectionId == null) return;
+            (groups[sectionId] ??= []).push(ws);
+        });
+        return groups;
+    }, [workstations]);
+
+    const activityWorkstationCounts = useMemo(
+        () => Object.fromEntries(Object.entries(workstationsByActivity).map(([id, list]) => [id, list.length])),
+        [workstationsByActivity],
+    );
+
+    const selectedActivity = planningSections.find((s) => s.id === selectedActivityId);
+
+    // Keep a visible activity selected, like the workstations tab (not while it is being edited).
     useEffect(() => {
-        if (activeTab === 'activities' && planningSections.length > 0 && selectedActivityId === null) {
-            setSelectedActivityId(planningSections[0].id);
+        if (activeTab !== 'activities' || editingSectionId !== null) return;
+        const selectionVisible = visibleActivities.some((s) => s.id === selectedActivityId);
+        if (!selectionVisible && visibleActivities.length > 0) {
+            setSelectedActivityId(visibleActivities[0].id);
         }
-    }, [activeTab, planningSections, selectedActivityId]);
+    }, [activeTab, visibleActivities, selectedActivityId, editingSectionId]);
 
     const handleNewRole = () => {
         setViewMode('new');
@@ -430,17 +470,19 @@ function SettingsPage() {
 
                 {/* Tab Navigation */}
                 <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mt-4 w-full">
-                    <CardHeader className="py-3.5 border-b flex flex-row items-center justify-between ">
-                        <TabsList className="mb-4">
-                            <TabsTrigger value="workstations">Workstations</TabsTrigger>
-                            <TabsTrigger value="activities">Shop Activities</TabsTrigger>
-                        </TabsList>
-                    </CardHeader>
+                    <TabsList variant="line" className="w-full gap-6">
+                        <TabsTrigger value="workstations" className="px-1 font-semibold">
+                            <Cpu /> Workstations
+                        </TabsTrigger>
+                        <TabsTrigger value="activities" className="px-1 font-semibold">
+                            <ListChecks /> Shop Activities
+                        </TabsTrigger>
+                    </TabsList>
 
                     <TabsContent value="workstations" className="mt-4">
-                        {/* List and details scroll independently, so the selected workstation stays in view. */}
-                        <div className="grid grid-cols-1 overflow-hidden rounded-xl border border-border bg-background lg:h-[calc(100vh-260px)] lg:min-h-[520px] lg:grid-cols-[340px_minmax(0,1fr)]">
-                            <div className="flex max-h-[60vh] min-h-0 flex-col border-b border-border lg:max-h-none lg:border-b-0 lg:border-r">
+                        <MasterDetailLayout
+                            flushTop={viewMode === 'details' && !!selectedRole}
+                            list={
                                 <StationList
                                     roles={visibleWorkstations}
                                     selectedRole={selectedRole}
@@ -453,109 +495,86 @@ function SettingsPage() {
                                     counts={workstationCounts}
                                     isLoading={isLoading}
                                 />
-                            </div>
-
-                            <div className={`min-h-0 overflow-y-auto px-6 pb-6 ${viewMode === 'details' && selectedRole ? 'pt-0' : 'pt-6'}`}>
-                                {renderRightContent()}
-                            </div>
-                        </div>
+                            }
+                        >
+                            {renderRightContent()}
+                        </MasterDetailLayout>
                     </TabsContent>
 
-                    <TabsContent value="activities" className="mt-0">
-                        <div className="flex h-full gap-6">
-                            <div className="w-80 pr-6 border-r overflow-y-auto">
-                                <div className="space-y-4">
-                                    <PlanningSectionManager
-                                        planningSections={planningSections}
-                                        onRefresh={refetchPlanningSections}
-                                        selectedActivityId={selectedActivityId}
-                                        onSelectActivity={setSelectedActivityId}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Right Content Area for Details */}
-                            <div className="flex-1 pl-6 overflow-y-auto">
-                                {selectedActivityId ? (
-                                    editingSectionId === selectedActivityId ? (
-                                        // Edit Mode
-                                        <Card>
-                                            <CardContent className="p-6">
-                                                <div className="space-y-4">
-                                                    <div className="flex items-center justify-between">
-                                                        <h3 className="text-lg font-semibold">Edit Activity</h3>
-                                                        <div className="flex gap-2">
-                                                            <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
-                                                                <X className="w-4 h-4" />
-                                                            </Button>
-                                                            <Button size="sm" onClick={handleSaveEdit} className="bg-green-600 hover:bg-green-700">
-                                                                <Check className="w-4 h-4" /> Save
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label>Activity Name</Label>
-                                                        <Input
-                                                            value={editingName}
-                                                            onChange={(e) => setEditingName(e.target.value)}
-                                                            disabled
-                                                            className="disabled:cursor-not-allowed disabled:opacity-60"
-                                                        />
-                                                        <Label>Description</Label>
-                                                        <Textarea
-                                                            value={editingDescription}
-                                                            onChange={(e) => setEditingDescription(e.target.value)}
-                                                            rows={3}
-                                                        />
-                                                        <div className="flex items-center gap-2 mt-2">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={editingIsActive}
-                                                                onChange={(e) => setEditingIsActive(e.target.checked)}
-                                                                className="h-4 w-4"
-                                                            />
-                                                            <Label>Active</Label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    ) : (
-                                        // View Mode
-                                        <ActivityDetailsView
-                                            activity={planningSections.find(s => s.id === selectedActivityId)!}
-                                            onEdit={() => {
-                                                const section = planningSections.find(s => s.id === selectedActivityId);
-                                                if (section) handleEditActivity(section);
-                                            }}
-                                            onDelete={async () => {
-                                                const section = planningSections.find(s => s.id === selectedActivityId);
-                                                if (!section) return;
-
-                                                if (!confirm(`Are you sure you want to delete "${section.plan_name}"?`)) {
-                                                    return;
-                                                }
-
-                                                try {
-                                                    await deletePlanningSection(section.id).unwrap();
-                                                    toast.success('Shop activity deleted successfully');
-                                                    setSelectedActivityId(null);
-                                                    refetchPlanningSections();
-                                                } catch (error) {
-                                                    console.error('Failed to delete:', error);
-                                                    toast.error('Failed to delete shop activity');
-                                                }
-                                            }}
-                                            onToggleStatus={() => handleToggleActivityStatus(selectedActivityId!)}
-                                        />
-                                    )
-                                ) : (
-                                    <div className="flex items-center justify-center h-64 text-muted-foreground">
-                                        Select an activity from the list to view details
+                    <TabsContent value="activities" className="mt-4">
+                        <MasterDetailLayout
+                            flushTop={!!selectedActivity && editingSectionId !== selectedActivityId}
+                            list={
+                                <PlanningSectionManager
+                                    planningSections={visibleActivities}
+                                    onRefresh={refetchPlanningSections}
+                                    selectedActivityId={selectedActivityId}
+                                    onSelectActivity={(id) => {
+                                        setSelectedActivityId(id);
+                                        handleCancelEdit();
+                                    }}
+                                    search={activitySearch}
+                                    onSearchChange={setActivitySearch}
+                                    statusFilter={activityStatusFilter}
+                                    onStatusFilterChange={setActivityStatusFilter}
+                                    counts={activityCounts}
+                                    workstationCounts={activityWorkstationCounts}
+                                />
+                            }
+                        >
+                            {selectedActivity ? (
+                                editingSectionId === selectedActivity.id ? (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center justify-between">
+                                            <h2 className="text-xl font-semibold text-foreground">
+                                                Edit Shop Activity: {selectedActivity.plan_name}
+                                            </h2>
+                                            <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Activity Name</Label>
+                                            <Input
+                                                value={editingName}
+                                                onChange={(e) => setEditingName(e.target.value)}
+                                                disabled
+                                                className="disabled:cursor-not-allowed disabled:opacity-60"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Description</Label>
+                                            <Textarea
+                                                value={editingDescription}
+                                                onChange={(e) => setEditingDescription(e.target.value)}
+                                                rows={3}
+                                            />
+                                        </div>
+                                        <label className="flex items-center gap-2 text-sm font-medium">
+                                            <Switch checked={editingIsActive} onCheckedChange={setEditingIsActive} />
+                                            {editingIsActive ? 'Active' : 'Inactive'}
+                                        </label>
+                                        <div className="flex justify-end gap-2">
+                                            <Button variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+                                            <Button variant="primary" onClick={handleSaveEdit}>
+                                                <Check className="w-4 h-4" /> Save
+                                            </Button>
+                                        </div>
                                     </div>
-                                )}
-                            </div>
-                        </div>
+                                ) : (
+                                    <ActivityDetailsView
+                                        activity={selectedActivity}
+                                        workstations={workstationsByActivity[selectedActivity.id] ?? []}
+                                        onEdit={() => handleEditActivity(selectedActivity)}
+                                        onToggleStatus={() => handleToggleActivityStatus(selectedActivity.id)}
+                                    />
+                                )
+                            ) : (
+                                <div className="flex items-center justify-center h-64 text-muted-foreground">
+                                    Select an activity from the list to view details
+                                </div>
+                            )}
+                        </MasterDetailLayout>
                     </TabsContent>
 
                     <TabsContent value="stone-types" className="mt-0">

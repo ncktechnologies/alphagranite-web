@@ -1,48 +1,35 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+// Compact shop activity row for the Shop Settings list.
+import { MasterListItem } from '@/components/common/master-detail';
 
 interface ActivityCardProps {
   id: number;
   plan_name: string;
   plan_description?: string;
-  status_id?: number;
+  is_active: boolean;
+  workstationCount: number;
   isSelected: boolean;
   onClick: (id: number) => void;
-  is_active: boolean;
 }
 
-export const ActivityCard = ({ 
+export const ActivityCard = ({
   id,
-  plan_name, 
-  plan_description, 
-  status_id, 
+  plan_name,
+  plan_description,
+  is_active,
+  workstationCount,
   isSelected,
-  is_active, 
   onClick
-}: ActivityCardProps) => {
-  return (
-    <Card 
-      className={`cursor-pointer transition-all hover:shadow-md ${
-        isSelected ? 'border border-[#8BAD2B] bg-primary-soft' : ''
-      }`}
-      onClick={() => onClick(id)}
-    >
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className={`${isSelected ? 'text-lg font-normal' : 'font-bold text-[17px]'} text-foreground`}>
-              {plan_name}
-            </h3>
-            <Badge 
-              className={`${is_active ? 'bg-[#0BC33F33] text-[#0BC33F]' : 'bg-[#ED143B33] text-[#ED143B]'} px-2 py-1 rounded-[50px] text-sm`}
-            >
-              {is_active ? 'Active' : 'Inactive'}
-            </Badge>
-          </div>
-          
-          <p className="text-sm text-text">{plan_description || ''}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+}: ActivityCardProps) => (
+  <MasterListItem
+    title={plan_name}
+    active={is_active}
+    isSelected={isSelected}
+    onClick={() => onClick(id)}
+    subtitle={plan_description || 'No description'}
+    aside={
+      <span className="shrink-0 text-[11px] text-muted-foreground">
+        {workstationCount === 0 ? 'No workstations' : `${workstationCount} workstation${workstationCount === 1 ? '' : 's'}`}
+      </span>
+    }
+  />
+);

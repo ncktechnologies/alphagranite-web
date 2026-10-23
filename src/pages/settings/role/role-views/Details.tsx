@@ -4,6 +4,7 @@ import { Role } from "@/store/api/role";
 import { RoleHeader } from "../component/RoleHeader";
 import { RoleStats } from "../component/RoleStats";
 import { UsersSection } from "../component/users-section";
+import { DetailStickyHeader } from "@/components/common/master-detail";
 
 interface RoleDetailsViewProps {
   role: Role;
@@ -14,11 +15,15 @@ interface RoleDetailsViewProps {
 
 export const RoleDetailsView = ({ role, onEdit, onDelete, onActivate }: RoleDetailsViewProps) => {
   return (
-    <div className="space-y-2">
-      <RoleHeader role={role} onEdit={onEdit} onDelete={onDelete} onActivate={onActivate} />
+    <div className="space-y-6">
+      <DetailStickyHeader>
+        <RoleHeader role={role} onEdit={onEdit} onDelete={onDelete} onActivate={onActivate} />
+      </DetailStickyHeader>
       <RoleStats role={role} />
-      <h2 className="py-2 text-text text-base">Users</h2>
-      <UsersSection role={role} />
+      <div className="space-y-3">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Users</p>
+        <UsersSection role={role} />
+      </div>
     </div>
   );
 };

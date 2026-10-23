@@ -1,76 +1,68 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Edit2, Trash2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { PenLine } from 'lucide-react';
+import { DetailField, DetailStickyHeader, StatusIndicator } from '@/components/common/master-detail';
+import type { PlanningSection } from './PlanningSectionManager';
 
 interface ActivityDetailsViewProps {
-  activity: {
-    id: number;
-    plan_name: string;
-    plan_description?: string;
-    status_id?: number;
-  };
+  activity: PlanningSection;
+  workstations: { id: string; workstationName: string; status?: string }[];
   onEdit: () => void;
-  onDelete: () => void;
   onToggleStatus: () => void;
 }
 
-export function ActivityDetailsView({ activity, onEdit, onDelete, onToggleStatus }: ActivityDetailsViewProps) {
-  return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="space-y-6">
-          {/* Header with actions */}
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold text-foreground">{activity?.plan_name}</h2>
-              <p className="text-sm text-muted-foreground mt-1">Shop Activity Details</p>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <div className="flex items-center gap-2">
-                <Badge 
-                  className={`${activity.is_active ? 'bg-[#0BC33F33] text-[#0BC33F]' : 'bg-[#ED143B33] text-[#ED143B]'} px-3 py-1 rounded-[50px]`}
-                >
-                  {activity.is_active  ? 'Active' : 'Inactive'}
-                </Badge>
-                <Switch
-                  checked={activity.is_active}
-                  onCheckedChange={onToggleStatus}
-                  aria-label="Toggle status"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  size="sm"
-                  onClick={onEdit}
-                  className="bg-[#8BAD2B] hover:bg-[#7a9b25] text-white"
-                >
-                  <Edit2 className="w-4 h-4 mr-1" />
-                  Edit
-                </Button>
-                {/* <Button 
-                  size="sm"
-                  onClick={onDelete}
-                  variant="outline"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Delete
-                </Button> */}
-              </div>
-            </div>
-          </div>
+export function ActivityDetailsView({ activity, workstations, onEdit, onToggleStatus }: ActivityDetailsViewProps) {
+  const active = activity.is_active === true || activity.is_active === 1;
 
-          {/* Description */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-secondary-foreground">Description</h3>
-            <p className="text-base text-foreground bg-muted p-4 rounded-lg">
-              {activity.plan_description || ''}
-            </p>
+  return (
+    <div className="space-y-6">
+      <DetailStickyHeader>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="truncate text-xl font-semibold text-foreground">{activity.plan_name}</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">Shop activity</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <Switch checked={active} onCheckedChange={onToggleStatus} aria-label="Toggle shop activity active" />
+              <span className={active ? 'text-green-700' : 'text-muted-foreground'}>{active ? 'Active' : 'Inactive'}</span>
+            </label>
+            <Button variant="outline" size="sm" onClick={onEdit}>
+              <PenLine className="size-4" />
+              Edit
+            </Button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </DetailStickyHeader>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <DetailField label="Activity name" value={activity.plan_name} />
+        <DetailField label="Status" value={active ? 'Active' : 'Inactive'} />
+        <DetailField
+          label="Description"
+          value={activity.plan_description || <span className="font-normal text-muted-foreground">No description</span>}
+          className="sm:col-span-2"
+        />
+      </div>
+
+      <div className="rounded-lg border border-border p-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Workstations</p>
+          <span className="text-xs text-muted-foreground">{workstations.length}</span>
+        </div>
+        {workstations.length > 0 ? (
+          <div className="mt-3 space-y-1">
+            {workstations.map((ws) => (
+              <div key={ws.id} className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-3 py-2">
+                <span className="truncate text-sm font-medium text-foreground">{ws.workstationName}</span>
+                <StatusIndicator active={ws.status === 'Active'} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-muted-foreground">No workstations use this activity. Assign one from the Workstations tab.</p>
+        )}
+      </div>
+    </div>
   );
 }

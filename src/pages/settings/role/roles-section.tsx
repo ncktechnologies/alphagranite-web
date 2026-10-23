@@ -1,5 +1,5 @@
 // components/RolesSection.tsx
-import { Fragment, useState, useEffect } from 'react';
+import { Fragment, useState, useEffect, useMemo } from 'react';
 import { Container } from '@/components/common/container';
 import { PageMenu } from '../page-menu';
 import { ViewMode } from '@/config/types';
@@ -11,11 +11,15 @@ import { useGetAllActionMenusQuery } from '@/store/api/actionMenu';
 import { EmptyState } from './component/EmptyState';
 import { ContentLoader } from '@/components/common/content-loader';
 import { Card } from '@/components/ui/card';
+import { MasterDetailLayout } from '@/components/common/master-detail';
+import { matchesStatusFilter, type StatusFilter } from '@/components/common/master-detail-utils';
 
 export const RolesSection = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('details');
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [isDeleted, setIsDeleted] = useState(false);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   // API hooks
   const { data: rolesData, isLoading, refetch, error} = useGetRolesQuery({ with_stats: true });
@@ -31,12 +35,28 @@ export const RolesSection = () => {
   );
   const roles = rolesData?.data || [];
 
-  // Set first role as active when component mounts or when roles load
+  const counts = useMemo(() => {
+    const active = roles.filter((role) => role.status === 1).length;
+    return { all: roles.length, active, inactive: roles.length - active };
+  }, [roles]);
+
+  const visibleRoles = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return roles.filter((role) => {
+      if (!matchesStatusFilter(role.status === 1, statusFilter)) return false;
+      if (!term) return true;
+      return [role.name, role.description].some((value) => value?.toLowerCase().includes(term));
+    });
+  }, [roles, statusFilter, search]);
+
+  // Keep a visible role selected: pick the first match when nothing (or a filtered-out one) is selected.
   useEffect(() => {
-    if (roles.length > 0 && !selectedRoleId && viewMode === 'details') {
-      setSelectedRoleId(roles[0].id);
+    if (viewMode !== 'details') return;
+    const selectionVisible = visibleRoles.some((role) => role.id === selectedRoleId);
+    if (!selectionVisible && visibleRoles.length > 0) {
+      setSelectedRoleId(visibleRoles[0].id);
     }
-  }, [roles, selectedRoleId, viewMode]);
+  }, [visibleRoles, selectedRoleId, viewMode]);
 
 
   const handleRoleSelect = (role: Role) => {
@@ -204,20 +224,25 @@ export const RolesSection = () => {
     <Fragment>
       <PageMenu />
       <Container>
-        <div className="flex h-full gap-6">
-          <RolesList
-            roles={roles}
-            selectedRoleId={selectedRoleId}
-            onRoleSelect={handleRoleSelect}
-            onNewRole={handleNewRole}
-            isLoading={isLoading}
-          />
-
-          {/* Right Content Area */}
-          <div className="flex-1 pl-6">
-            {renderRightContent()}
-          </div>
-        </div>
+        <MasterDetailLayout
+          flushTop={viewMode === 'details' && !!selectedRoleDetails}
+          list={
+            <RolesList
+              roles={visibleRoles}
+              selectedRoleId={selectedRoleId}
+              onRoleSelect={handleRoleSelect}
+              onNewRole={handleNewRole}
+              search={search}
+              onSearchChange={setSearch}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              counts={counts}
+              isLoading={isLoading}
+            />
+          }
+        >
+          {renderRightContent()}
+        </MasterDetailLayout>
       </Container>
     </Fragment>
   );
