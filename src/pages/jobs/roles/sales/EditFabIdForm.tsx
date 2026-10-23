@@ -50,6 +50,7 @@ import { getCheckboxRuleError, isCurrentStateImpossible } from './NewFabIdForm';
 import DialogContent, { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
 import { inputToNumber, numberToInput } from '@/lib/form-number';
+import { migratedNoteFields, type MigratedNoteField } from '@/lib/migrated-notes';
 
 // Custom Currency Input Component
 interface CurrencyInputProps {
@@ -260,6 +261,7 @@ const EditFabIdForm = () => {
     const [costPerSqft, setCostPerSqft] = useState('');
     const [redoDepartment, setRedoDepartment] = useState('');
     const [redoRequestedBy, setRedoRequestedBy] = useState('');
+    const [migratedNotes, setMigratedNotes] = useState<MigratedNoteField[]>([]);
 
     // Add item states
     const [showAddThickness, setShowAddThickness] = useState(false);
@@ -483,10 +485,13 @@ const EditFabIdForm = () => {
                             redo_department: fabData.redo_department ? String(fabData.redo_department) : '',
                             redo_requested_by: fabData.redo_requested_by ? String(fabData.redo_requested_by) : '',
                         };
-                        if (fabData.notes && Array.isArray(fabData.notes) && fabData.notes.length > 0) {
-                            formData.notes = fabData.notes[0];
-                        } else if (typeof fabData.notes === 'string') {
-                            formData.notes = fabData.notes;
+                        // Migrated FABs hold a JSON object here (sent as [object]); show it read-only so
+                        // it isn't put in the box and re-saved as a new FAB note.
+                        const storedNote = Array.isArray(fabData.notes) ? fabData.notes[0] : fabData.notes;
+                        if (typeof storedNote === 'string') {
+                            formData.notes = storedNote;
+                        } else {
+                            setMigratedNotes(migratedNoteFields(storedNote));
                         }
                         form.reset(formData);
                         // Populate AG redo modal if values exist
@@ -1260,7 +1265,26 @@ const EditFabIdForm = () => {
                                             </div>
                                         </div>
                                         {/* Notes */}
-                                        <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea placeholder="Type here..." {...field} rows={4} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="notes" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Notes</FormLabel>
+                                                {migratedNotes.length > 0 && (
+                                                    <div className="rounded-lg border border-border bg-muted/40 p-3">
+                                                        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Migrated data</p>
+                                                        <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
+                                                            {migratedNotes.map(({ label, value }) => (
+                                                                <div key={label} className="flex justify-between gap-3 border-b border-border/60 pb-1 last:border-b-0">
+                                                                    <dt className="text-muted-foreground">{label}</dt>
+                                                                    <dd className="text-right font-medium text-foreground">{value}</dd>
+                                                                </div>
+                                                            ))}
+                                                        </dl>
+                                                    </div>
+                                                )}
+                                                <FormControl><Textarea placeholder="Type here..." {...field} rows={4} /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
                                     </CardContent>
                                     <CardFooter className='flex justify-between items-center'>
                                         <Link to="/sales" className="flex flex-nowrap items-center gap-2 text-sm text-primary underline"><ArrowLeft className="w-4 h-4" /> Back to Fabs</Link>
