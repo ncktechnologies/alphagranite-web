@@ -723,12 +723,12 @@ export function InstallationTemplateReport() {
                     formatter: (row) => {
                         if (row.type === 'installer') {
                             const key = isTemplate ? 'total_sqft_templated' : 'total_sqft_installed';
-                            return (row[key] || 0).toFixed(0);
+                            return Number(row[key] || 0).toFixed(0);
                         } else if (row.type === 'job') {
                             const val = isTemplate ? row.sqft_templated : row.sq_ft_installed;
-                            return (val || 0).toFixed(0);
+                            return Number(val || 0).toFixed(0);
                         } else if (row.type === 'timer') {
-                            return (row.sqft || 0).toFixed(0);
+                            return Number(row.sqft || 0).toFixed(0);
                         }
                         return '';
                     },
@@ -739,13 +739,13 @@ export function InstallationTemplateReport() {
                     formatter: (row) => {
                         if (row.type === 'installer') {
                             const key = isTemplate ? 'total_sqft_not_templated' : 'total_sqft_incomplete';
-                            return (row[key] || 0).toFixed(0);
+                            return Number(row[key] || 0).toFixed(0);
                         } else if (row.type === 'job') {
                             const val = isTemplate ? row.sqft_not_templated : row.sq_ft_incomplete;
-                            return (val || 0).toFixed(0);
+                            return Number(val || 0).toFixed(0);
                         } else if (row.type === 'timer') {
-                            if (isTemplate) return (row.sqft_not_templated || 0).toFixed(0);
-                            else return (row.sqft_not_installed || 0).toFixed(0);
+                            if (isTemplate) return Number(row.sqft_not_templated || 0).toFixed(0);
+                            else return Number(row.sqft_not_installed || 0).toFixed(0);
                         }
                         return '';
                     },

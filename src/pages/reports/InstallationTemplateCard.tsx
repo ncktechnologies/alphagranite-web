@@ -12,9 +12,10 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { exportTableToCSV } from '@/lib/exportToCsv';
+import { downloadCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
 import { BackButton } from '@/components/common/BackButton';
+import { toast } from 'sonner';
 
 interface ActivityRow {
     activity_type: string;
@@ -102,6 +103,28 @@ export function InstallationTemplateReportCard() {
     const rows: ActivityRow[] = useMemo(() => data?.data?.rows ?? [], [data]);
     const summary = useMemo(() => data?.data?.summary ?? null, [data]);
 
+    const handleExportCSV = () => {
+        if (rows.length === 0) {
+            toast.warning('No data to export');
+            return;
+        }
+        downloadCSV(
+            ['INSTALLER', 'TYPE', 'DATE', 'JOB', 'COMPLETE', 'DURATION', 'SQFT INSTALLED', 'SQFT INCOMPLETE', 'REASON'],
+            rows.map(row => [
+                row.installer || 'Unknown',
+                row.activity_type,
+                row.activity_date,
+                row.job_name,
+                row.activity_complete ? 'Yes' : 'No',
+                row.time_duration,
+                Number(row.sq_ft_installed || 0).toFixed(0),
+                Number(row.sq_ft_incomplete || 0).toFixed(0),
+                row.reason_if_not_complete || '',
+            ]),
+            'installation-template',
+        );
+    };
+
     // Group by installer
     const grouped = useMemo(() => {
         const map = new Map<string, ActivityRow[]>();
@@ -144,7 +167,7 @@ export function InstallationTemplateReportCard() {
                             </div>
                         </PopoverContent>
                     </Popover>
-                    <Button variant="outline" onClick={() => exportTableToCSV({}, 'installation-template')}>Export CSV</Button>
+                    <Button variant="outline" onClick={handleExportCSV}>Export CSV</Button>
                 <BackButton/>
                 </div>
 
