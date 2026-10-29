@@ -40,6 +40,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DateRange } from 'react-day-picker';
 import { formatForDisplay } from '@/utils/date-utils';
+import { format } from 'date-fns';
+import { parseDateForDisplay } from '@/pages/shop/components/statusDetails';
 import { useTableState } from '@/hooks/use-table-state';
 import { formatNumber } from '@/lib/report-format';
 import { isSameFabType, useFabTypeNames } from '@/hooks/use-fab-type-names';
@@ -1196,7 +1198,7 @@ export const JobTable = ({
         meta: {
             format: (value: any, row: IJob) => {
                 const notes = Array.isArray(row.fab_notes) ? row.fab_notes : [];
-                const stageNotes = notes.filter((n: any) => n.stage === 'install_schedulling');
+                const stageNotes = notes.filter((n: any) => n.stage === 'install_scheduling');
                 if (stageNotes.length === 0) return 'No notes';
                 const latest = stageNotes[0];
                 return latest.note || 'No notes';

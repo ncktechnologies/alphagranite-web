@@ -99,7 +99,7 @@ const formatDate = (d: Date | undefined): string => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-const parseDateForDisplay = (s: string | undefined): Date | undefined => {
+export const parseDateForDisplay = (s: string | undefined): Date | undefined => {
     if (!s || typeof s !== 'string' || s.trim() === '') return undefined;
     try {
         const parts = s.split('-');
