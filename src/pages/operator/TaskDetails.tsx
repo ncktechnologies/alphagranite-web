@@ -179,7 +179,7 @@ export function OperatorTaskDetails() {
     }));
 
     // Fetch full FAB data to get all files
-    const { data: fabResponse } = useGetFabByIdQuery(currentTask?.fab_id || 0, { skip: !currentTask?.fab_id });
+    const { data: fabResponse, refetch: refetchFab } = useGetFabByIdQuery(currentTask?.fab_id || 0, { skip: !currentTask?.fab_id });
     const fabData = (fabResponse as any)?.data ?? fabResponse;
 
     // ─── Build file sources ──────────────────────────────────────────────────────
@@ -228,23 +228,15 @@ export function OperatorTaskDetails() {
             sources.push({ kind: 'raw', data: qaFiles });
         }
 
-        // Shop revision files – from the selected revision
-        if (selectedRevision?.files?.length) {
-            const revisionFiles = selectedRevision.files.map((f: any): UnifiedFile => ({
-                id: String(f.id),
-                name: f.name || f.filename || `File_${f.id}`,
-                size: parseInt(f.file_size) || f.size || 0,
-                type: f.file_type || f.mime_type || 'application/octet-stream',
-                url: f.file_url || f.url || '',
-                stage_name: f.stage_name ?? f.stage,
-                stage: f.stage_name ?? f.stage,
-                file_design: f.file_design,
-                uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
-                uploadedBy: f.uploaded_by_name ?? f.uploader_name,
-                uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
-                _raw: f,
-            }));
-            sources.push({ kind: 'raw', data: revisionFiles });
+        // Shop revision files – from every revision, matching the shop/admin FAB view
+        const shopRevisionFiles: any[] = [];
+        (fabData.shop_revisions || []).forEach((rev: any) => {
+            if (rev.files?.length) {
+                shopRevisionFiles.push(...rev.files);
+            }
+        });
+        if (shopRevisionFiles.length) {
+            sources.push({ kind: 'raw', data: toUnifiedFiles(shopRevisionFiles) });
         }
 
         return sources;
@@ -392,6 +384,7 @@ export function OperatorTaskDetails() {
             refetchQaFiles();
             refetchTask();
             refetchRevisions();
+            refetchFab();
         } catch (error: any) {
             toast.error(error?.data?.message || t('FILE.DELETE.FAILED', 'Failed to delete file'));
         }
@@ -452,6 +445,7 @@ export function OperatorTaskDetails() {
     const handleUploadComplete = () => {
         setShowShopUploadModal(false);
         refetchRevisions();
+        refetchFab();
         toast.success(t('SHOP_REVISION.UPLOAD_SUCCESS', 'Files uploaded to shop revision successfully'));
     };
 
