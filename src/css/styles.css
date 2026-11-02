@@ -85,6 +85,15 @@
   background-color: color-mix(in oklab, var(--primary-soft) 70%, transparent);
 }
 
+/* Pinned cells must stay opaque, or the columns scrolling beneath them show through. */
+[data-slot='data-grid-table'] tbody tr:not([data-fab-type]):hover > td[data-pinned] {
+  background-color: color-mix(in oklab, var(--accent) 70%, var(--background));
+}
+
+[data-slot='data-grid-table'] tbody tr[data-state='selected']:not([data-fab-type]) > td[data-pinned] {
+  background-color: color-mix(in oklab, var(--primary-soft) 70%, var(--background));
+}
+
 [data-slot='data-grid-table'] td {
   font-variant-numeric: tabular-nums;
 }
