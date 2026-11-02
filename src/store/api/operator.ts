@@ -1,5 +1,6 @@
 import { axiosBaseQuery } from "@/services/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
+import { AUTO_REFRESH } from "./auto-refresh";
 import { ShopCutPlanSuccessResponse } from "./shopCutPlanning";
 
 const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`;
@@ -81,7 +82,7 @@ export interface OperatorJobTimerActionRequest {
 export const operatorApi = createApi({
     reducerPath: 'operatorApi',
     baseQuery: axiosBaseQuery({ baseUrl }),
-    tagTypes: ['Operator', 'Workstation', 'Task', 'Timer'],
+    tagTypes: ['Operator', 'Workstation', 'Task', 'Timer', AUTO_REFRESH],
     endpoints: (builder) => ({
         // Get workstations assigned to an operator
         getOperatorWorkstations: builder.query<OperatorWorkstation[], { operator_id: number; status_id?: number }>({
@@ -126,7 +127,7 @@ export const operatorApi = createApi({
                 method: 'GET',
                 params: { view, reference_date, active_only }
             }),
-            providesTags: ['Task'],
+            providesTags: ['Task', AUTO_REFRESH],
             transformResponse: (response: any) => response.data || response,
         }),
 

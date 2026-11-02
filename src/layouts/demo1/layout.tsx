@@ -6,6 +6,7 @@ import { useMenu } from '@/hooks/use-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSettings } from '@/providers/settings-provider';
 import { useUiPreferences } from '@/hooks/use-ui-preferences';
+import { useAutoRefresh } from '@/hooks/use-auto-refresh';
 import { titleForPath } from '@/lib/breadcrumbs';
 import { OfflineBanner } from '@/components/common/offline-banner';
 import { CommandPalette } from '@/partials/command-palette/command-palette';
@@ -20,6 +21,9 @@ export function Demo1Layout() {
   const item = getCurrentItem(MENU_SIDEBAR);
   const { settings, setOption } = useSettings();
   const { addRecentPage } = useUiPreferences();
+
+  // Lists, widgets and dashboards stay current without a page reload
+  useAutoRefresh();
 
   // Remember visited pages for the command menu's "Recent" group
   useEffect(() => {

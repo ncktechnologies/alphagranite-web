@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { axiosBaseQuery } from "@/services/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
+import { AUTO_REFRESH } from "./auto-refresh";
 
 // const baseUrl = "https://alpha-granite.xyz-ntrinsic.com";
 const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`;
@@ -180,7 +181,7 @@ export interface TimerHistoryResponse {
 export const shopCutPlanningApi = createApi({
   reducerPath: "shopCutPlanningApi",
   baseQuery: axiosBaseQuery({ baseUrl }),
-  tagTypes: ["ShopCutPlan"],
+  tagTypes: ["ShopCutPlan", AUTO_REFRESH],
   keepUnusedDataFor: 0,
   endpoints(build) {
     return {
@@ -245,7 +246,7 @@ export const shopCutPlanningApi = createApi({
           };
         },
         transformResponse: (response: any) => response.data || response,
-        providesTags: ['ShopCutPlan'],
+        providesTags: ['ShopCutPlan', AUTO_REFRESH],
         // Keep recently viewed calendar ranges so paging back is instant; plan mutations still invalidate.
         keepUnusedDataFor: 60,
       }),

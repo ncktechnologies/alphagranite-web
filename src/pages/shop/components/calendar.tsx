@@ -185,7 +185,9 @@ const ShopCalendarPage: React.FC = () => {
   }, [currentDate, viewMode, lockedFabId, searchFabId, searchType, filterFabType, filterWorkstation, filterOperator, filterPlanningSections]);
 
   const queryParams = buildQueryParams();
-  const { data: plansResponse, isLoading, isFetching } = useGetAllShopPlansQuery(queryParams);
+  const { data: plansResponse, currentData, isLoading, isFetching: isFetchingAny } = useGetAllShopPlansQuery(queryParams);
+  // Overlay only while loading new dates/filters; background refreshes update quietly
+  const isFetching = isFetchingAny && !currentData;
 
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
 

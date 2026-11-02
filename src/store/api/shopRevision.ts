@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { axiosBaseQuery } from "@/services/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
+import { AUTO_REFRESH } from "./auto-refresh";
 
 const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`;
 
@@ -57,7 +58,7 @@ export interface ShopRevisionSuccessResponse<T = any> {
 export const shopRevisionApi = createApi({
   reducerPath: "shopRevisionApi",
   baseQuery: axiosBaseQuery({ baseUrl }),
-  tagTypes: ["ShopRevision", "Task", "Fab"],
+  tagTypes: ["ShopRevision", "Task", "Fab", AUTO_REFRESH],
   endpoints: (builder) => ({
     createShopRevision: builder.mutation<ShopRevisionSuccessResponse<ShopRevision>, CreateShopRevisionPayload>({
       query: (data) => ({
@@ -92,7 +93,7 @@ export const shopRevisionApi = createApi({
         method: "GET",
       }),
       transformResponse: (response: any) => response?.data ?? response ?? [],
-      providesTags: ["ShopRevision"],
+      providesTags: ["ShopRevision", AUTO_REFRESH],
     }),
 
     getShopRevisionsByFabId: builder.query<ShopRevision[], number>({
@@ -144,7 +145,7 @@ export const shopRevisionApi = createApi({
         if (typeof response?.count === 'number') return response.count;
         return 0;
       },
-      providesTags: ["ShopRevision"],
+      providesTags: ["ShopRevision", AUTO_REFRESH],
     }),
 
 

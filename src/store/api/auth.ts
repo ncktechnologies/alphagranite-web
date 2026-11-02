@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { axiosBaseQuery } from "@/services/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
+import { AUTO_REFRESH } from "./auto-refresh";
 import type { 
   LoginRequest,
   LoginResponse,
@@ -24,7 +25,7 @@ const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`
 export const authApi = createApi({
     reducerPath: "authApi",
     baseQuery: axiosBaseQuery({baseUrl}),
-    tagTypes: ["User"],
+    tagTypes: ["User", AUTO_REFRESH],
     keepUnusedDataFor: 0,
     endpoints(build) {
         return {
@@ -60,14 +61,16 @@ export const authApi = createApi({
                     url: "/admin/platform/dashboard/stats", 
                     method: "get"
                 }),
-                transformResponse: (response: any) => response.data || response
+                transformResponse: (response: any) => response.data || response,
+                providesTags: [AUTO_REFRESH]
             }),
             getRoleBasedDashboard: build.query<any, void>({
                 query: () => ({
                     url: "/dashboard/role-based",
                     method: "get"
                 }),
-                transformResponse: (response: any) => response.data || response
+                transformResponse: (response: any) => response.data || response,
+                providesTags: [AUTO_REFRESH]
             }),
             forgotPassword: build.mutation<any, ForgotPasswordRequest>({
                 query: (data) => ({ url: "/users/forgot_password", method: "post", data })

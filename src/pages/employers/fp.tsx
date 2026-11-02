@@ -65,7 +65,7 @@ export function FinalProgrammingPage() {
   ]);
 
   // Fetch data with backend pagination and filtering
-  const { data, isLoading, isFetching } = useGetFabsByStageQuery({
+  const { data, currentData, isLoading, isFetching } = useGetFabsByStageQuery({
     stage_name: 'final_programming',
     params: queryParams,
   });
@@ -89,7 +89,7 @@ export function FinalProgrammingPage() {
         <FinalProgrammingTable
           data={data?.data || []}
           totalRecords={data?.total || 0}
-          isLoading={isLoading || isFetching}
+          isLoading={isLoading || (isFetching && !currentData)}
           onRowClick={handleRowClick}
           tableState={tableState}
         />

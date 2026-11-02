@@ -34,10 +34,12 @@ function DashboardSkeleton() {
 }
 
 export function Demo1LightSidebarContent({ timePeriod }: IDemo1LightSidebarContentProps) {
-  const { data: dashboardData, isLoading, isFetching, isError, refetch } = useGetAdminDashboardQuery(
+  const { data: dashboardData, currentData, isLoading, isFetching: isFetchingAny, isError, refetch } = useGetAdminDashboardQuery(
     { time_period: timePeriod || 'all' },
     { skip: false },
   );
+  // Dim only while switching time period; background refreshes update quietly
+  const isFetching = isFetchingAny && !currentData;
 
   if (isLoading) return <DashboardSkeleton />;
 

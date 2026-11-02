@@ -125,11 +125,13 @@ export function OperatorDashboard() {
             { skip: !currentEmployeeId }
         );
 
-    const { data: tasksData, isLoading: isTasksLoading, isFetching: isTasksFetching } =
+    const { data: tasksData, currentData: currentTasks, isLoading: isTasksLoading, isFetching } =
         useGetCurrentOperatorTasksQuery(
             { view: viewMode, reference_date: format(currentDate, 'yyyy-MM-dd') },
             { skip: !currentEmployeeId }
         );
+    // Only a new day/week shows the overlay; background refreshes update the calendar quietly
+    const isTasksFetching = isFetching && !currentTasks;
 
     // ─── Display days ────────────────────────────────────────────────────────
     const displayDays = useMemo(() => {

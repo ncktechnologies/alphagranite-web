@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { axiosBaseQuery } from "@/services/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
+import { AUTO_REFRESH, autoRefreshUnlessLookup } from "./auto-refresh";
 
 // const baseUrl = "https://alpha-granite.xyz-ntrinsic.com";
 const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`
@@ -910,7 +911,7 @@ const searchableListOptions = { keepUnusedDataFor: 120, forceRefetch: () => true
 export const jobApi = createApi({
     reducerPath: "jobApi",
     baseQuery: axiosBaseQuery({ baseUrl: `${baseUrl}/api/v1` }),
-    tagTypes: ["Job", "Fab", "FabType", "Account", "StoneType", "StoneColor", "StoneThickness", "Edge", "Drafting", "CNC"],
+    tagTypes: ["Job", "Fab", "FabType", "Account", "StoneType", "StoneColor", "StoneThickness", "Edge", "Drafting", "CNC", AUTO_REFRESH],
     keepUnusedDataFor: 0,
     endpoints(build) {
         return {
@@ -938,7 +939,7 @@ export const jobApi = createApi({
                     };
                 },
                 transformResponse: (response: any) => response.data || response,
-                providesTags: ["Job"],
+                providesTags: autoRefreshUnlessLookup(["Job"]),
             }),
 
             // Add this new endpoint for getting jobs by account
@@ -1078,7 +1079,7 @@ export const jobApi = createApi({
                     }
                     return { data: [], total: 0 };
                 },
-                providesTags: ["Fab"],
+                providesTags: autoRefreshUnlessLookup(["Fab"]),
             }),
 
             getFabById: build.query<Fab, number>({
@@ -1096,7 +1097,7 @@ export const jobApi = createApi({
                     method: "get"
                 }),
                 transformResponse: (response: any) => response.data || response,
-                providesTags: ["Fab"],
+                providesTags: ["Fab", AUTO_REFRESH],
             }),
 
             getFabsByStage: build.query<{ data: Fab[]; total: number }, { stage_name: string; params?: any }>({
@@ -1133,7 +1134,7 @@ export const jobApi = createApi({
                     }
                     return { data: [], total: 0 };
                 },
-                providesTags: ["Fab"],
+                providesTags: ["Fab", AUTO_REFRESH],
             }),
 
             getFabsInFinalProgrammingPending: build.query<Fab[], { drafter_id?: number } | void>({
@@ -1145,7 +1146,7 @@ export const jobApi = createApi({
                     ...(params && params.drafter_id !== undefined && { params: { drafter_id: params.drafter_id } }),
                 }),
                 transformResponse: (response: any) => response.data || response,
-                providesTags: ["Fab"],
+                providesTags: ["Fab", AUTO_REFRESH],
             }),
             getFabsInSlabSmithPending: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
                 ...searchableListOptions,
@@ -1197,7 +1198,7 @@ export const jobApi = createApi({
                     };
                 },
                 transformResponse: (response: any) => response.data || response,
-                providesTags: ["Fab"],
+                providesTags: ["Fab", AUTO_REFRESH],
             }),
             getFabsInResurfacing: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
                 ...searchableListOptions,
@@ -1247,7 +1248,7 @@ export const jobApi = createApi({
                     };
                 },
                 transformResponse: (response: any) => response.data || response,
-                providesTags: ["Fab"],
+                providesTags: ["Fab", AUTO_REFRESH],
             }),
             getFabsCompletion: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
                 ...searchableListOptions,
@@ -1298,7 +1299,7 @@ export const jobApi = createApi({
                     };
                 },
                 transformResponse: (response: any) => response.data || response,
-                providesTags: ["Fab"],
+                providesTags: ["Fab", AUTO_REFRESH],
             }),
             getFabsCnc: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
                 ...searchableListOptions,
@@ -1349,7 +1350,7 @@ export const jobApi = createApi({
                     };
                 },
                 transformResponse: (response: any) => response.data || response,
-                providesTags: ["Fab"],
+                providesTags: ["Fab", AUTO_REFRESH],
             }),
             getFabsCostOfStone: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
                 ...searchableListOptions,
@@ -1399,7 +1400,7 @@ export const jobApi = createApi({
                     };
                 },
                 transformResponse: (response: any) => response.data || response,
-                providesTags: ["Fab"],
+                providesTags: ["Fab", AUTO_REFRESH],
             }),
             createFab: build.mutation<Fab, FabCreate>({
                 query: (data) => ({
@@ -1707,7 +1708,7 @@ export const jobApi = createApi({
                     method: "get",
                     params: params || {}
                 }),
-                providesTags: ["Job", "Fab"],
+                providesTags: ["Job", "Fab", AUTO_REFRESH],
             }),
 
             // Create Account
@@ -2140,7 +2141,8 @@ export const jobApi = createApi({
                     method: "get"
                 }),
                 transformResponse: (response: any) => response.data || response,
-                providesTags: ["Job"],
+                // Stage counts change when FABs move, so FAB saves refresh them too
+                providesTags: ["Job", "Fab", AUTO_REFRESH],
             }),
 
             // Sales CT endpoints
@@ -2535,7 +2537,7 @@ export const jobApi = createApi({
                     }
                 }),
                 transformResponse: (response: any) => response.data || response,
-                providesTags: ["Job"],
+                providesTags: ["Job", AUTO_REFRESH],
             }),
 
             // Toggle Need To Invoice endpoint

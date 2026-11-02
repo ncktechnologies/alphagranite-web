@@ -504,8 +504,10 @@ const ShopCalendarPage: React.FC = () => {
   const {
     currentData: plansResponse,
     isLoading,
-    isFetching,
+    isFetching: isFetchingAny,
   } = useGetAllShopPlansQuery(queryParams);
+  // Background refreshes keep the current plans on screen, so only new args count as fetching
+  const isFetching = isFetchingAny && !plansResponse;
 
   const flatPlans = useMemo(
     () => plansResponse?.data?.plans ?? plansResponse?.plans ?? [],

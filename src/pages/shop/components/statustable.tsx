@@ -377,7 +377,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     }), [searchQuery, fabTypeFilter, currentPage, itemsPerPage]);
 
     // Poll so timers started or paused by operators show up without a reload.
-    const { data: fabsData, isLoading: isApiLoading, refetch: refetchFabs } = useGetFabsQuery(queryParams, { pollingInterval: 60_000 });
+    const { data: fabsData, isLoading: isApiLoading, refetch: refetchFabs } = useGetFabsQuery(queryParams);
 
     // ─── Shop cut plan timers ─────────────────────────────────────────────────
     const [manageTimer] = useManageShopPlanTimerMutation();
