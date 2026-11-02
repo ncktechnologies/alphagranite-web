@@ -194,8 +194,9 @@ const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onS
             toast.success('Shop est. completion date updated.');
             setIsEditing(false);
             onSaved();
-        } catch {
-            // toast.error('Failed to update date.');
+        } catch (error: any) {
+            // e.g. "Missing plans: EDGING, HANDWORK" when required shop activities aren't planned yet
+            toast.error(error?.data?.message || error?.data?.detail?.message || 'Failed to update date.');
         } finally {
             setIsSaving(false);
         }
