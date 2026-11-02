@@ -1504,7 +1504,8 @@ export const JobSalesTable = ({
                                         onChange={e => setSearchQuery(e.target.value)}
                                         className="ps-9 w-[230px] h-[34px] rounded-s-none"
                                     />
-                                    {searchQuery && (
+                                    {/* Hidden while the search results load, so clearing works straight away */}
+                                    {searchQuery && !isLoading && (
                                         <Button
                                             mode="icon"
                                             variant="ghost"
