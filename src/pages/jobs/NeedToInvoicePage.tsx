@@ -82,6 +82,7 @@ interface ExtendedJob extends Omit<Job, 'project_value'> {
   account_id?: number;
   need_to_invoice?: boolean;
   notes?: string | Array<{ note: string }>;
+  description?: string | null;
   invoiced_at?: string;
 }
 
@@ -258,6 +259,20 @@ export const NeedToInvoicePage = () => {
       cell: ({ row }) => <span className="text-sm text-text">{row.original.name}</span>,
       enableSorting: true,
       size: 200,
+      meta: { format: (value: string) => value || '' },
+    },
+    {
+      // business_jobs.description, labelled "Job Note" (same as Manage Jobs)
+      id: 'description',
+      accessorFn: (row) => row.description || '',
+      header: ({ column }) => <DataGridColumnHeader title="JOB NOTE" column={column} />,
+      cell: ({ row }) => (
+        <span className="text-xs line-clamp-2" title={row.original.description || undefined}>
+          {row.original.description || '-'}
+        </span>
+      ),
+      enableSorting: true,
+      size: 220,
       meta: { format: (value: string) => value || '' },
     },
     {

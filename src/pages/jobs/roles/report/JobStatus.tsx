@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import React, { useMemo, useState } from 'react';
 import {
     ColumnDef,
@@ -141,6 +142,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
     const queryParams = useMemo(() => ({
         skip: pagination.pageIndex * pagination.pageSize,
         limit: pagination.pageSize,
+        sort_by: 'job_number_desc' as const, // highest job number first, across all pages
         ...(searchQuery && { search: searchQuery }),
         ...(fabTypeFilter !== 'all' && { fab_type: fabTypeFilter }),
         ...(salesPersonFilter !== 'all' && { sales_person_id: Number(salesPersonFilter) }),
@@ -254,7 +256,11 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             id: 'fab_id',
             accessorKey: 'fab_id',
             header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
-            cell: ({ row }) => <span className="text-xs font-medium hover:underline cursor-pointer">{row.original.fab_id}</span>,
+            cell: ({ row }) => (
+                <Link to={`/sales/${row.original.fab_id}`} className="text-xs font-medium text-primary hover:underline">
+                    {row.original.fab_id}
+                </Link>
+            ),
             enableSorting: true,
             size: 80,
             meta: { format: (value: string) => value || '' },

@@ -89,6 +89,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Dark mode: muted/secondary text is too dim on fab-type tinted rows. Unlayered so it
+   outranks the text utilities. */
+.dark [data-fab-type] .text-muted-foreground,
+.dark [data-fab-type] .text-secondary-foreground {
+  color: color-mix(in oklab, var(--foreground) 82%, transparent);
+}
+
 /* Table density — "comfortable" (default) adds breathing room; "compact" keeps the original tight rows */
 html:not([data-density='compact']) [data-slot='data-grid-table']:not([data-dense]) > tbody > tr > td {
   padding-top: 0.625rem;

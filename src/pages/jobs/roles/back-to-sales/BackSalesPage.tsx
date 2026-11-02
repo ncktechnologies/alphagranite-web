@@ -13,6 +13,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useIsSuperAdmin, usePermission } from '@/hooks/use-permission'; // 👈 import usePermission
 
+const latestDate = (...dates: (string | null | undefined)[]) =>
+    dates.filter((d): d is string => !!d).sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
     if (!dateString) return '-';
@@ -36,7 +39,8 @@ const transformFabToJob = (fab: Fab): IJob => {
         fab_id: String(fab.id),
         job_name: `${fab.job_details?.name || ''}`,
         job_no: String(fab.job_details?.job_number || ''),
-        date: fab.draft_completed_date || '',
+        // Back from a revision: show/group by when the revision was submitted, not the original draft.
+        date: latestDate((fab as any).revision_submitted_date, fab.draft_completed_date) || '',
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
         // Optional fields with default values
@@ -105,7 +109,9 @@ export function AfterDraftSalesPage() {
         tableId: 'sct-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
-        persistState: false,
+        // Back from View Details returns to the same sales person filter/page (this tab only).
+        persistState: true,
+        persistIn: 'session',
     });
 
     // Calculate skip value for pagination

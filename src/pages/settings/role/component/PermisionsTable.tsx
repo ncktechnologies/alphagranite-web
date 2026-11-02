@@ -179,6 +179,11 @@ export const PermissionsTable = ({
   const handlePermissionChange = (module: string, action: string, checked: boolean) => {
     // 1. Update the requested permission
     onPermissionChange(module, action, checked);
+    // Write means full write access: keep update/delete in step with it.
+    if (action === 'create') {
+      onPermissionChange(module, 'update', checked);
+      onPermissionChange(module, 'delete', checked);
+    }
 
     // 2. If Write is enabled, also enable Read for the same module
     if (action === 'create' && checked) {

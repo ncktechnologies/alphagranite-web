@@ -7,6 +7,7 @@ import { Container } from '@/components/common/container';
 import { useGetFabsQuery, Fab, useGetFabsInSlabSmithPendingQuery } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
+import { useDrafterFilter } from '@/hooks/use-drafter-filter';
 import { useMemo, useState } from 'react';
 import  AssignSlabSmithOperatorModal  from './components/AssignSlabSmithOperatorModal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -106,6 +107,9 @@ const SlabSmithPage = () => {
         defaultDateFilter: 'all',
         persistState: false,
     });
+    const { drafters, drafterFilter, setDrafterFilter, filterValue: drafterId } = useDrafterFilter(
+        () => tableState.setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    );
 
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
 
@@ -138,8 +142,11 @@ const SlabSmithPage = () => {
             }
         }
         // console.log('Slab Smith Query Params:', params);
+        // Latest assignee for this stage; 0 = unassigned.
+        if (drafterId !== undefined) params.slabsmith_operator_id = drafterId;
         return params;
     }, [
+        drafterId,
         skip,
         tableState.pagination.pageSize,
         tableState.searchQuery,
@@ -245,6 +252,10 @@ const SlabSmithPage = () => {
                         useBackendPagination={true}
                         tableState={tableState}
                         showSalesPersonFilter={false}
+                showDrafterFilter
+                drafters={drafters}
+                drafterFilter={drafterFilter}
+                setDrafterFilter={setDrafterFilter}
                         showScheduleFilter={false}
                         salesPersons={salesPersons}
                         enableMultiSelect

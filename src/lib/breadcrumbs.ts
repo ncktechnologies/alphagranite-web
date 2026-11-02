@@ -20,7 +20,14 @@ const isOpaqueId = (segment: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment) ||
   /^[0-9a-f]{16,}$/i.test(segment);
 
+/** URL slugs whose page goes by a different name. */
+const SEGMENT_LABELS: Record<string, string> = {
+  'draft-review': 'SCT',
+};
+
 export function humanizeSegment(segment: string): string {
+  const label = SEGMENT_LABELS[segment.toLowerCase()];
+  if (label) return label;
   const words = decodeURIComponent(segment)
     .replace(/[-_]+/g, ' ')
     .trim()

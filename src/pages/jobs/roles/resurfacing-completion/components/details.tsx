@@ -101,8 +101,8 @@ export function ResurfacingStatusDetailsPage() {
           return {
             id: noteItem?.id ?? index,
             avatar: fabAuthorName?.charAt(0).toUpperCase() || 'U',
-            avatarUrl: note.created_by_profile_image_url,
-            content: note?.note || '',
+            avatarUrl: noteItem?.created_by_profile_image_url,
+            content: noteContent,
             author: fabAuthorName || 'Unknown',
             timestamp: fab?.created_at ? new Date(fab.created_at).toLocaleDateString() : 'Unknown date',
             category: config.label,

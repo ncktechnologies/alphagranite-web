@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useTableState } from '@/hooks/use-table-state';
+import { useDrafterFilter } from '@/hooks/use-drafter-filter';
 import { AssignDrafterModal } from '../drafters/components/AssignDrafterModal';
 
 const transformFabToJob = (fab: Fab): IJob => {
@@ -88,6 +89,9 @@ const FinalProgrammingPage = () => {
         defaultDateFilter: 'all',
         persistState: false,
     });
+    const { drafters, drafterFilter, setDrafterFilter, filterValue: drafterId } = useDrafterFilter(
+        () => tableState.setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    );
 
     // Calculate skip value for pagination
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
@@ -134,7 +138,9 @@ const FinalProgrammingPage = () => {
     ]);
 
     // Fetch data – currently using a hook that doesn't accept queryParams
-    const { data, isLoading, isFetching, isError, error, currentData } = useGetFabsInFinalProgrammingPendingQuery();
+    const { data, isLoading, isFetching, isError, error, currentData } = useGetFabsInFinalProgrammingPendingQuery(
+        drafterId !== undefined ? { final_programmer_id: drafterId } : undefined
+    );
 
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -231,6 +237,10 @@ const FinalProgrammingPage = () => {
                     path='final-programming'
                     isLoading={isFetching && !currentData}
                     showSalesPersonFilter={true}
+                showDrafterFilter
+                drafters={drafters}
+                drafterFilter={drafterFilter}
+                setDrafterFilter={setDrafterFilter}
                     salesPersons={salesPersons}
                     visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'wj_time_minutes', 'final_programming_notes', 'final_programming_completed', 'drafter', 'timer_status']}
                     timerStatusTitle="PROGRAMMING Status"

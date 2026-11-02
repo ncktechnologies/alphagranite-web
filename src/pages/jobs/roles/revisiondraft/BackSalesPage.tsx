@@ -6,6 +6,7 @@ import { IJob } from '../../components/job';
 import { useGetFabsQuery, Fab } from '@/store/api/job';
 import { useGetEmployeeSalesPersonsQuery, useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
+import { useDrafterFilter } from '@/hooks/use-drafter-filter';
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router';
@@ -84,6 +85,9 @@ export function DraftRevisionPage() {
         defaultDateFilter: 'all',
         persistState: false,
     });
+    const { drafters, drafterFilter, setDrafterFilter, filterValue: drafterId } = useDrafterFilter(
+        () => tableState.setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    );
 
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
 
@@ -116,8 +120,11 @@ export function DraftRevisionPage() {
             }
         }
         console.log('Revision Query Params:', params);
+        // Latest assignee for this stage; 0 = unassigned.
+        if (drafterId !== undefined) params.revisor_id = drafterId;
         return params;
     }, [
+        drafterId,
         skip,
         tableState.pagination.pageSize,
         tableState.searchQuery,
@@ -240,6 +247,10 @@ export function DraftRevisionPage() {
                 totalRecords={data?.total || 0}
                 tableState={tableState}
                 showSalesPersonFilter={true}
+                showDrafterFilter
+                drafters={drafters}
+                drafterFilter={drafterFilter}
+                setDrafterFilter={setDrafterFilter}
                 salesPersons={salesPersons}
                 enableMultiSelect
                 selectedRows={selectedRows}

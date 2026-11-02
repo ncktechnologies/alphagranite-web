@@ -76,6 +76,15 @@ export interface UpdateSlaRuleDto {
 }
 
 
+export interface CompletedWorkReportParams {
+    department: 'cad' | 'cnc' | 'slabsmith' | 'final_programming';
+    start_date?: string;
+    end_date?: string;
+    employee_id?: number;
+    search?: string;
+    search_type?: 'fab_id' | 'job_name' | 'job_number' | 'account_name';
+}
+
 export const reportApi = createApi({
     reducerPath: "reportApi",
     baseQuery: axiosBaseQuery({ baseUrl }),
@@ -451,6 +460,13 @@ export const reportApi = createApi({
                 }),
                 invalidatesTags: ["Report"],
             }),
+            getCompletedWorkReport: build.query<any, CompletedWorkReportParams>({
+                query: (params) => ({
+                    url: '/api/v1/reports/completed-work',
+                    method: 'get',
+                    params: Object.fromEntries(Object.entries({ limit: 5000, ...params }).filter(([, v]) => v !== undefined && v !== '')),
+                }),
+            }),
             getRevisionReport: build.query<any, { year?: number; month?: number; start_date?: string; end_date?: string; fab_type?: string } | void>({
                 query: (params) => {
                     const searchParams = new URLSearchParams();
@@ -473,6 +489,7 @@ export const reportApi = createApi({
 });
 
 export const {
+    useGetCompletedWorkReportQuery,
     useGetReportRedosQuery,
     useGetWeeklyFabricationLaborCostQuery,
     useGetWeeklyInstallerLaborCostQuery,

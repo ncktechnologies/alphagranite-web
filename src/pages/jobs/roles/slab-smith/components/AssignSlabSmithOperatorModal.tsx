@@ -185,7 +185,7 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
           {/* FAB List (read-only) */}
           {fabIdsToAssign.length > 0 && (
             <div className="space-y-2">
-              <label className="text-xs font-medium text-[#7e8299]">FAB ID(s)</label>
+              <label className="text-xs font-medium text-muted-foreground">FAB ID(s)</label>
               <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-[6px] max-h-32 overflow-y-auto">
                 {fabIdsToAssign.map(fabId => (
                   <span

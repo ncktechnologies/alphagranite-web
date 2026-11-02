@@ -602,6 +602,46 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             },
         },
         {
+            // Notes entered on Resurfacing Status (saved under the "resurfacing" stage)
+            id: 'resurfacing_notes',
+            accessorFn: r => {
+                const notes = Array.isArray(r.fab_notes)
+                    ? r.fab_notes.filter((note: any) => note.stage === 'resurfacing')
+                    : [];
+                return notes.map((note: any) => note.note).join(' | ');
+            },
+            header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
+            cell: ({ row }) => {
+                const notes = Array.isArray(row.original.fab_notes)
+                    ? row.original.fab_notes.filter((note: any) => note.stage === 'resurfacing')
+                    : [];
+
+                if (notes.length === 0) {
+                    return <span className="text-xs text-muted-foreground italic">No notes</span>;
+                }
+
+                const latest = notes[0];
+                return (
+                    <div className="text-xs max-w-xs" title={latest.note}>
+                        <div className="font-medium truncate">{latest.note}</div>
+                        <div className="text-muted-foreground text-xs">by {latest.created_by_name || 'Unknown'}</div>
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 220,
+            meta: {
+                format: (value, row) => {
+                    const notes = Array.isArray(row.fab_notes)
+                        ? row.fab_notes.filter((n: any) => n.stage === 'resurfacing')
+                        : [];
+                    if (notes.length === 0) return 'No notes';
+                    const latest = notes[0];
+                    return `${latest.note} (by ${latest.created_by_name || 'Unknown'})`;
+                },
+            },
+        },
+        {
             id: 'shop_fab_notes',
             accessorFn: r => {
                 const shopNotes = Array.isArray(r.fab_notes)

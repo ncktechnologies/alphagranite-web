@@ -388,16 +388,16 @@ export const CutListTableWithCalculations = ({
                         <div className="flex gap-4 text-xs max-w-[400px]">
                             {jobInfo.length > 0 && (
                                 <div className="flex-1 min-w-0">
-                                    <div className=" text-gray-600" title={jobInfo.join(' - ')}>{jobInfo.join(' - ')}</div>
+                                    <div className="text-secondary-foreground" title={jobInfo.join(' - ')}>{jobInfo.join(' - ')}</div>
                                     {stoneInfo.length > 0 && (
-                                        <div className=" text-gray-600" title={stoneInfo.join(' - ')}>{stoneInfo.join(' - ')}</div>
+                                        <div className="text-secondary-foreground" title={stoneInfo.join(' - ')}>{stoneInfo.join(' - ')}</div>
                                     )}
                                 </div>
                             )}
                             {materialInfo.length > 0 && (
                                 <div className="shrink-0 max-w-[45%] text-right">
                                     {materialInfo.map((info, idx) => (
-                                        <div key={idx} className=" text-gray-600" title={info}>{info}</div>
+                                        <div key={idx} className="text-secondary-foreground" title={info}>{info}</div>
                                     ))}
                                 </div>
                             )}

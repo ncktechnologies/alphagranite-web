@@ -330,6 +330,49 @@ export function SalesDetailsPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* ─── Shop Revision History (read‑only) ─────────────────────── */}
+          {(fab?.shop_revisions?.length ?? 0) > 0 && (
+            <Card>
+              <CardHeader className="border-b pb-4">
+                <CardHeading>
+                  <CardTitle>Shop Revision History</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {fab.shop_revisions.length} revision{fab.shop_revisions.length !== 1 ? 's' : ''}
+                  </p>
+                </CardHeading>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                {fab.shop_revisions.map((revision: any) => (
+                  <div
+                    key={revision.id}
+                    className={`rounded-md border p-3 ${revision.revision_completed ? 'border-border' : 'border-orange-300'}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-sm">Revision #{revision.id}</p>
+                      <span className={`text-xs ${revision.revision_completed ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
+                        {revision.revision_completed ? 'Completed' : 'Pending'}
+                      </span>
+                    </div>
+                    {revision.shop_revision_type && (
+                      <p className="text-sm text-muted-foreground mt-1">{revision.shop_revision_type}</p>
+                    )}
+                    <p className="text-sm text-secondary-foreground mt-1">{revision.revision_note || 'No note provided.'}</p>
+                    {revision.revision_feedback && (
+                      <p className="text-sm text-foreground mt-1">
+                        <span className="font-medium">Feedback:</span> {revision.revision_feedback}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Requested by {revision.requested_by_name || 'Unknown'}
+                      {revision.created_at && ` on ${new Date(revision.created_at).toLocaleDateString()}`}
+                      {revision.completed_at && ` · Completed ${new Date(revision.completed_at).toLocaleDateString()}`}
+                    </p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </main>
       </div>
     </div>

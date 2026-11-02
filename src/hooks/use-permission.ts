@@ -70,18 +70,23 @@ export const usePermission = (menuCode: string) => {
     can_delete: false,
   };
 
+  // Roles only have Read and Write; Write (can_create) also covers update and delete,
+  // matching the API's permission check.
+  const canUpdate = !!(menuPermissions.can_update || menuPermissions.can_create);
+  const canDelete = !!(menuPermissions.can_delete || menuPermissions.can_create);
+
   return {
     // Original format (snake_case)
     can_create: menuPermissions.can_create,
     can_read: menuPermissions.can_read,
-    can_update: menuPermissions.can_update,
-    can_delete: menuPermissions.can_delete,
+    can_update: canUpdate,
+    can_delete: canDelete,
     
     // Camel case aliases for convenience
     canCreate: menuPermissions.can_create,
     canRead: menuPermissions.can_read,
-    canUpdate: menuPermissions.can_update,
-    canDelete: menuPermissions.can_delete,
+    canUpdate,
+    canDelete,
     
     // Helper flags
     hasAnyPermission: Object.values(menuPermissions).some(p => p),

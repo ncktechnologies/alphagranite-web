@@ -421,7 +421,22 @@ export interface FabListParams {
     sct_completed_end?: string | null;
     user_level?: string;
     plan_view?: string; // Add plan_view filter for shop status
+    /** 0 = FABs with no drafter assigned */
+    drafter_id?: number;
+    /** Widget person filters (latest assignee for that stage); 0 = unassigned */
+    revisor_id?: number;
+    cnc_operator_id?: number;
+    slabsmith_operator_id?: number;
+    sort_by?: 'fab_id_desc' | 'job_number_desc';
 }
+
+/** Forward whichever person filters are set; 0 is a real value (unassigned). */
+const assigneeParams = (p: FabListParams) =>
+    Object.fromEntries(
+        (['revisor_id', 'cnc_operator_id', 'slabsmith_operator_id'] as const)
+            .filter((key) => p[key] !== undefined)
+            .map((key) => [key, p[key]])
+    );
 
 export interface TemplatingSchedule {
     fab_id: number;
@@ -1031,6 +1046,9 @@ export const jobApi = createApi({
                             ...(queryParams.sct_completed_end && { sct_completed_end: queryParams.sct_completed_end }),
                             ...(queryParams.type && { type: queryParams.type }),
                             ...(queryParams.user_level && { user_level: queryParams.user_level }),
+                            ...(queryParams.drafter_id !== undefined && { drafter_id: queryParams.drafter_id }),
+                            ...(queryParams.sort_by && { sort_by: queryParams.sort_by }),
+                            ...assigneeParams(queryParams),
                         }
                     };
                 },
@@ -1112,10 +1130,12 @@ export const jobApi = createApi({
                 providesTags: ["Fab"],
             }),
 
-            getFabsInFinalProgrammingPending: build.query<Fab[], void>({
-                query: () => ({
+            getFabsInFinalProgrammingPending: build.query<Fab[], { final_programmer_id?: number } | void>({
+                query: (params) => ({
                     url: "/stages/final_programming/pending",
-                    method: "get"
+                    method: "get",
+                    // 0 = no final programmer assigned
+                    ...(params && params.final_programmer_id !== undefined && { params: { final_programmer_id: params.final_programmer_id } }),
                 }),
                 transformResponse: (response: any) => response.data || response,
                 providesTags: ["Fab"],
@@ -1129,6 +1149,7 @@ export const jobApi = createApi({
                         params: {
                             skip: queryParams.skip || 0,
                             limit: queryParams.limit || 100,
+                            ...assigneeParams(queryParams),
                             // Existing filters
                             ...(queryParams.job_id !== undefined && { job_id: queryParams.job_id }),
                             ...(queryParams.fab_type && { fab_type: queryParams.fab_type }),
@@ -1278,6 +1299,7 @@ export const jobApi = createApi({
                         params: {
                             skip: queryParams.skip || 0,
                             limit: queryParams.limit || 100,
+                            ...assigneeParams(queryParams),
                             // Existing filters
                             ...(queryParams.job_id !== undefined && { job_id: queryParams.job_id }),
                             ...(queryParams.fab_type && { fab_type: queryParams.fab_type }),

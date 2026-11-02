@@ -1,3 +1,4 @@
+import { CompletedWorkReport } from '@/pages/reports/CompletedWorkReport';
 import { AuthRouting } from '@/auth/auth-routing';
 import { RequireAuth } from '@/auth/require-auth';
 import { ErrorRouting } from '@/errors/error-routing';
@@ -458,6 +459,7 @@ export function AppRoutingSetup() {
           {/* Reports Route */}
           <Route path="/report" element={<ReportsPage />} />
           <Route path="/report/installer-rates" element={<InstallerRatesReport />} />
+          <Route path="/report/completed-work" element={<CompletedWorkReport />} />
           <Route path="/performance/redos" element={<RedosReport />} />
           <Route path="/report/weekly-fabrication-cost" element={<WeeklyFabricationCostReport />} />
           <Route path="/report/weekly-installer-cost" element={<WeeklyInstallerCostReport />} />

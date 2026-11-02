@@ -103,7 +103,7 @@ export const JOB_STAGES = {
     DRAFT_REVIEW: {
         stage: 'draft_review',
         route: '/job/draft-review',
-        title: 'Draft Review',
+        title: 'SCT',
     },
     REVISION: {
         stage: 'revision',

@@ -51,7 +51,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         total_sq_ft: String(fab.total_sqft),
         revenue: '',
         revised: '',
-        sct_completed: '',
+        sct_completed: (fab as any).sct_completed_date || '',
         draft_completed: '',
         gp: '',
         stone_type_name: fab.stone_type_name || '',
@@ -94,7 +94,7 @@ export function SalesPage() {
     }, [salesPersonsData]);
 
     const tableState = useTableState({
-        tableId: 'sct-table',
+        tableId: 'view-all-fabs-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
         // Back from a FAB returns to the same filters/page (this tab only).
@@ -108,6 +108,7 @@ export function SalesPage() {
         const params: any = {
             skip,
             limit: tableState.pagination.pageSize,
+            sort_by: 'fab_id_desc', // newest FABs first
         };
         if (statusFilter !== 'all') params.status_id = statusFilter === 'active' ? 1 : 0;
         if (tableState.searchQuery) {

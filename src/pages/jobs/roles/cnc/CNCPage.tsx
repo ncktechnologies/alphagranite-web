@@ -8,6 +8,7 @@ import { Container } from '@/components/common/container';
 import { useGetFabsQuery, Fab, useGetFabsCncQuery } from '@/store/api/job';
 import { useGetEmployeeSalesPersonsQuery, useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
+import { useDrafterFilter } from '@/hooks/use-drafter-filter';
 import { useMemo, useState } from 'react';
 import { AssignDrafterModal } from './components/AssignDrafterModal';
 import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
@@ -82,6 +83,9 @@ const CNCPage = () => {
         defaultDateFilter: 'all',
         persistState: false,
     });
+    const { drafters, drafterFilter, setDrafterFilter, filterValue: drafterId } = useDrafterFilter(
+        () => tableState.setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    );
 
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
 
@@ -113,8 +117,11 @@ const CNCPage = () => {
                 params.date_filter = tableState.dateFilter;
             }
         }
+        // Latest assignee for this stage; 0 = unassigned.
+        if (drafterId !== undefined) params.cnc_operator_id = drafterId;
         return params;
     }, [
+        drafterId,
         skip,
         tableState.pagination.pageSize,
         tableState.searchQuery,
@@ -187,6 +194,10 @@ const CNCPage = () => {
                 totalRecords={data?.total || 0}
                 tableState={tableState}
                 showSalesPersonFilter
+                showDrafterFilter
+                drafters={drafters}
+                drafterFilter={drafterFilter}
+                setDrafterFilter={setDrafterFilter}
                 salesPersons={salesPersons}
                 enableMultiSelect
                 selectedRows={selectedRows}
