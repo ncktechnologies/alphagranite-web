@@ -86,7 +86,9 @@ export function UniversalUpload({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   // Initialize with default values if provided (useful when dropdowns are shown)
-  const [selectedStage, setSelectedStage] = useState<string>(defaultStage || '');
+  // With a single stage option there is nothing to choose, so preselect it.
+  const initialStage = defaultStage || (stages.length === 1 ? stages[0].value : '');
+  const [selectedStage, setSelectedStage] = useState<string>(initialStage);
   const [selectedFileDesign, setSelectedFileDesign] = useState<string>(defaultFileType || '');
 
   const { t, translateStage, translateFileType, translateFileLabel } = useTranslation();
@@ -99,10 +101,10 @@ export function UniversalUpload({
 
   // Update selected stage if defaultStage changes (rare, but ensures consistency)
   useEffect(() => {
-    if (defaultStage !== undefined && selectedStage === '') {
-      setSelectedStage(defaultStage);
+    if (initialStage && selectedStage === '') {
+      setSelectedStage(initialStage);
     }
-  }, [defaultStage, selectedStage]);
+  }, [initialStage, selectedStage]);
 
   useEffect(() => {
     if (defaultFileType !== undefined && selectedFileDesign === '') {
@@ -219,7 +221,7 @@ export function UniversalUpload({
       });
 
       // Reset selections after successful upload (but keep defaults for next upload)
-      if (showStageSelect) setSelectedStage(defaultStage || '');
+      if (showStageSelect) setSelectedStage(initialStage);
       if (showFileTypeSelect) setSelectedFileDesign(defaultFileType || '');
 
       onUploadComplete?.();

@@ -106,7 +106,7 @@ const CostOfStonePage = () => {
         tableState.dateRange,
     ]);
 
-    const { data, isLoading, refetch } = useGetFabsCostOfStoneQuery(queryParams);
+    const { data, refetch, isFetching, currentData } = useGetFabsCostOfStoneQuery(queryParams);
     const rawData = data?.data || [];
     const totalRecords = data?.total || 0;
 
@@ -129,7 +129,7 @@ const CostOfStonePage = () => {
             <JobTable
                 jobs={jobsData as IJob[]}
                 path="cost-of-stone"
-                isLoading={isLoading && !data}
+                isLoading={isFetching && !currentData}
                 useBackendPagination
                 totalRecords={totalRecords}
                 tableState={tableState}

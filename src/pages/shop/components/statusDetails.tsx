@@ -1356,6 +1356,11 @@ const FabDetailsPage = () => {
                                                 </span>
                                             </div>
                                             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{revision.revision_note || 'No note provided.'}</p>
+                                            {revision.revision_feedback && (
+                                                <p className="text-sm text-foreground mt-1 line-clamp-2">
+                                                    <span className="font-medium">Feedback:</span> {revision.revision_feedback}
+                                                </p>
+                                            )}
                                             <p className="text-xs text-placeholder mt-1">Requested by: {revision.requested_by_name || revision.requested_by || 'Unknown'}</p>
                                         </button>
                                     ))}

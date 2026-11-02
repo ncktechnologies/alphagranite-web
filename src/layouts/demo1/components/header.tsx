@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { UserDropdownMenu } from '@/partials/topbar/user-dropdown-menu';
+import { NotificationsBell } from '@/partials/topbar/notifications-bell';
 import { ChevronDown, Keyboard, Menu, Search } from 'lucide-react';
 import { useLocation } from 'react-router';
 import { Link } from 'react-router-dom';
@@ -179,6 +180,8 @@ export function Header() {
               <TooltipContent>Keyboard shortcuts (?)</TooltipContent>
             </Tooltip>
           )}
+
+          <NotificationsBell />
 
           <span className="hidden lg:block h-6 w-px bg-border" aria-hidden />
 

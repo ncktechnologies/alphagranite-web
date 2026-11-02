@@ -137,7 +137,7 @@ export function PredraftPage() {
         salesPersons
     ]);
 
-    const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
+    const { data, isLoading, isFetching, isError, error, currentData } = useGetFabsQuery(queryParams);
 
     const handleRowClick = (fabId: string) => {
         navigate(`/job/predraft/${fabId}`);
@@ -188,7 +188,7 @@ export function PredraftPage() {
             <JobTable
                 jobs={jobsData}
                 path='predraft'
-                isLoading={isLoading && !data}
+                isLoading={isFetching && !currentData}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}
                 tableState={tableState}

@@ -5,7 +5,8 @@ import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { Container } from '@/components/common/container';
 import { useGetFabsQuery, Fab } from '@/store/api/job';
-import { useGetEmployeeSalesPersonsQuery, useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetEmployeeSalesPersonsQuery, useGetSalesPersonsQuery, useGetEmployeesQuery } from '@/store/api/employee';
+import { useGetRolesQuery } from '@/store/api/role';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo, useState } from 'react';
 import { AssignDrafterModal } from './components/AssignDrafterModal';
@@ -82,6 +83,32 @@ const DrafterPage = () => {
         persistState: false,
     });
 
+    // Drafter filter: same CAD/Drafter role lookup as the Assign Drafter modal
+    const { data: rolesData } = useGetRolesQuery();
+    const drafterRoleId = useMemo(() => {
+        const roles = (rolesData as any)?.data?.data ?? (rolesData as any)?.data ?? rolesData;
+        if (!Array.isArray(roles)) return null;
+        const role = roles.find((r: any) => ['cad', 'drafter'].includes((r.name || '').toLowerCase().trim()));
+        return role?.id ?? null;
+    }, [rolesData]);
+    const { data: draftersData } = useGetEmployeesQuery(
+        { role_id: drafterRoleId ?? undefined, sort_by: 'first_name', sort_order: 'asc', limit: 500 },
+        { skip: !drafterRoleId }
+    );
+    const drafterOptions = useMemo(() => {
+        const employees = (draftersData as any)?.data ?? draftersData;
+        if (!Array.isArray(employees)) return [];
+        return employees.map((e: any) => ({
+            id: String(e.id),
+            name: `${e.first_name || ''} ${e.last_name || ''}`.trim() || e.email || 'Unknown Drafter',
+        }));
+    }, [draftersData]);
+    const [drafterFilter, setDrafterFilterState] = useState('all');
+    const setDrafterFilter = (value: string) => {
+        setDrafterFilterState(value);
+        tableState.setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    };
+
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
 
     // Build query params
@@ -112,8 +139,12 @@ const DrafterPage = () => {
                 params.date_filter = tableState.dateFilter;
             }
         }
+        // 0 asks the API for FABs with no drafter assigned.
+        if (drafterFilter === 'unassigned') params.drafter_id = 0;
+        else if (drafterFilter !== 'all') params.drafter_id = Number(drafterFilter);
         return params;
     }, [
+        drafterFilter,
         skip,
         tableState.pagination.pageSize,
         tableState.searchQuery,
@@ -125,7 +156,7 @@ const DrafterPage = () => {
         salesPersons, // added dependency
     ]);
 
-    const { data, isLoading } = useGetFabsQuery(queryParams);
+    const { data, isFetching, currentData } = useGetFabsQuery(queryParams);
 
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -182,12 +213,16 @@ const DrafterPage = () => {
             <JobTable
                 jobs={jobsData}
                 path="draft"
-                isLoading={isLoading && !data}
+                isLoading={isFetching && !currentData}
                 useBackendPagination
                 totalRecords={data?.total || 0}
                 tableState={tableState}
                 showSalesPersonFilter
                 salesPersons={salesPersons}
+                showDrafterFilter
+                drafters={drafterOptions}
+                drafterFilter={drafterFilter}
+                setDrafterFilter={setDrafterFilter}
                 enableMultiSelect
                 selectedRows={selectedRows}
                 setSelectedRows={setSelectedRows}

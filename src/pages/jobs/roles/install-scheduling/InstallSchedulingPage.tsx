@@ -216,7 +216,7 @@ export function InstallSchedulingPage() {
 
     const [dateGrouping, setDateGrouping] = useState<'date' | 'month' | 'none'>('month');
 
-    const { data, isLoading, isFetching, isError, error } = useGetFabsCompletionQuery(queryParams);
+    const { data, isLoading, isFetching, isError, error, currentData } = useGetFabsCompletionQuery(queryParams);
     const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
 
     if (isLoading) {
@@ -257,7 +257,7 @@ export function InstallSchedulingPage() {
             <JobTable
                 jobs={jobsData}
                 path="install-to-schedule"
-                isLoading={isLoading && !data}
+                isLoading={isFetching && !currentData}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}
                 tableState={tableState}

@@ -214,7 +214,7 @@ export function InstallCompletionPage() {
         salesPersons,
     ]);
 
-    const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
+    const { data, isLoading, isFetching, isError, error, currentData } = useGetFabsQuery(queryParams);
     const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
 
     if (isLoading) {
@@ -255,7 +255,7 @@ export function InstallCompletionPage() {
             <JobTable
                 jobs={jobsData}
                 path="install-scheduled"
-                isLoading={isLoading && !data}
+                isLoading={isFetching && !currentData}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}
                 tableState={tableState}

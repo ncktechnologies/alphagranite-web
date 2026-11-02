@@ -172,7 +172,7 @@ export function TemplatingPage() {
         return params;
     }, [skip, tableState.pagination.pageSize, tableState.searchQuery, tableState.fabTypeFilter, templaterFilter, tableState.scheduleFilter, tableState.dateFilter, tableState.dateRange, tableState.searchType, templaterIdMap]);
 
-    const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
+    const { data, isLoading, isFetching, isError, error, currentData } = useGetFabsQuery(queryParams);
 
     const handleRowClick = (fabId: string) => {
         const job = data?.data?.find(fab => fab.id.toString() === fabId);
@@ -245,7 +245,7 @@ export function TemplatingPage() {
                         jobs={jobsData}
                         path="templating"
                         showScheduleFilter={true}
-                        isLoading={isLoading && !data}
+                        isLoading={isFetching && !currentData}
                         useBackendPagination={true}
                         totalRecords={data?.total || 0}
                         tableState={tableState}

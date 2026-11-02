@@ -134,7 +134,7 @@ const FinalProgrammingPage = () => {
     ]);
 
     // Fetch data – currently using a hook that doesn't accept queryParams
-    const { data, isLoading, isFetching, isError, error } = useGetFabsInFinalProgrammingPendingQuery();
+    const { data, isLoading, isFetching, isError, error, currentData } = useGetFabsInFinalProgrammingPendingQuery();
 
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -229,7 +229,7 @@ const FinalProgrammingPage = () => {
                 <JobTable
                     jobs={jobsData}
                     path='final-programming'
-                    isLoading={isLoading && !data}
+                    isLoading={isFetching && !currentData}
                     showSalesPersonFilter={true}
                     salesPersons={salesPersons}
                     visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'wj_time_minutes', 'final_programming_notes', 'final_programming_completed', 'drafter', 'timer_status']}

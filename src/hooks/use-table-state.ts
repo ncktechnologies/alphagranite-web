@@ -27,6 +27,8 @@ export interface UseTableStateOptions {
   defaultScheduleFilter?: string;
   /** Enable localStorage persistence */
   persistState?: boolean;
+  /** 'session' keeps state only for this browser tab, so Back restores it without it sticking forever */
+  persistIn?: 'local' | 'session';
 }
 
 const DEFAULT_PAGINATION: PaginationState = {
@@ -45,15 +47,17 @@ export function useTableState(options: UseTableStateOptions) {
     defaultDateFilter = 'all',
     defaultScheduleFilter = 'all',
     persistState = true,
+    persistIn = 'local',
   } = options;
 
   const STORAGE_KEY = `table-state-${tableId}`;
+  const getStorage = () => (persistIn === 'session' ? sessionStorage : localStorage);
 
   // Load initial state from localStorage if persistence is enabled
   const getInitialState = (): TableState => {
     if (persistState && typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = getStorage().getItem(STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored);
           return {
@@ -103,7 +107,7 @@ export function useTableState(options: UseTableStateOptions) {
               }
             : undefined,
         };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToStore));
+        getStorage().setItem(STORAGE_KEY, JSON.stringify(stateToStore));
       } catch (error) {
         console.error(`Failed to save table state for ${tableId}:`, error);
       }
@@ -222,9 +226,9 @@ export function useTableState(options: UseTableStateOptions) {
   // Clear stored state from localStorage
   const clearStoredState = useCallback(() => {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(STORAGE_KEY);
+      getStorage().removeItem(STORAGE_KEY);
     }
-  }, [STORAGE_KEY]);
+  }, [STORAGE_KEY, persistIn]);
 
   return {
     // State values

@@ -152,7 +152,7 @@ const SlabSmithPage = () => {
     ]);
 
     // Fetch data with backend pagination and filtering
-    const { data, isLoading, isFetching, isError, error } = useGetFabsInSlabSmithPendingQuery(queryParams);
+    const { data, isLoading, isFetching, isError, error, currentData } = useGetFabsInSlabSmithPendingQuery(queryParams);
 
     // Modal and selection state
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
@@ -240,7 +240,7 @@ const SlabSmithPage = () => {
                     <JobTable
                         jobs={jobsData}
                         path='slab-smith'
-                        isLoading={isLoading && !data}
+                        isLoading={isFetching && !currentData}
                         totalRecords={data?.total || 0}
                         useBackendPagination={true}
                         tableState={tableState}

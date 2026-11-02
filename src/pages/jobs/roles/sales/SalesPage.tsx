@@ -97,7 +97,9 @@ export function SalesPage() {
         tableId: 'sct-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
-        persistState: false,
+        // Back from a FAB returns to the same filters/page (this tab only).
+        persistState: true,
+        persistIn: 'session',
     });
 
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
@@ -152,7 +154,7 @@ export function SalesPage() {
         statusFilter,
     ]);
 
-    const { data, isLoading, error, isError } = useGetFabsQuery(queryParams);
+    const { data, isLoading, error, isError, isFetching, currentData } = useGetFabsQuery(queryParams);
 
     if (isNewFabForm) {
         return <NewFabIdForm />;
@@ -222,8 +224,9 @@ export function SalesPage() {
                 </Toolbar>
                 <JobSalesTable
                     jobs={jobsData}
+                    scrollRestoreKey="view-all-fabs"
                     path='sales'
-                    isLoading={isLoading && !data}
+                    isLoading={isFetching && !currentData}
                     useBackendPagination={true}
                     totalRecords={data?.total || 0}
                     tableState={tableState}

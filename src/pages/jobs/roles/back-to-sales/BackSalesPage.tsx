@@ -173,7 +173,7 @@ export function AfterDraftSalesPage() {
     ]);
 
     // Fetch data with backend pagination and filtering
-    const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
+    const { data, isLoading, isFetching, isError, error, currentData } = useGetFabsQuery(queryParams);
 
     const handleRowClick = (fabId: string) => {
         navigate(`/job/draft-review/${fabId}`);
@@ -230,7 +230,7 @@ export function AfterDraftSalesPage() {
             <JobTable
                 jobs={jobsData}
                 path='draft-review'
-                isLoading={isLoading && !data}
+                isLoading={isFetching && !currentData}
                 // onRowClick={handleRowClick}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}

@@ -19,6 +19,7 @@ import { operatorApi } from "./api/operator";
 import { installerTimerApi, templaterTimerApi } from "./api/jobTimers";
 import { reportApi } from "./api/report";
 import {auditApi} from "./api/audit";
+import { notificationApi } from "./api/notification";
 
 
 
@@ -46,6 +47,7 @@ const rootReducer = combineReducers({
     [installerTimerApi.reducerPath]: installerTimerApi.reducer,
     [reportApi.reducerPath]: reportApi.reducer,
     [auditApi.reducerPath]: auditApi.reducer,
+    [notificationApi.reducerPath]: notificationApi.reducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
@@ -75,7 +77,8 @@ const store = configureStore({
                 templaterTimerApi.middleware,
                 installerTimerApi.middleware,
                 reportApi.middleware,
-                auditApi.middleware
+                auditApi.middleware,
+                notificationApi.middleware
             ),
 
 });

@@ -1,4 +1,6 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { useSessionState } from '@/hooks/use-session-state';
+import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
 import {
   ColumnDef,
   getCoreRowModel,
@@ -98,6 +100,7 @@ interface ExtendedJob extends Omit<Job, 'project_value'> {
   need_to_invoice?: boolean;
   invoiced_at?: string;
   notes?: string | Array<{ note: string }>;
+  description?: string | null;
 }
 
 interface JobsSectionProps {
@@ -110,15 +113,16 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
   // Same gate as Edit (create), plus update.
   const jobPermissions = usePermission('Manage Jobs');
   const canChangeStatus = jobPermissions.can_create || jobPermissions.can_update;
-  const [pagination, setPagination] = useState<PaginationState>({
+  // Kept per tab so Back from a job returns to the same search, filters and page.
+  const [pagination, setPagination] = useSessionState<PaginationState>('manage-jobs:pagination', {
     pageIndex: 0,
     pageSize: 25,
   });
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useSessionState<SortingState>('manage-jobs:sorting', []);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchType, setSearchType] = useState<SearchType>('job_name');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useSessionState('manage-jobs:search', '');
+  const [searchType, setSearchType] = useSessionState<SearchType>('manage-jobs:search-type', 'job_name');
+  const [selectedStatus, setSelectedStatus] = useSessionState<string>('manage-jobs:status', 'all');
 
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [sheetMode, setSheetMode] = useState<'create' | 'edit' | 'view'>('create');
@@ -129,6 +133,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
   const [currentJobForNote, setCurrentJobForNote] = useState<ExtendedJob | null>(null);
   const [noteText, setNoteText] = useState('');
   const [markAsNeedInvoice, setMarkAsNeedInvoice] = useState(false);
+  const [noteDialogMode, setNoteDialogMode] = useState<'invoice' | 'note'>('invoice');
 
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'unmark' | 'invoice' | null>(null);
@@ -163,6 +168,8 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
   }, [searchQuery, searchType, selectedStatus, pagination.pageIndex, pagination.pageSize]);
 
   const { data: jobsData, isLoading, refetch } = useGetJobsQuery(queryParams);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  useScrollRestoration('manage-jobs', scrollAreaRef, !isLoading && !!jobsData);
   const { data: accountsData } = useGetAccountsQuery();
 
   const [deleteJob] = useDeleteJobMutation();
@@ -209,10 +216,11 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
   };
 
   // --- Invoice action handlers ---
-  const handleOpenNoteDialog = (job: ExtendedJob) => {
+  const handleOpenNoteDialog = (job: ExtendedJob, mode: 'invoice' | 'note' = 'invoice') => {
     setCurrentJobForNote(job);
     setNoteText('');
     setMarkAsNeedInvoice(false);
+    setNoteDialogMode(mode);
     setIsNoteDialogOpen(true);
   };
 
@@ -301,6 +309,9 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
                           Unmark Need to Invoice
                         </DropdownMenuItem>
                       )}
+                      <DropdownMenuItem onClick={() => handleOpenNoteDialog(job, 'note')}>
+                        Add Accounting Note
+                      </DropdownMenuItem>
                     </>
                   )}
 
@@ -329,6 +340,20 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           cell: ({ row }) => <span className="text-sm text-text">{row.original.name}</span>,
           enableSorting: true,
           size: 200,
+          meta: { format: (value: string) => value || '' },
+        },
+        {
+          // business_jobs.description, labelled "Job Note" for the office
+          id: 'description',
+          accessorFn: (row) => row.description || '',
+          header: ({ column }) => <DataGridColumnHeader title="JOB NOTE" column={column} />,
+          cell: ({ row }) => (
+            <span className="text-xs line-clamp-2" title={row.original.description || undefined}>
+              {row.original.description || '-'}
+            </span>
+          ),
+          enableSorting: true,
+          size: 220,
           meta: { format: (value: string) => value || '' },
         },
         {
@@ -509,7 +534,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
       <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Mark as Need to Invoice</DialogTitle>
+            <DialogTitle>{noteDialogMode === 'note' ? 'Add Accounting Note' : 'Mark as Need to Invoice'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
@@ -522,20 +547,27 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
                 rows={3}
               />
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="mark-invoice"
-                checked={markAsNeedInvoice}
-                onCheckedChange={(checked) => setMarkAsNeedInvoice(!!checked)}
-              />
-              <Label htmlFor="mark-invoice">Mark this job as needing invoice</Label>
-            </div>
+            {noteDialogMode === 'invoice' && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="mark-invoice"
+                  checked={markAsNeedInvoice}
+                  onCheckedChange={(checked) => setMarkAsNeedInvoice(!!checked)}
+                />
+                <Label htmlFor="mark-invoice">Mark this job as needing invoice</Label>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsNoteDialogOpen(false)} >
               Cancel
             </Button>
-            <Button onClick={handleSaveNoteAndInvoiceFlag} disabled={!markAsNeedInvoice} >Save</Button>
+            <Button
+              onClick={handleSaveNoteAndInvoiceFlag}
+              disabled={noteDialogMode === 'note' ? !noteText.trim() : !markAsNeedInvoice}
+            >
+              Save
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -644,7 +676,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
               </CardToolbar>
             </CardHeader>
             <CardTable>
-              <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
+              <ScrollArea ref={scrollAreaRef} className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                 <DataGridTable />
                 <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
               </ScrollArea>

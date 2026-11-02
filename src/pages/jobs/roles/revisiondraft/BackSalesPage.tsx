@@ -129,7 +129,7 @@ export function DraftRevisionPage() {
         salesPersons,
     ]);
 
-    const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
+    const { data, isLoading, isFetching, isError, error, currentData } = useGetFabsQuery(queryParams);
 
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -235,7 +235,7 @@ export function DraftRevisionPage() {
             <JobTable
                 jobs={jobsData}
                 path='revision'
-                isLoading={isLoading && !data}
+                isLoading={isFetching && !currentData}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}
                 tableState={tableState}

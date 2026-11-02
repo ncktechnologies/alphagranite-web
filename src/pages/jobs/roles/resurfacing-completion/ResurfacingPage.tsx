@@ -167,7 +167,7 @@ export function ResurfacingPage() {
     ]);
 
     // Fetch data with backend pagination and filtering
-    const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
+    const { data, isLoading, isFetching, isError, error, currentData } = useGetFabsQuery(queryParams);
 
     const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
 
@@ -213,7 +213,7 @@ export function ResurfacingPage() {
 
             <JobTable
                 jobs={jobsData}
-                isLoading={isLoading && !data}
+                isLoading={isFetching && !currentData}
                 tableState={tableState}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}

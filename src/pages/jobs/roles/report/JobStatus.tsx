@@ -75,8 +75,8 @@ export interface JobStatusRow {
     install_date: string | null | undefined;
     install_confirmed: boolean;
     installed: boolean;
-     revenue: number;
-    cost_of_stone: number;
+     revenue: number | null;
+    cost_of_stone: number | null;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -104,6 +104,9 @@ const YesNoBadge: React.FC<{ value: boolean }> = ({ value }) => (
         {value ? 'Yes' : 'No'}
     </span>
 );
+
+const formatMoneyOrDash = (value: number | string | null | undefined): string =>
+    value === null || value === undefined || value === '' ? '—' : `${Number(value).toFixed(2)}`;
 
 // ─────────────────────────────────────────────────────────
 // Component
@@ -189,8 +192,9 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             install_date: fab.install_details?.scheduled_end_date ?? null,
             install_confirmed: fab.install_confirm === true,
             installed: fab.install_details?.is_completed === true,
-            revenue: fab.revenue ?? 0,
-            cost_of_stone: fab.cost_of_stone ?? 0,
+            // Keep missing amounts as null so they show as a dash, not $0.00.
+            revenue: fab.revenue ?? null,
+            cost_of_stone: fab.cost_of_stone ?? null,
         }));
     }, [fabs]);
 
@@ -310,12 +314,11 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             accessorKey: 'revenue',
             header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
             cell: ({ row }) => {
-                const amount = row.original.revenue;
-                return <span className="text-xs font-medium">${amount.toFixed(2)}</span>;
+                return <span className="text-xs font-medium">{formatMoneyOrDash(row.original.revenue)}</span>;
             },
             enableSorting: true,
             size: 145,
-            meta: { format: (value: number) => '$' + value?.toFixed(2) },
+            meta: { format: (value: number | null) => formatMoneyOrDash(value) },
         },
         // NEW COLUMN: COST OF STONE
         {
@@ -323,12 +326,11 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             accessorKey: 'cost_of_stone',
             header: ({ column }) => <DataGridColumnHeader title="COST OF STONE" column={column} />,
             cell: ({ row }) => {
-                const amount = row.original.cost_of_stone;
-                return <span className="text-xs">${amount.toFixed(2)}</span>;
+                return <span className="text-xs">{formatMoneyOrDash(row.original.cost_of_stone)}</span>;
             },
             enableSorting: true,
             size: 120,
-            meta: { format: (value: number) => '$' + value?.toFixed(2) },
+            meta: { format: (value: number | null) => formatMoneyOrDash(value) },
         },
         {
             id: 'template',

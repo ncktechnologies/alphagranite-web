@@ -96,6 +96,11 @@ export const TimeTrackingComponent = ({
   useEffect(() => {
     if (sessionData?.data) {
       const session = sessionData.data;
+      // Paused time must come from the server; local tracking resets to 0 on reload,
+      // which made a running timer count every earlier pause as work.
+      if (typeof session.total_pause_duration === 'number') {
+        setTotalPausedTime(session.total_pause_duration);
+      }
 
       // Start time – always parse as UTC
       if (session.current_session_start_time) {

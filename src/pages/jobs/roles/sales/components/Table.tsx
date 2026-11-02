@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
 import {
     ColumnDef,
     getCoreRowModel,
@@ -81,6 +82,8 @@ interface JobTableProps {
     useBackendPagination?: boolean;
     totalRecords?: number;
     tableState?: ReturnType<typeof useTableState>;
+    /** When set, the table's scroll position is restored on Back */
+    scrollRestoreKey?: string;
     visibleColumns?: string[];
     enableMultiSelect?: boolean;
     selectedRows?: string[];
@@ -137,7 +140,10 @@ export const JobSalesTable = ({
     canExport = false,
     statusFilter = 'all',
     onStatusFilterChange,
+    scrollRestoreKey,
 }: JobTableProps) => {
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
+    useScrollRestoration(scrollRestoreKey ?? '', scrollAreaRef, !!scrollRestoreKey && !isLoading && jobs.length > 0);
     const [localSelectedRows, setLocalSelectedRows] = useState<string[]>([]);
     const [localPagination, setLocalPagination] = useState<PaginationState>({
         pageIndex: 0,
@@ -1656,7 +1662,7 @@ export const JobSalesTable = ({
                 </CardHeader>
 
                 <CardTable>
-                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
+                    <ScrollArea ref={scrollAreaRef} className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                         <DataGridTable />
                         <ScrollBar orientation="horizontal" className="h-3 bg-scrollbar-track" />
                     </ScrollArea>

@@ -657,6 +657,11 @@ export function OperatorTaskDetails() {
                                         <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                                             {revision.revision_note || t('SHOP_REVISION.NO_NOTE')}
                                         </p>
+                                        {revision.revision_feedback && (
+                                            <p className="text-sm text-foreground mt-1 line-clamp-2">
+                                                <span className="font-medium">{t('SHOP_REVISION.REVISION_FEEDBACK')}:</span> {revision.revision_feedback}
+                                            </p>
+                                        )}
                                         <p className="text-xs text-placeholder mt-1">
                                             {t('SHOP_REVISION.REQUESTED_BY')}: {revision.requested_by_name || revision.requested_by || t('COMMON.UNKNOWN')}
                                         </p>

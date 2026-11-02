@@ -363,7 +363,7 @@ export function ServiceLevelReport() {
 
     // ─── Helper to render a table with DataGrid wrapper ────────────────────
     const renderTable = (table: any, title: string, exportName: string) => (
-        <DataGrid table={table} recordCount={table.getCoreRowModel().rows.length} tableLayout={{ columnsResizable: true, cellBorder: true }}>
+        <DataGrid table={table} recordCount={table.getCoreRowModel().rows.length} tableLayout={{ columnsResizable: true, cellBorder: true, columnsPinnable: true }}>
             <Card className="border border-border rounded-[12px] overflow-hidden">
                 <CardHeader className="py-3 px-5 border-b flex justify-between items-center bg-background">
                     <p className="font-semibold">{title}</p>
@@ -481,7 +481,7 @@ export function ServiceLevelReport() {
 
             {/* ─── Fab Status Details with Filters and Search ──────────────── */}
             {fabStatusRows.length > 0 && (
-                <DataGrid table={fabTable} recordCount={filteredFabRows.length} tableLayout={{ columnsResizable: true, cellBorder: true }}>
+                <DataGrid table={fabTable} recordCount={filteredFabRows.length} tableLayout={{ columnsResizable: true, cellBorder: true, columnsPinnable: true }}>
                     <Card className="border border-border rounded-[12px] overflow-hidden">
                         <CardHeader className="py-3 px-5 border-b flex flex-wrap items-center gap-2 bg-background">
                             <p className="font-semibold mr-2">Fab Status Details</p>

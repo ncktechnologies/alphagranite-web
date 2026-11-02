@@ -241,8 +241,10 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
     handleStartDateTimeChange(entry.start_date, value);
   }, [entry.start_date, handleStartDateTimeChange]);
 
+  const [isStartDateOpen, setIsStartDateOpen] = useState(false);
   const onStartDateChange = useCallback((date: Date | undefined) => {
     handleStartDateTimeChange(date, entry.start_time);
+    if (date) setIsStartDateOpen(false);
   }, [entry.start_time, handleStartDateTimeChange]);
 
   return (
@@ -414,7 +416,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-[14px] text-secondary-foreground">Start Date *</Label>
-              <Popover>
+              <Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
                 <PopoverTrigger asChild>
                   <button
                     type="button"

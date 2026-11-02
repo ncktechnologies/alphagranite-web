@@ -126,7 +126,7 @@ const CNCPage = () => {
         salesPersons,
     ]);
 
-    const { data, isLoading } = useGetFabsCncQuery(queryParams);
+    const { data, isFetching, currentData } = useGetFabsCncQuery(queryParams);
 
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -182,7 +182,7 @@ const CNCPage = () => {
             <JobTable
                 jobs={jobsData}
                 path="cnc"
-                isLoading={isLoading && !data}
+                isLoading={isFetching && !currentData}
                 useBackendPagination
                 totalRecords={data?.total || 0}
                 tableState={tableState}

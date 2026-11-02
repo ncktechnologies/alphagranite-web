@@ -75,6 +75,11 @@ interface JobTableProps {
     installers?: Array<{ id: string | number; name: string }>;
     installerFilter?: string;
     setInstallerFilter?: (value: string) => void;
+    showDrafterFilter?: boolean;
+    drafters?: Array<{ id: string | number; name: string }>;
+    /** 'all', 'unassigned', or a drafter id */
+    drafterFilter?: string;
+    setDrafterFilter?: (value: string) => void;
     showTemplaterFilter?: boolean;
     templaters?: string[];
     templaterFilter?: string;
@@ -142,6 +147,10 @@ export const JobTable = ({
     installers = [],
     installerFilter = "all",
     setInstallerFilter = () => { },
+    showDrafterFilter = false,
+    drafters = [],
+    drafterFilter = "all",
+    setDrafterFilter = () => { },
     showTemplaterFilter = false,
     templaters = [],
     templaterFilter = "all",
@@ -1907,6 +1916,22 @@ export const JobTable = ({
                                     <SelectItem value="all">All Installers</SelectItem>
                                     {installers.map((installer) => (
                                         <SelectItem key={String(installer.id)} value={String(installer.id)}>{installer.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+
+                        {/* Drafter filter */}
+                        {showDrafterFilter && (
+                            <Select value={drafterFilter} onValueChange={setDrafterFilter}>
+                                <SelectTrigger className="w-[180px] h-[34px]">
+                                    <SelectValue placeholder="Drafter" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
+                                    <SelectItem value="all">All Drafters</SelectItem>
+                                    <SelectItem value="unassigned">No Drafter</SelectItem>
+                                    {drafters.map((drafter) => (
+                                        <SelectItem key={String(drafter.id)} value={String(drafter.id)}>{drafter.name}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>

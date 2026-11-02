@@ -582,7 +582,7 @@ const renderSummary = () => {
      
 
       {/* ─── Table (no sticky header, no ScrollArea) ──────────────────── */}
-      <DataGrid table={table} recordCount={trailsData?.pagination?.total || 0} tableLayout={{ cellBorder: true }}>
+      <DataGrid table={table} recordCount={trailsData?.pagination?.total || 0} tableLayout={{ cellBorder: true, columnsPinnable: true }}>
         <Card>
           <CardTable>
             <div className="overflow-x-auto">
