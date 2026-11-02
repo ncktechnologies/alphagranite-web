@@ -903,6 +903,10 @@ export interface AdminDashboardResponse {
     time_period: string;
 }
 
+// Searchable FAB lists: keep each result cached for a while so clearing the search (the X)
+// shows the full list immediately, but still refetch whenever a list is shown again.
+const searchableListOptions = { keepUnusedDataFor: 120, forceRefetch: () => true };
+
 export const jobApi = createApi({
     reducerPath: "jobApi",
     baseQuery: axiosBaseQuery({ baseUrl: `${baseUrl}/api/v1` }),
@@ -998,6 +1002,7 @@ export const jobApi = createApi({
 
             // Fabs with pagination support
             getFabs: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
+                ...searchableListOptions,
                 query: (params) => {
                     const queryParams = params || {};
                     return {
@@ -1095,6 +1100,7 @@ export const jobApi = createApi({
             }),
 
             getFabsByStage: build.query<{ data: Fab[]; total: number }, { stage_name: string; params?: any }>({
+                ...searchableListOptions,
                 query: ({ stage_name, params }) => ({
                     url: `/stages/${stage_name}/fabs`,
                     method: "get",
@@ -1131,6 +1137,7 @@ export const jobApi = createApi({
             }),
 
             getFabsInFinalProgrammingPending: build.query<Fab[], { drafter_id?: number } | void>({
+                ...searchableListOptions,
                 query: (params) => ({
                     url: "/stages/final_programming/pending",
                     method: "get",
@@ -1141,6 +1148,7 @@ export const jobApi = createApi({
                 providesTags: ["Fab"],
             }),
             getFabsInSlabSmithPending: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
+                ...searchableListOptions,
                 query: (params) => {
                     const queryParams = params || {};
                     return {
@@ -1192,6 +1200,7 @@ export const jobApi = createApi({
                 providesTags: ["Fab"],
             }),
             getFabsInResurfacing: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
+                ...searchableListOptions,
                 query: (params) => {
                     const queryParams = params || {};
                     return {
@@ -1241,6 +1250,7 @@ export const jobApi = createApi({
                 providesTags: ["Fab"],
             }),
             getFabsCompletion: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
+                ...searchableListOptions,
                 query: (params) => {
                     const queryParams = params || {};
                     return {
@@ -1291,6 +1301,7 @@ export const jobApi = createApi({
                 providesTags: ["Fab"],
             }),
             getFabsCnc: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
+                ...searchableListOptions,
                 query: (params) => {
                     const queryParams = params || {};
                     return {
@@ -1341,6 +1352,7 @@ export const jobApi = createApi({
                 providesTags: ["Fab"],
             }),
             getFabsCostOfStone: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
+                ...searchableListOptions,
                 query: (params) => {
                     const queryParams = params || {};
                     return {
