@@ -151,7 +151,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
     };
     const handleNoteSubmit = async (note: string, fabId: string) => {
         try {
-            await createFabNote({ fab_id: parseInt(fabId), note, stage: 'shop' }).unwrap();
+            await createFabNote({ fab_id: parseInt(fabId), note, stage: 'resurfacing' }).unwrap();
             await refetch();
             toast.success('Note added successfully');
             setIsNoteModalOpen(false);

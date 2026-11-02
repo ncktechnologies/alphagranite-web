@@ -139,7 +139,7 @@ const FinalProgrammingPage = () => {
 
     // Fetch data – currently using a hook that doesn't accept queryParams
     const { data, isLoading, isFetching, isError, error, currentData } = useGetFabsInFinalProgrammingPendingQuery(
-        drafterId !== undefined ? { final_programmer_id: drafterId } : undefined
+        drafterId !== undefined ? { drafter_id: drafterId } : undefined
     );
 
     const [selectedRows, setSelectedRows] = useState<string[]>([]);

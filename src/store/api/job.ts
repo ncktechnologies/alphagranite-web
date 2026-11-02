@@ -1130,12 +1130,12 @@ export const jobApi = createApi({
                 providesTags: ["Fab"],
             }),
 
-            getFabsInFinalProgrammingPending: build.query<Fab[], { final_programmer_id?: number } | void>({
+            getFabsInFinalProgrammingPending: build.query<Fab[], { drafter_id?: number } | void>({
                 query: (params) => ({
                     url: "/stages/final_programming/pending",
                     method: "get",
-                    // 0 = no final programmer assigned
-                    ...(params && params.final_programmer_id !== undefined && { params: { final_programmer_id: params.final_programmer_id } }),
+                    // The drafter shown in the table (latest drafting assignee); 0 = no drafter assigned
+                    ...(params && params.drafter_id !== undefined && { params: { drafter_id: params.drafter_id } }),
                 }),
                 transformResponse: (response: any) => response.data || response,
                 providesTags: ["Fab"],
