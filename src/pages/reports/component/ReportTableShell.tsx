@@ -155,7 +155,7 @@ export function ReportTableShell<TData>({
             <Card>
                 <CardHeader className="py-3.5 border-b">
                     <CardHeading>
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex flex-wrap items-center gap-2.5">
                             {/* Search input */}
                             <div className="relative">
                                 <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
@@ -184,7 +184,7 @@ export function ReportTableShell<TData>({
                                         <Button
                                             variant="outline"
                                             className={cn(
-                                                'w-[200px] justify-start text-left font-normal h-[34px]',
+                                                'w-auto min-w-[200px] shrink-0 justify-start text-left font-normal h-[34px] whitespace-nowrap',
                                                 !dateRange && 'text-muted-foreground'
                                             )}
                                         >
