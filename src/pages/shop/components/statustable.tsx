@@ -57,6 +57,7 @@ import { PlanTimerControl } from './PlanTimerControl';
 import { EstDateNeeded } from './EstDateNeeded';
 import { firstCutPlan } from './firstCutPlan';
 import { getStageTimerStatus, STAGE_TIMER_OUTLINE, type PlanTimer, type PlanTimerAction } from './planTimer';
+import { getLockedCellProps } from '@/components/ui/data-grid-table';
 
 // ------------------ Types ------------------
 export interface ShopStatusPlan {
@@ -1192,14 +1193,19 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         labelColId = 'estimated_completion_date',
     ) => (
         <tr className={`${bgClass} font-medium border-b border-border`}>
-            {table.getVisibleFlatColumns().map(col => {
+            {/* Same left/center/right order as the header, so locked columns line up */}
+            {[
+                ...table.getLeftVisibleLeafColumns(),
+                ...table.getCenterVisibleLeafColumns(),
+                ...table.getRightVisibleLeafColumns(),
+            ].map(col => {
                 const id = col.id;
                 const td = (content: React.ReactNode) => (
-                    <td key={id} className="px-4 py-2 text-sm font-semibold text-secondary-foreground border-r border-border last:border-r-0">
+                    <td key={id} {...getLockedCellProps(col)} className="px-4 py-2 text-sm font-semibold text-secondary-foreground border-r border-border last:border-r-0 data-pinned:bg-inherit">
                         {content}
                     </td>
                 );
-                if (id === 'expander' || id === 'actions') return <td key={id} className="px-4 py-2 border-r border-border" />;
+                if (id === 'expander' || id === 'actions') return <td key={id} {...getLockedCellProps(col)} className="px-4 py-2 border-r border-border data-pinned:bg-inherit" />;
                 if (id === labelColId) return td(label);
                 if (id === 'pieces') return td(totals.pieces);
                 if (id === 'total_sq_ft') return td(`${totals.sqft.toFixed(2)} SF`);
@@ -1207,7 +1213,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 if (id === 'edging') return td(`${totals.edging.toFixed(2)} LF`);
                 if (id === 'miter') return td(`${totals.miter.toFixed(2)} LF`);
                 if (id === 'cnc') return td(`${totals.cnc.toFixed(2)} LF`);
-                return <td key={id} className="px-4 py-2 border-r border-border last:border-r-0" />;
+                return <td key={id} {...getLockedCellProps(col)} className="px-4 py-2 border-r border-border last:border-r-0 data-pinned:bg-inherit" />;
             })}
         </tr>
     );
@@ -1325,12 +1331,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                 {hg.headers.map(header => (
                                                     <th
                                                         key={header.id}
-                                                        className="px-4 py-2 text-left text-xs font-semibold text-secondary-foreground bg-muted border-b border-border whitespace-normal relative"
-                                                        style={{
+                                                        {...getLockedCellProps(header.column, {
                                                             width: header.getSize(),
                                                             minWidth: header.getSize(),
                                                             maxWidth: header.getSize()
-                                                        }}
+                                                        })}
+                                                        className="px-4 py-2 text-left text-xs font-semibold text-secondary-foreground bg-muted border-b border-border whitespace-normal relative"
                                                     >
                                                         {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                                         {header.column.getCanResize() && (
@@ -1423,8 +1429,8 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                                                                 return (
                                                                                                     <td
                                                                                                         key={cell.id}
+                                                                                                        {...getLockedCellProps(cell.column, cellStyle)}
                                                                                                         className="px-4 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0"
-                                                                                                        style={cellStyle}
                                                                                                     >
                                                                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                                                                     </td>
@@ -1436,7 +1442,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                                                         {parentRow.getIsExpanded() && parentRow.subRows.map(childRow => (
                                                                                             <tr key={childRow.id} className="border-b border-border bg-muted/60">
                                                                                                 {childRow.getVisibleCells().map(cell => (
-                                                                                                    <td key={cell.id} className="px-4 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0">
+                                                                                                    <td key={cell.id} {...getLockedCellProps(cell.column)} className="px-4 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0">
                                                                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                                                                     </td>
                                                                                                 ))}

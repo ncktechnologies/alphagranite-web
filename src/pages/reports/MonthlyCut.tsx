@@ -25,6 +25,7 @@ import { useIsSuperAdmin } from '@/hooks/use-permission';
 import { BackButton } from '@/components/common/BackButton';
 import { CURRENCY_COLUMNS } from './DailyInstallationCut';
 import { HEADER_OVERRIDES } from './MonthlyInstallCompletion';
+import { getLockedCellProps } from '@/components/ui/data-grid-table';
 
 const fabTypeColorMap: Record<string, string> = {
     standard: '#9eeb47',
@@ -452,8 +453,8 @@ export function MonthlyCutCompletionReport() {
                                                 {headerGroup.headers.map(header => (
                                                     <th
                                                         key={header.id}
+                                                        {...getLockedCellProps(header.column, { width: header.getSize() })}
                                                         className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted"
-                                                        style={{ width: header.getSize() }}
                                                     >
                                                         {flexRender(header.column.columnDef.header, header.getContext())}
                                                         {header.column.getCanResize() && (
@@ -477,8 +478,8 @@ export function MonthlyCutCompletionReport() {
                                                     {row.getVisibleCells().map(cell => (
                                                         <td
                                                             key={cell.id}
+                                                            {...getLockedCellProps(cell.column, { width: cell.column.getSize() })}
                                                             className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0"
-                                                            style={{ width: cell.column.getSize() }}
                                                         >
                                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                         </td>

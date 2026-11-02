@@ -28,6 +28,7 @@ import {
 import { reportRowClass } from '@/lib/report-row-styles';
 import { cn } from '@/lib/utils';
 import { BackButton } from '@/components/common/BackButton';
+import { getLockedCellProps } from '@/components/ui/data-grid-table';
 
 /** One row of the report as described by the backend. */
 export interface MetricRow {
@@ -226,11 +227,11 @@ function PivotTableCard({ title, pivot, className, toolbar }: {
                                             {headerGroup.headers.map((header) => (
                                                 <th
                                                     key={header.id}
+                                                    {...getLockedCellProps(header.column, { width: header.getSize() })}
                                                     className={cn(
                                                         'px-3 py-2 text-left text-xs font-semibold text-[#7c8689] dark:text-muted-foreground border-b border-[#e2e4ed] dark:border-border bg-gray-50 dark:bg-muted',
                                                         header.column.id === METRIC_COLUMN_ID && FROZEN_COLUMN_CLASS,
                                                     )}
-                                                    style={{ width: header.getSize() }}
                                                 >
                                                     {flexRender(header.column.columnDef.header, header.getContext())}
                                                     {header.column.getCanResize() && (
@@ -252,6 +253,7 @@ function PivotTableCard({ title, pivot, className, toolbar }: {
                                             {row.getVisibleCells().map((cell) => (
                                                 <td
                                                     key={cell.id}
+                                                    {...getLockedCellProps(cell.column, { width: cell.column.getSize() })}
                                                     className={cn(
                                                         'px-3 py-2 text-sm text-[#4b545d] dark:text-foreground border-r border-[#e2e4ed] dark:border-border last:border-r-0',
                                                         cell.column.id === 'total' && 'font-semibold',
@@ -260,7 +262,6 @@ function PivotTableCard({ title, pivot, className, toolbar }: {
                                                         // Row style from the backend, applied across the whole row.
                                                         reportRowClass(row.original.style),
                                                     )}
-                                                    style={{ width: cell.column.getSize() }}
                                                 >
                                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                 </td>

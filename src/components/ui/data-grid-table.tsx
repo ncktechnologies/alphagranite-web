@@ -46,6 +46,23 @@ function getPinningStyles<TData>(column: Column<TData>): CSSProperties {
   };
 }
 
+// Keeps a Locked (pinned) column in view in cells DataGridTable doesn't render itself:
+// group header rows, and tables that draw their own <th>/<td>. Spread onto the cell and
+// pass any existing inline style through. Backgrounds and the edge divider come from
+// styles.css ([data-pinned], [data-locked-edge]).
+function getLockedCellProps<TData>(column: Column<TData>, style?: CSSProperties) {
+  const isPinned = column.getIsPinned();
+  const isEdge =
+    (isPinned === 'left' && column.getIsLastColumn('left')) ||
+    (isPinned === 'right' && column.getIsFirstColumn('right'));
+
+  return {
+    'data-pinned': isPinned || undefined,
+    'data-locked-edge': isEdge ? isPinned : undefined,
+    style: isPinned ? { ...style, ...getPinningStyles(column) } : style,
+  };
+}
+
 function DataGridTableBase({ children }: { children: ReactNode }) {
   const { props } = useDataGrid();
 
@@ -651,7 +668,7 @@ function DataGridTable<TData extends object>() {
                         const colId = header.column.id;
                         const showTotal = columnsToCalculate.includes(colId);
                         return (
-                          <th key={header.id} style={{ width: header.getSize() }} className="px-2 py-1 text-left font-normal">
+                          <th key={header.id} {...getLockedCellProps(header.column, { width: header.getSize() })} className="px-2 py-1 text-left font-normal data-pinned:bg-background">
                             {isFirst ? (
                               <span className="text-[15px] font-semibold text-text whitespace-nowrap">{month}</span>
                             ) : showTotal ? (
@@ -678,7 +695,7 @@ function DataGridTable<TData extends object>() {
                   });
 
                   return (
-                    <div key={dateStr} className="border border-border rounded-lg overflow-hidden">
+                    <div key={dateStr} className="border border-border rounded-lg overflow-clip">
                       {/* Date Header with Total */}
                       <div className="bg-[#F6FFE7] dark:bg-primary-soft border-b border-border">
                         <table className="w-full table-fixed">
@@ -689,7 +706,7 @@ function DataGridTable<TData extends object>() {
                                 const colId = header.column.id;
                                 const showTotal = columnsToCalculate.includes(colId);
                                 return (
-                                  <th key={header.id} style={{ width: header.getSize() }} className="px-2 py-1 text-left font-normal">
+                                  <th key={header.id} {...getLockedCellProps(header.column, { width: header.getSize() })} className="px-2 py-1 text-left font-normal data-pinned:bg-[#F6FFE7] dark:data-pinned:bg-primary-soft">
                                     {isFirst ? (
                                       <span className="text-[14px] font-medium text-text whitespace-nowrap">
                                         {(() => {
@@ -750,7 +767,7 @@ function DataGridTable<TData extends object>() {
         });
 
         return (
-          <div key={date} className="border border-border rounded-lg overflow-hidden">
+          <div key={date} className="border border-border rounded-lg overflow-clip">
             <div className="bg-[#F6FFE7] dark:bg-primary-soft border-b border-border">
               <table className="w-full table-fixed">
                 <thead>
@@ -763,8 +780,8 @@ function DataGridTable<TData extends object>() {
                       return (
                         <th
                           key={header.id}
-                          style={{ width: header.getSize() }}
-                          className="px-2 py-1 text-left font-normal"
+                          {...getLockedCellProps(header.column, { width: header.getSize() })}
+                          className="px-2 py-1 text-left font-normal data-pinned:bg-[#F6FFE7] dark:data-pinned:bg-primary-soft"
                         >
                           {isFirstColumn ? (
                             <span className="text-[16px] leading-[15px] text-text whitespace-nowrap">
@@ -838,4 +855,6 @@ export {
   DataGridTableRowSelect,
   DataGridTableRowSelectAll,
   DataGridTableRowSpacer,
+  getLockedCellProps,
+  getPinningStyles,
 };

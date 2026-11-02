@@ -25,7 +25,7 @@ import {
   ArrowUp,
   Check,
   ChevronsUpDown,
-  PinOff,
+  LockOpen,
   Settings2,
 } from 'lucide-react';
 
@@ -145,10 +145,10 @@ function DataGridColumnHeader<TData, TValue>({
         variant="ghost"
         className="-me-1 size-7 rounded-md shrink-0" // Added shrink-0
         onClick={() => column.pin(false)}
-        aria-label={`Unpin ${title} column`}
-        title={`Unpin ${title} column`}
+        aria-label={`Unlock ${title} column`}
+        title={`Unlock ${title} column`}
       >
-        <PinOff className="size-3.5! opacity-50!" aria-hidden="true" />
+        <LockOpen className="size-3.5! opacity-50!" aria-hidden="true" />
       </Button>
     );
   };
@@ -208,12 +208,12 @@ function DataGridColumnHeader<TData, TValue>({
               <>
                 <DropdownMenuItem onClick={() => column.pin(column.getIsPinned() === 'left' ? false : 'left')}>
                   <ArrowLeftToLine className="size-3.5!" aria-hidden="true" />
-                  <span className="grow">Pin to left</span>
+                  <span className="grow">Lock to left</span>
                   {column.getIsPinned() === 'left' && <Check className="size-4 opacity-100! text-primary" />}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => column.pin(column.getIsPinned() === 'right' ? false : 'right')}>
                   <ArrowRightToLine className="size-3.5!" aria-hidden="true" />
-                  <span className="grow">Pin to right</span>
+                  <span className="grow">Lock to right</span>
                   {column.getIsPinned() === 'right' && <Check className="size-4 opacity-100! text-primary" />}
                 </DropdownMenuItem>
               </>

@@ -21,6 +21,7 @@ import { BackButton } from '@/components/common/BackButton';
 import { FabInfoCell } from '@/components/common/fabInfo';
 import { Input } from '@/components/ui/input';
 import { isSameFabType, useFabTypeNames } from '@/hooks/use-fab-type-names';
+import { getLockedCellProps } from '@/components/ui/data-grid-table';
 
 // ─── Fab type color mapping ──────────────────────────────────────────────
 const fabTypeColorMap: Record<string, string> = {
@@ -372,8 +373,8 @@ export function RevisionReport() {
                                             {headerGroup.headers.map(header => (
                                                 <th
                                                     key={header.id}
+                                                    {...getLockedCellProps(header.column, { width: header.getSize() })}
                                                     className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted"
-                                                    style={{ width: header.getSize() }}
                                                 >
                                                     {flexRender(header.column.columnDef.header, header.getContext())}
                                                     {header.column.getCanResize() && (
@@ -395,7 +396,7 @@ export function RevisionReport() {
                                         return (
                                             <tr key={row.id} className="border-b border-border hover:bg-muted/50" {...rowAttrs}>
                                                 {row.getVisibleCells().map(cell => (
-                                                    <td key={cell.id} className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0" style={{ width: cell.column.getSize() }}>
+                                                    <td key={cell.id} {...getLockedCellProps(cell.column, { width: cell.column.getSize() })} className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0">
                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                     </td>
                                                 ))}

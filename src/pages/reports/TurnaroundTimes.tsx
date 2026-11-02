@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { getFabIdLink, getJobNumberLink, renderLink } from '@/lib/reportLinks';
 import { FabInfoCell } from '@/components/common/fabInfo';
 import { BackButton } from '@/components/common/BackButton';
+import { getLockedCellProps } from '@/components/ui/data-grid-table';
 
 const fabTypeColorMap: Record<string, string> = {
     standard: '#9eeb47',
@@ -398,8 +399,8 @@ export function TurnaroundTimesReport() {
                                                 {headerGroup.headers.map(header => (
                                                     <th
                                                         key={header.id}
+                                                        {...getLockedCellProps(header.column, { width: header.getSize() })}
                                                         className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted"
-                                                        style={{ width: header.getSize() }}
                                                     >
                                                         {flexRender(header.column.columnDef.header, header.getContext())}
                                                         {header.column.getCanResize() && (
@@ -421,8 +422,8 @@ export function TurnaroundTimesReport() {
                                                 {row.getVisibleCells().map(cell => (
                                                     <td
                                                         key={cell.id}
+                                                        {...getLockedCellProps(cell.column, { width: cell.column.getSize() })}
                                                         className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0"
-                                                        style={{ width: cell.column.getSize() }}
                                                     >
                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                     </td>
@@ -465,8 +466,8 @@ export function TurnaroundTimesReport() {
                                                 {headerGroup.headers.map(header => (
                                                     <th
                                                         key={header.id}
+                                                        {...getLockedCellProps(header.column, { width: header.getSize() })}
                                                         className="px-3 py-2 text-left text-xs font-semibold text-text-foreground border-b border-border bg-muted"
-                                                        style={{ width: header.getSize() }}
                                                     >
                                                         {flexRender(header.column.columnDef.header, header.getContext())}
                                                         {header.column.getCanResize() && (
@@ -490,8 +491,8 @@ export function TurnaroundTimesReport() {
                                                     {row.getVisibleCells().map(cell => (
                                                         <td
                                                             key={cell.id}
+                                                            {...getLockedCellProps(cell.column, { width: cell.column.getSize() })}
                                                             className="px-3 py-2 text-sm text-secondary-foreground border-r border-border last:border-r-0"
-                                                            style={{ width: cell.column.getSize() }}
                                                         >
                                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                         </td>

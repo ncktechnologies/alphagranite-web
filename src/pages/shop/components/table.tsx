@@ -23,6 +23,7 @@ import {
 import { DataGrid } from '@/components/ui/data-grid';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { DataGridPagination } from '@/components/ui/data-grid-pagination';
+import { getLockedCellProps } from '@/components/ui/data-grid-table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Search, CalendarDays, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -831,7 +832,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
                                                         <th
                                                             key={header.id}
                                                             className="px-4 py-2 text-left text-xs font-semibold text-secondary-foreground border-b border-border bg-muted break-words whitespace-normal relative"
-                                                            style={{ width: header.getSize(), minWidth: header.getSize(), maxWidth: header.getSize() }}
+                                                            {...getLockedCellProps(header.column, { width: header.getSize(), minWidth: header.getSize(), maxWidth: header.getSize() })}
                                                         >
                                                             {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                                             {header.column.getCanResize() && (
@@ -851,23 +852,38 @@ const ShopTable: React.FC<ShopTableProps> = ({
                                             {/* Overall totals row */}
                                             {filteredRows.length > 0 && (
                                                 <tr className="bg-muted/30 font-medium border-b-2 border-border">
-                                                    {table.getVisibleFlatColumns().map(column => {
+                                                    {/* Same left/center/right order as the header, so locked columns line up */}
+                                                    {[
+                                                        ...table.getLeftVisibleLeafColumns(),
+                                                        ...table.getCenterVisibleLeafColumns(),
+                                                        ...table.getRightVisibleLeafColumns(),
+                                                    ].map(column => {
                                                         const colId = column.id;
-                                                        const cls = "px-3 p-2 text-sm font-semibold border-r border-border";
-                                                        if (colId === 'actions') return <td key={colId} className={cls}>Total</td>;
-                                                        if (colId === 'pieces') return <td key={colId} className={cls}>{overallTotals.pieces}</td>;
-                                                        if (colId === 'total_sq_ft') return <td key={colId} className={cls}>{overallTotals.total_sq_ft.toFixed(2)}</td>;
-                                                        if (colId === 'wl_ln_ft') return <td key={colId} className={cls}>{overallTotals.wl_ln_ft.toFixed(2)}</td>;
-                                                        if (colId === 'sl_ln_ft') return <td key={colId} className={cls}>{overallTotals.sl_ln_ft.toFixed(2)}</td>;
-                                                        // ✨ New totals for Saw Miter
-                                                        if (colId === 'saw_miter_lnft') return <td key={colId} className={cls}>{overallTotals.saw_miter_lnft.toFixed(2)}</td>;
-                                                        if (colId === 'edging_ln_ft') return <td key={colId} className={cls}>{overallTotals.edging_ln_ft.toFixed(2)}</td>;
-                                                        if (colId === 'cnc_ln_ft') return <td key={colId} className={cls}>{overallTotals.cnc_ln_ft.toFixed(2)}</td>;
-                                                        if (colId === 'milter_ln_ft') return <td key={colId} className={cls}>{overallTotals.milter_ln_ft.toFixed(2)}</td>;
-                                                        // ✨ New totals for WJ Miter
-                                                        if (colId === 'wj_miter_lnft') return <td key={colId} className={cls}>{overallTotals.wj_miter_lnft.toFixed(2)}</td>;
-                                                        if (colId === 'total_cut_ln_ft') return <td key={colId} className={cls}>{overallTotals.total_cut_ln_ft.toFixed(2)}</td>;
-                                                        return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
+                                                        const totals: Record<string, React.ReactNode> = {
+                                                            actions: 'Total',
+                                                            pieces: overallTotals.pieces,
+                                                            total_sq_ft: overallTotals.total_sq_ft.toFixed(2),
+                                                            wl_ln_ft: overallTotals.wl_ln_ft.toFixed(2),
+                                                            sl_ln_ft: overallTotals.sl_ln_ft.toFixed(2),
+                                                            saw_miter_lnft: overallTotals.saw_miter_lnft.toFixed(2),
+                                                            edging_ln_ft: overallTotals.edging_ln_ft.toFixed(2),
+                                                            cnc_ln_ft: overallTotals.cnc_ln_ft.toFixed(2),
+                                                            milter_ln_ft: overallTotals.milter_ln_ft.toFixed(2),
+                                                            wj_miter_lnft: overallTotals.wj_miter_lnft.toFixed(2),
+                                                            total_cut_ln_ft: overallTotals.total_cut_ln_ft.toFixed(2),
+                                                        };
+                                                        const hasTotal = colId in totals;
+                                                        return (
+                                                            <td
+                                                                key={colId}
+                                                                className={hasTotal
+                                                                    ? "px-3 p-2 text-sm font-semibold border-r border-border"
+                                                                    : "px-4 py-2 text-sm border-r border-border"}
+                                                                {...getLockedCellProps(column)}
+                                                            >
+                                                                {totals[colId]}
+                                                            </td>
+                                                        );
                                                     })}
                                                 </tr>
                                             )}
@@ -879,7 +895,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
                                                         <td
                                                             key={cell.id}
                                                             className="px-2 py-1 text-xs text-secondary-foreground break-words whitespace-normal"
-                                                            style={{ width: cell.column.getSize() }}
+                                                            {...getLockedCellProps(cell.column, { width: cell.column.getSize() })}
                                                         >
                                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                         </td>

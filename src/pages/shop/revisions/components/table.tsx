@@ -22,6 +22,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useGetShopRevisionFabsQuery, type ShopRevisionFabSummary } from '@/store/api/shopRevision';
 import { format } from 'date-fns';
 import { exportTableToCSV } from '@/lib/exportToCsv';
+import { getLockedCellProps } from '@/components/ui/data-grid-table';
 
 // Reusable FabInfo component
 interface FabInfoProps {
@@ -272,8 +273,8 @@ export const ShopRevisionTable = ({ canViewDetails = false, canExport = false }:
                     {headerGroup.headers.map((header) => (
                       <th
                         key={header.id}
+                        {...getLockedCellProps(header.column, { width: header.getSize() })}
                         className="px-4 py-2 text-left text-xs font-semibold text-secondary-foreground border-b border-border bg-muted"
-                        style={{ width: header.getSize() }}
                       >
                         {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                       </th>
@@ -292,7 +293,7 @@ export const ShopRevisionTable = ({ canViewDetails = false, canExport = false }:
                   table.getRowModel().rows.map((row) => (
                     <tr key={row.id} className="border-b border-border" data-fab-type={row.original.fab_type?.toLowerCase()}>
                       {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id} className="px-4 py-2 text-sm border-r border-border last:border-r-0">
+                        <td key={cell.id} {...getLockedCellProps(cell.column)} className="px-4 py-2 text-sm border-r border-border last:border-r-0">
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
                       ))}

@@ -26,6 +26,7 @@ import {
   SheetFooter,
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { getLockedCellProps } from '@/components/ui/data-grid-table';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface AuditTrail {
@@ -593,8 +594,8 @@ const renderSummary = () => {
                       {headerGroup.headers.map((header) => (
                         <th
                           key={header.id}
+                          {...getLockedCellProps(header.column, { width: header.getSize() })}
                           className="px-3 py-2 text-left text-xs font-semibold text-text-foreground"
-                          style={{ width: header.getSize() }}
                         >
                           {flexRender(header.column.columnDef.header, header.getContext())}
                           {header.column.getCanResize() && (
@@ -616,8 +617,8 @@ const renderSummary = () => {
                       {row.getVisibleCells().map((cell) => (
                         <td
                           key={cell.id}
+                          {...getLockedCellProps(cell.column, { width: cell.column.getSize() })}
                           className="px-3 py-2 text-sm text-secondary-foreground"
-                          style={{ width: cell.column.getSize() }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>

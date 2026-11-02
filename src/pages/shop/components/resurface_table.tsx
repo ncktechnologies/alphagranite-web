@@ -41,6 +41,7 @@ import { useTableState } from '@/hooks/use-table-state';
 import { NotesModal } from '@/components/common/NotesModal';
 import { toast } from 'sonner';
 import { safeFormatDate } from './statusDetails';
+import { getLockedCellProps } from '@/components/ui/data-grid-table';
 
 export interface ShopPlanRow {
     fab_id: string;
@@ -826,12 +827,12 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
                                                     {headerGroup.headers.map(header => (
                                                         <th
                                                             key={header.id}
-                                                            className="px-4 py-2 text-left text-xs font-semibold text-secondary-foreground border-b border-border bg-muted break-words whitespace-normal relative"
-                                                            style={{
+                                                            {...getLockedCellProps(header.column, {
                                                                 width: header.getSize(),
                                                                 minWidth: header.getSize(),
                                                                 maxWidth: header.getSize()
-                                                            }}
+                                                            })}
+                                                            className="px-4 py-2 text-left text-xs font-semibold text-secondary-foreground border-b border-border bg-muted break-words whitespace-normal relative"
                                                         >
                                                             {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                                             {header.column.getCanResize() && (
@@ -850,18 +851,34 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
                                         <tbody>
                                             {filteredRows.length > 0 && (
                                                 <tr className="bg-muted/30 font-medium border-b-2 border-border">
-                                                    {table.getVisibleFlatColumns().map(column => {
+                                                    {/* Same left/center/right order as the header, so locked columns line up */}
+                                                    {[
+                                                        ...table.getLeftVisibleLeafColumns(),
+                                                        ...table.getCenterVisibleLeafColumns(),
+                                                        ...table.getRightVisibleLeafColumns(),
+                                                    ].map(column => {
                                                         const colId = column.id;
-                                                        const cls = "px-4 py-2 text-sm font-semibold border-r border-border";
-                                                        if (colId === 'pieces') return <td key={colId} className={cls}>{overallTotals.pieces}</td>;
-                                                        if (colId === 'total_sq_ft') return <td key={colId} className={cls}>{overallTotals.sqft.toFixed(2)}</td>;
-                                                        if (colId === 'wl_ln_ft') return <td key={colId} className={cls}>{overallTotals.wl.toFixed(2)}</td>;
-                                                        if (colId === 'sl_ln_ft') return <td key={colId} className={cls}>{overallTotals.sl.toFixed(2)}</td>;
-                                                        if (colId === 'edging_ln_ft') return <td key={colId} className={cls}>{overallTotals.edging.toFixed(2)}</td>;
-                                                        if (colId === 'cnc_ln_ft') return <td key={colId} className={cls}>{overallTotals.cnc.toFixed(2)}</td>;
-                                                        if (colId === 'milter_ln_ft') return <td key={colId} className={cls}>{overallTotals.milter.toFixed(2)}</td>;
-                                                        if (colId === 'total_cut_ln_ft') return <td key={colId} className={cls}>{overallTotals.totalCut.toFixed(2)}</td>;
-                                                        return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
+                                                        const totals: Record<string, React.ReactNode> = {
+                                                            pieces: overallTotals.pieces,
+                                                            total_sq_ft: overallTotals.sqft.toFixed(2),
+                                                            wl_ln_ft: overallTotals.wl.toFixed(2),
+                                                            sl_ln_ft: overallTotals.sl.toFixed(2),
+                                                            edging_ln_ft: overallTotals.edging.toFixed(2),
+                                                            cnc_ln_ft: overallTotals.cnc.toFixed(2),
+                                                            milter_ln_ft: overallTotals.milter.toFixed(2),
+                                                            total_cut_ln_ft: overallTotals.totalCut.toFixed(2),
+                                                        };
+                                                        return (
+                                                            <td
+                                                                key={colId}
+                                                                className={colId in totals
+                                                                    ? "px-4 py-2 text-sm font-semibold border-r border-border"
+                                                                    : "px-4 py-2 text-sm border-r border-border"}
+                                                                {...getLockedCellProps(column)}
+                                                            >
+                                                                {totals[colId]}
+                                                            </td>
+                                                        );
                                                     })}
                                                 </tr>
                                             )}
@@ -873,6 +890,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
                                                         return (
                                                             <td
                                                                 key={cell.id}
+                                                                {...getLockedCellProps(cell.column)}
                                                                 className={`px-4 py-2 text-sm border-r border-border last:border-r-0 ${isLongText ? 'whitespace-normal break-words min-w-[200px]' : 'break-words'}`}
                                                             >
                                                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}

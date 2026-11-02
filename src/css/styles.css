@@ -94,6 +94,35 @@
   background-color: color-mix(in oklab, var(--primary-soft) 70%, var(--background));
 }
 
+/* Locked (pinned) columns: opaque defaults so scrolled columns don't show through, and a
+   divider on the edge of the locked block. Layered so a table's own bg utilities win. */
+@layer base {
+  th[data-pinned] {
+    background-color: var(--muted);
+  }
+
+  td[data-pinned] {
+    background-color: var(--background);
+  }
+
+  [data-locked-edge='left'] {
+    box-shadow: inset -1px 0 0 var(--border);
+  }
+
+  [data-locked-edge='right'] {
+    box-shadow: inset 1px 0 0 var(--border);
+  }
+}
+
+/* Fab-type rows paint their color on the <tr>, so pinned cells repaint it themselves. */
+[data-fab-type] > td[data-pinned] {
+  background-color: var(--fab-row, var(--background));
+}
+
+.dark [data-fab-type] > td[data-pinned] {
+  background-color: color-mix(in oklab, var(--fab-row, var(--card)) 30%, var(--card));
+}
+
 [data-slot='data-grid-table'] td {
   font-variant-numeric: tabular-nums;
 }
