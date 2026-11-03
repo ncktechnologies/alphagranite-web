@@ -6,9 +6,8 @@ import { hasReadPermissionForKey } from "@/lib/permission";
 
 const REPORTS = [
     { title: 'Completion Report', path: '/report/daily-completion', permissionKey: 'completion_report' },
-    // Department selector (CAD, CNC, SlabSmith, Final Programming); uses the Completion Report permission for now.
-    { title: 'Completed Work by Department', path: '/report/completed-work', permissionKey: 'completion_report' },
-    { title: 'CAD Completed', path: '/report/completed-work?department=cad', permissionKey: 'completion_report' },
+    // Department selector (CAD, CNC, SlabSmith, Final Programming)
+    { title: 'Completed Work by Department', path: '/report/completed-work', permissionKey: 'completed_work_report' },
     { title: 'Install Completion', path: '/report/daily-install-completion', permissionKey: 'install_completion' },
     { title: 'Install Performance', path: '/report/install-performance', permissionKey: 'install_performance' },
     { title: 'Shop Cut Completion - Monthly', path: '/report/monthly-cut-completion', permissionKey: 'shop_cut_completion_monthly' },

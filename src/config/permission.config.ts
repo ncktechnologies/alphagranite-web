@@ -38,6 +38,7 @@ export const PERMISSION_GROUPS: MenuItem[] = [
   permissionKey: 'reports',  
   children: [
     { permissionKey: 'completion_report' },
+    { permissionKey: 'completed_work_report' },
     { permissionKey: 'install_completion' },
     { permissionKey: 'install_performance' },
     { permissionKey: 'shop_cut_completion_monthly' },
