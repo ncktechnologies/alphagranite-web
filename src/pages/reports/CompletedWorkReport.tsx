@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { endOfMonth, format, startOfMonth } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Container } from '@/components/common/container';
 import { BackButton } from '@/components/common/BackButton';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
@@ -47,7 +47,15 @@ const SEARCH_TYPES: { value: SearchType; label: string }[] = [
 const joinParts = (...parts: (string | null | undefined)[]) => parts.filter(Boolean).join(' - ');
 
 export function CompletedWorkReport() {
-  const [department, setDepartment] = useState<Department>('cad');
+  // ?department=cad etc. opens the report on that department (e.g. the "CAD Completed" link)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const department: Department =
+    DEPARTMENTS.find((d) => d.value === searchParams.get('department'))?.value ?? 'cad';
+  const setDepartment = (value: Department) =>
+    setSearchParams((prev) => {
+      prev.set('department', value);
+      return prev;
+    }, { replace: true });
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date()),
@@ -76,7 +84,9 @@ export function CompletedWorkReport() {
       {
         id: 'completed_on',
         accessorKey: 'completed_on',
-        header: ({ column }) => <DataGridColumnHeader title="DATE COMPLETED" column={column} />,
+        header: ({ column }) => (
+          <DataGridColumnHeader title={department === 'cad' ? 'DATE DRAFTED' : 'DATE COMPLETED'} column={column} />
+        ),
         cell: ({ row }) => (row.original.completed_on ? format(new Date(row.original.completed_on), 'MM/dd/yyyy') : '-'),
         meta: { format: (value: string | null) => (value ? format(new Date(value), 'MM/dd/yyyy') : '') },
         size: 130,
@@ -132,7 +142,7 @@ export function CompletedWorkReport() {
         size: 160,
       },
     ],
-    [personLabel],
+    [personLabel, department],
   );
 
   return (

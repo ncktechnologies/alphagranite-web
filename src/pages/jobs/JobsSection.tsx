@@ -343,20 +343,6 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           meta: { format: (value: string) => value || '' },
         },
         {
-          // business_jobs.description, labelled "Job Note" for the office
-          id: 'description',
-          accessorFn: (row) => row.description || '',
-          header: ({ column }) => <DataGridColumnHeader title="JOB NOTE" column={column} />,
-          cell: ({ row }) => (
-            <span className="text-xs line-clamp-2" title={row.original.description || undefined}>
-              {row.original.description || '-'}
-            </span>
-          ),
-          enableSorting: true,
-          size: 220,
-          meta: { format: (value: string) => value || '' },
-        },
-        {
           id: 'job_number',
           accessorFn: (row) => row.job_number,
           header: ({ column }) => <DataGridColumnHeader title="JOB NUMBER" column={column} />,
@@ -459,6 +445,20 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           size: 130,
           enableSorting: true,
           meta: { format: (value: any) => (value ? 'Invoiced' : '-') },
+        },
+        {
+          // business_jobs.description, labelled "Job Note" for the office
+          id: 'description',
+          accessorFn: (row) => row.description || '',
+          header: ({ column }) => <DataGridColumnHeader title="JOB NOTE" column={column} />,
+          cell: ({ row }) => (
+            <span className="text-xs line-clamp-2" title={row.original.description || undefined}>
+              {row.original.description || '-'}
+            </span>
+          ),
+          enableSorting: true,
+          size: 220,
+          meta: { format: (value: string) => value || '' },
         },
         {
           id: 'notes',

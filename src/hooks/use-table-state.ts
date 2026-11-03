@@ -31,6 +31,22 @@ export interface UseTableStateOptions {
   persistIn?: 'local' | 'session';
 }
 
+// Session-kept filters (persistIn: 'session') are for Back, not for a reload: a full page
+// reload starts every such table fresh. This runs once per page load, so in-app navigation
+// later in the session still restores them.
+function clearSessionTableStatesOnReload() {
+  try {
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    if (navigation?.type !== 'reload') return;
+    Object.keys(sessionStorage)
+      .filter((key) => key.startsWith('table-state-'))
+      .forEach((key) => sessionStorage.removeItem(key));
+  } catch {
+    // Storage unavailable (private mode etc.): nothing to clear
+  }
+}
+if (typeof window !== 'undefined') clearSessionTableStatesOnReload();
+
 const DEFAULT_PAGINATION: PaginationState = {
   pageIndex: 0,
   pageSize: 25,

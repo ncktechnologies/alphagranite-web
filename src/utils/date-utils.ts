@@ -195,9 +195,18 @@ export const getCalendarMonth = (date?: Date | string | null): Date => {
 };
 
 // Format date for consistent calendar display
+// Server dates come as America/Chicago wall time ("2026-10-16" or "2026-10-16T00:00:00-05:00").
+// Their date part is the business day, whatever timezone the viewer's computer is in.
+const SERVER_CALENDAR_DATE = /^(\d{4}-\d{2}-\d{2})(?:$|T[\d:.]+(?:[+-]\d{2}:?\d{2})?$)/;
+
+/** The business day of a server date as yyyy-MM-dd, or null for other values (e.g. UTC "Z" timestamps). */
+export const serverCalendarDate = (value: string): string | null => SERVER_CALENDAR_DATE.exec(value)?.[1] ?? null;
+
 export const formatCalendarDate = (date: Date | string | null | undefined): string => {
   if (!date) return '';
-  
+  // Without this, a viewer west of Chicago saw a 16 Oct schedule grouped under 15 Oct
+  if (typeof date === 'string' && serverCalendarDate(date)) return serverCalendarDate(date)!;
+
   try {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     if (!isValid(dateObj)) return '';

@@ -11,7 +11,8 @@ import { useGetFabsQuery, Fab } from '@/store/api/job';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo, useState } from 'react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { serverCalendarDate } from '@/utils/date-utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
@@ -23,7 +24,9 @@ import { useGetRolesQuery } from "@/store/api";
 const formatDate = (dateString?: string): string => {
     if (!dateString) return '-';
     try {
-        const date = new Date(dateString);
+        // The scheduled day as the server has it, not shifted into the viewer's timezone
+        const calendarDate = serverCalendarDate(dateString);
+        const date = calendarDate ? parseISO(calendarDate) : new Date(dateString);
         const day = date.getDate().toString().padStart(2, '0');
         const month = date.toLocaleString('en-US', { month: 'short' });
         const year = date.getFullYear();
