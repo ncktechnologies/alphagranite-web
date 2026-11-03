@@ -109,9 +109,8 @@ export function AfterDraftSalesPage() {
         tableId: 'sct-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
-        // Back from View Details returns to the same sales person filter/page (this tab only).
-        persistState: true,
-        persistIn: 'session',
+        // Filters always start fresh: neither Back nor a reload keeps them.
+        persistState: false,
     });
 
     // Calculate skip value for pagination
