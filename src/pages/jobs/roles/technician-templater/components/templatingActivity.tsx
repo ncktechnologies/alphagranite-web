@@ -121,8 +121,10 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
       const updateData: any = { templating_id: templatingId };
 
       if (values.notes) updateData.notes = [values.notes];
-      if (values.start_date) updateData.actual_end_date = new Date(values.start_date).toISOString();
-      if (values.schedule_start_date) updateData.schedule_start_date = new Date(values.schedule_start_date).toISOString();
+      // Send the picked calendar day as-is. `new Date("YYYY-MM-DD")` is UTC midnight, which the
+      // request interceptor turns into the previous day for browsers west of UTC (e.g. Chicago).
+      if (values.start_date) updateData.actual_end_date = `${values.start_date}T00:00:00`;
+      if (values.schedule_start_date) updateData.schedule_start_date = values.schedule_start_date;
       if (values.duration) updateData.duration = values.duration;
       if (values.square_ft) updateData.total_sqft = values.square_ft;
       if (values.is_completed !== null) updateData.is_completed = values.is_completed;
