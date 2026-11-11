@@ -6,6 +6,7 @@ import {
     getPaginationRowModel,
     getSortedRowModel,
     PaginationState,
+    Row,
     SortingState,
     useReactTable,
     VisibilityState,
@@ -410,6 +411,20 @@ export const JobTable = ({
         return undefined;
     }, [noteStage, path]);
 
+    // flexRender mounts a column's `cell` function as a React component, so every time
+    // `columns` is rebuilt (e.g. when the page re-renders with a fresh `jobs` array) a new
+    // cell function means a new component type, and React remounts the cell, dropping any
+    // state inside it, such as an open "Add Note" dialog. The actions cell holds that
+    // state, so give it one function for the table's lifetime and read the latest props from a ref.
+    const actionsCellPropsRef = useRef({ customActionsColumn, handleView, pageRole, canAddNote, resolvedNoteStage });
+    actionsCellPropsRef.current = { customActionsColumn, handleView, pageRole, canAddNote, resolvedNoteStage };
+    const [renderActionsCell] = useState(() => ({ row }: { row: Row<IJob> }) => {
+        const p = actionsCellPropsRef.current;
+        return p.customActionsColumn
+            ? p.customActionsColumn(row.original)
+            : <ActionsCell row={row} onView={() => p.handleView(row.original)} pageRole={p.pageRole} canAddNote={p.canAddNote} noteStage={p.resolvedNoteStage} />;
+    });
+
     const baseColumns = useMemo<ColumnDef<IJob>[]>(() =>
          
     [
@@ -446,9 +461,7 @@ export const JobTable = ({
     {
         id: 'actions',
         header: '',
-        cell: ({ row }) => customActionsColumn
-            ? customActionsColumn(row.original)
-            : <ActionsCell row={row} onView={() => handleView(row.original)} pageRole={pageRole} canAddNote={canAddNote} noteStage={resolvedNoteStage} />,
+        cell: renderActionsCell,
         enableSorting: false,
         size: 60,
         meta: { format: () => '' }, // no export
