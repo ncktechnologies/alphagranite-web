@@ -374,26 +374,25 @@ export function JobDetailsPage() {
               </CardHeading>
 
               <CardToolbar>
-                <Can action="create" on="Manage Jobs">
-                  <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Camera className="h-4 w-4 mr-2" />
-                        Upload Media
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Upload Media Files</DialogTitle>
-                      </DialogHeader>
-                      <JobMediaUpload
-                        jobId={jobId}
-                        onUploadComplete={refetchMedia}
-                        onClose={() => setShowUploadDialog(false)}
-                      />
-                    </DialogContent>
-                  </Dialog>
-                </Can>
+                {/* Anyone who can view the job can add files to it. */}
+                <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Camera className="h-4 w-4 mr-2" />
+                      Upload Media
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Upload Media Files</DialogTitle>
+                    </DialogHeader>
+                    <JobMediaUpload
+                      jobId={jobId}
+                      onUploadComplete={refetchMedia}
+                      onClose={() => setShowUploadDialog(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
               </CardToolbar>
             </CardHeader>
 
@@ -424,14 +423,12 @@ export function JobDetailsPage() {
 
               {/* Upload prompt when empty and no upload button visible */}
               {!mediaLoading && (!mediaFiles || mediaFiles.length === 0) && (
-                <Can action="create" on="Manage Jobs">
-                  <div className="mt-4 flex justify-center">
-                    <Button onClick={() => setShowUploadDialog(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Upload First File
-                    </Button>
-                  </div>
-                </Can>
+                <div className="mt-4 flex justify-center">
+                  <Button onClick={() => setShowUploadDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Upload First File
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>

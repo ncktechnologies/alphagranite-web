@@ -46,7 +46,7 @@ import {
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetDepartmentsQuery } from '@/store/api/department';
 import { useGetEmployeeSalesPersonsQuery } from '@/store/api/employee';
-import { getCheckboxRuleError, isCurrentStateImpossible } from './NewFabIdForm';
+import { getCheckboxRuleError } from './NewFabIdForm';
 import DialogContent, { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
 import { inputToNumber, numberToInput } from '@/lib/form-number';
@@ -661,28 +661,37 @@ const EditFabIdForm = () => {
     };
 
     const handleCheckboxToggle = (
-        fieldName: keyof FabIdFormData,
+        _fieldName: keyof FabIdFormData,
         nextChecked: boolean,
         onChange: (value: boolean) => void
     ) => {
-        const currentValues = form.getValues();
-        const nextValues: Partial<FabIdFormData> = {
-            ...currentValues,
-            [fieldName]: nextChecked,
-        };
-
-        const checkboxRuleError = getCheckboxRuleError(nextValues);
-        if (checkboxRuleError) {
-            setCheckboxLogicError(checkboxRuleError);
-            return;
-        }
-
+        // Combination rules are checked on submit; clear any earlier message.
         setCheckboxLogicError(null);
         onChange(nextChecked);
     };
 
+    const CHECKBOX_FIELDS = [
+        'templateNotNeeded',
+        'draftNotNeeded',
+        'slabSmithCustNotNeeded',
+        'sctNotNeeded',
+        'slabSmithAGNotNeeded',
+        'finalProgrammingNotNeeded',
+    ] as const;
 
     const onSubmit = async (values: FabIdFormData) => {
+        // Only check the combination when a box was changed, so a FAB saved
+        // under older rules can still be edited by people who can't change
+        // the boxes.
+        const loaded = form.formState.defaultValues ?? {};
+        const checkboxesChanged = CHECKBOX_FIELDS.some((field) => !!loaded[field] !== !!values[field]);
+        const checkboxRuleError = checkboxesChanged ? getCheckboxRuleError(values) : null;
+        if (checkboxRuleError) {
+            setCheckboxLogicError(checkboxRuleError);
+            return;
+        }
+        setCheckboxLogicError(null);
+
         try {
             setIsSubmitting(true);
             setError(null);
@@ -1144,11 +1153,11 @@ const EditFabIdForm = () => {
                                         </div>
                                         {/* Checkboxes - NOW DISABLED */}
                                         <div>
-                                            {(checkboxLogicError || isCurrentStateImpossible(form.getValues())) && (
+                                            {checkboxLogicError && (
                                                 <Alert className="mb-4 border-red-200 bg-red-50">
                                                     <AlertCircle className="h-4 w-4 text-red-600" />
                                                     <AlertTitle className="text-red-800">
-                                                        {checkboxLogicError || 'Invalid checkbox combination detected'}
+                                                        {checkboxLogicError}
                                                     </AlertTitle>
                                                 </Alert>
                                             )}

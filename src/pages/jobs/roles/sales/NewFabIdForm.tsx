@@ -155,18 +155,9 @@ export const isCurrentStateImpossible = (formData: Partial<FabIdFormData>): bool
   return currentSelected.length > 0 && isScenarioImpossible(currentSelected);
 };
 
-export const ALLOW_ALL_CHECKBOX_FAB_TYPES = ['resurface', 'punchout-ag', 'punchout-billable'];
-
-export const canAllowAllCheckboxes = (fabType?: string): boolean => {
-  return !!fabType && ALLOW_ALL_CHECKBOX_FAB_TYPES.includes(fabType.toLowerCase());
-};
-
+// Checked when the form is submitted, not as boxes are ticked. All six may be
+// ticked together; the FAB then starts at Cut List.
 export const getCheckboxRuleError = (formData: Partial<FabIdFormData>): string | null => {
-  const selectedCount = getSelectedCheckboxLabels(formData).length;
-  if (selectedCount === 6 && !canAllowAllCheckboxes(formData.fabType)) {
-    return 'All 6 checkboxes cannot be selected at the same time.';
-  }
-
   if (!formData.slabSmithCustNotNeeded && !formData.slabSmithAGNotNeeded) {
     return 'At least one SlabSmith checkbox must be selected.';
   }
@@ -667,22 +658,11 @@ const NewFabIdForm = () => {
   );
 
   const handleCheckboxToggle = (
-    fieldName: keyof FabIdFormData,
+    _fieldName: keyof FabIdFormData,
     nextChecked: boolean,
     onChange: (value: boolean) => void
   ) => {
-    const currentValues = form.getValues();
-    const nextValues: Partial<FabIdFormData> = {
-      ...currentValues,
-      [fieldName]: nextChecked,
-    };
-
-    const checkboxRuleError = getCheckboxRuleError(nextValues);
-    if (checkboxRuleError) {
-      setCheckboxLogicError(checkboxRuleError);
-      return;
-    }
-
+    // Combination rules are checked on submit; clear any earlier message.
     setCheckboxLogicError(null);
     onChange(nextChecked);
   };
@@ -1623,11 +1603,11 @@ const NewFabIdForm = () => {
 
                       {/* Checkboxes */}
                       <div>
-                        {(checkboxLogicError || isCurrentStateImpossible(form.getValues())) && (
+                        {checkboxLogicError && (
                           <Alert className="mb-4 border-red-200 bg-red-50">
                             <AlertCircle className="h-4 w-4 text-red-600" />
                             <AlertTitle className="text-red-800">
-                              {checkboxLogicError || 'Invalid checkbox combination detected'}
+                              {checkboxLogicError}
                             </AlertTitle>
                           </Alert>
                         )}
