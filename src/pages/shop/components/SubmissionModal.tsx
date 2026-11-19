@@ -37,7 +37,7 @@ import { toast } from "sonner";
 const cuttingSchema = z.object({
   workstation: z.string().min(1, "Workstation is required"),
   hoursScheduled: z.string().min(1, "Hours are required"),
-  scheduleDate: z.date({ required_error: "Schedule date is required" }),
+  scheduleDate: z.date({ error: "Schedule date is required" }),
   operator: z.string().min(1, "Operator is required"),
 });
 
