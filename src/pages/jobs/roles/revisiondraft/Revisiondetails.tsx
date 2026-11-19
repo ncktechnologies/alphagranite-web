@@ -71,10 +71,19 @@ const formatBytes = (bytes: number, decimals = 2) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
 
+// Newest revision first, whatever order the API returns them in. A FAB can carry older
+// (e.g. migrated "SHOP") revisions, so never assume the first or last element is current.
+const revisionsNewestFirst = (revisionsData: any): any[] => {
+  const list = Array.isArray(revisionsData) ? revisionsData : (revisionsData as any)?.data || [];
+  if (!Array.isArray(list)) return [];
+  const time = (r: any) => (r?.created_at ? new Date(r.created_at).getTime() : 0);
+  return [...list].sort((a, b) => time(b) - time(a) || (b?.id ?? 0) - (a?.id ?? 0));
+};
+
 // Improved revision info extraction using both SCT and revisions data
 const getRevisionInfo = (fabData: any, sctData: any, revisionsData: any) => {
   // First try to get from revisions table (most accurate)
-  const revisionsArray = Array.isArray(revisionsData) ? revisionsData : (revisionsData as any)?.data || [];
+  const revisionsArray = revisionsNewestFirst(revisionsData);
   const latestRevision = revisionsArray.length > 0 ? revisionsArray[0] : null;
   const salesCTData = fabData?.sales_ct_data || sctData;
 
@@ -472,8 +481,7 @@ export function RevisionDetailsPage() {
     }
     try {
       let revisionId;
-      const revisionsArray = Array.isArray(revisionsData) ? revisionsData : (revisionsData as any)?.data || [];
-      const existingRevisions = Array.isArray(revisionsArray) ? revisionsArray : [];
+      const existingRevisions = revisionsNewestFirst(revisionsData);
       const hasExistingRevisions = existingRevisions.length > 0;
 
       // If complete is true, create revision if needed, then call updateRevision to complete the stage
@@ -481,8 +489,8 @@ export function RevisionDetailsPage() {
         let revisionIdToUpdate: number;
 
         if (hasExistingRevisions) {
-          // Use existing revision
-          const latestRevision = existingRevisions[existingRevisions.length - 1];
+          // Use the revision currently being worked on
+          const latestRevision = existingRevisions[0];
           revisionIdToUpdate = latestRevision.id;
         } else {
           // Create new revision first to get the ID
@@ -501,9 +509,9 @@ export function RevisionDetailsPage() {
           revisionIdToUpdate = createResult.data.id;
         }
 
-        // Now call updateRevision with is_completed: true
+        // Now call updateRevision with is_completed: true. The type belongs to whoever
+        // requested the revision, so the revisor's save leaves it alone.
         const updateData: any = {
-          revision_type: revisionInfo.salesCTData?.revision_type || revisionInfo.revisionType,
           revision_notes: data.notes || '',
           is_completed: true,
           revision_reason: revisionInfo.revisionReason
@@ -513,9 +521,8 @@ export function RevisionDetailsPage() {
         revisionId = revisionIdToUpdate;
       } else if (hasExistingRevisions) {
         // If complete is false but there are existing revisions, update them
-        const latestRevision = existingRevisions[existingRevisions.length - 1];
+        const latestRevision = existingRevisions[0];
         const updateData: any = {
-          revision_type: revisionInfo.salesCTData?.revision_type || revisionInfo.revisionType,
           revision_notes: data.notes || '',
           is_completed: false,
           revision_reason: revisionInfo.revisionReason

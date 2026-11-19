@@ -77,7 +77,7 @@ export interface UpdateSlaRuleDto {
 
 
 export interface CompletedWorkReportParams {
-    department: 'cad' | 'cnc' | 'slabsmith' | 'final_programming';
+    department: 'cad' | 'revisions' | 'cnc' | 'slabsmith' | 'final_programming';
     start_date?: string;
     end_date?: string;
     employee_id?: number;

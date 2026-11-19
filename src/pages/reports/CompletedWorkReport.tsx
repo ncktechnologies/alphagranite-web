@@ -27,11 +27,14 @@ interface CompletedWorkRow {
   stone_color: string | null;
   sqft: number | null;
   employee_name: string | null;
+  // Caspio-era work brought over by the migration; not credited to anyone in Odyssey.
+  is_legacy?: boolean;
 }
 
 // Add a department here once the API supports it (see DEPARTMENTS in completed_work_report.py).
 const DEPARTMENTS: { value: Department; label: string }[] = [
   { value: 'cad', label: 'CAD - Drafting' },
+  { value: 'revisions', label: 'CAD - Revisions' },
   { value: 'cnc', label: 'CNC Programming' },
   { value: 'slabsmith', label: 'SlabSmith' },
   { value: 'final_programming', label: 'Final Programming' },
@@ -139,6 +142,12 @@ export function CompletedWorkReport() {
         id: 'employee_name',
         accessorKey: 'employee_name',
         header: ({ column }) => <DataGridColumnHeader title={personLabel.toUpperCase()} column={column} />,
+        cell: ({ row }) =>
+          row.original.is_legacy ? (
+            <span className="italic text-muted-foreground">{row.original.employee_name}</span>
+          ) : (
+            row.original.employee_name || '-'
+          ),
         size: 160,
       },
     ],
