@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,9 +14,12 @@ import { useNavigate } from "react-router";
 import { useCompleteTemplatingMutation, useGetTemplatingByFabIdQuery, useUpdateTemplatingMutation, useCreateFabNoteMutation } from "@/store/api/job";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Can } from '@/components/permission';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useGetEmployeesQuery, useGetRolesQuery } from "@/store/api";
 
 const formSchema = z.object({
   is_completed: z.boolean().nullable(),
+  technician_id: z.string().optional(),
   start_date: z.string(),
   schedule_start_date: z.string(),
   duration: z.string().optional().refine(
@@ -54,6 +57,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
     resolver: zodResolver(formSchema),
     defaultValues: {
       is_completed: null,
+      technician_id: "",
       start_date: "",
       schedule_start_date: "",
       duration: "",
@@ -71,11 +75,41 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
     { skip: !fabId }
   );
 
+  // Technician list: same source as the coordinator's Reschedule modal (templater roles).
+  const { data: rolesData } = useGetRolesQuery();
+  const templaterRoleId = useMemo(() => {
+    const raw: any = rolesData;
+    const roles = raw?.data?.data ?? raw?.data ?? raw;
+    if (!Array.isArray(roles)) return null;
+    const role = roles.find((r: any) => {
+      const name = (r.name || '').toLowerCase();
+      return name === 'templator' || name === 'template scheduler';
+    });
+    return role?.id ?? null;
+  }, [rolesData]);
+  const { data: employeesData } = useGetEmployeesQuery(
+    { role_id: templaterRoleId ?? undefined, sort_by: 'first_name', sort_order: 'asc', limit: 500 },
+    { skip: !templaterRoleId }
+  );
+  const technicianOptions = useMemo(() => {
+    const employees = employeesData?.data ?? employeesData;
+    const list: { id: string; name: string }[] = Array.isArray(employees)
+      ? employees.map((e: any) => ({ id: String(e.id), name: `${e.first_name} ${e.last_name}` }))
+      : [];
+    // Keep the currently assigned technician selectable even if they aren't in the templater role.
+    const currentId = templatingData?.data?.technician_id;
+    if (currentId && !list.some((t) => t.id === String(currentId))) {
+      list.unshift({ id: String(currentId), name: templatingData?.data?.technician_name || `User #${currentId}` });
+    }
+    return list;
+  }, [employeesData, templatingData]);
+
   // Populate form with existing data
   useEffect(() => {
     if (templatingData?.data) {
       const formValues: Partial<z.infer<typeof formSchema>> = {
         is_completed: templatingData.data.is_completed || null,
+        technician_id: templatingData.data.technician_id ? String(templatingData.data.technician_id) : "",
         start_date: templatingData.data.end_date
           ? templatingData.data.end_date.split('T')[0]
           : "",
@@ -127,6 +161,9 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
       if (values.schedule_start_date) updateData.schedule_start_date = values.schedule_start_date;
       if (values.duration) updateData.duration = values.duration;
       if (values.square_ft) updateData.total_sqft = values.square_ft;
+      if (values.technician_id && values.technician_id !== String(templatingData?.data?.technician_id ?? "")) {
+        updateData.technician_id = Number(values.technician_id);
+      }
       if (values.is_completed !== null) updateData.is_completed = values.is_completed;
       // "Reschedule" can be chosen any number of times; each save bumps the count.
       if (values.is_completed === false) updateData.reschedule = true;
@@ -212,6 +249,32 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                     </span>
                   )}
                 </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Technician */}
+          <FormField
+            control={form.control}
+            name="technician_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Technician</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select technician" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
+                    {technicianOptions.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
